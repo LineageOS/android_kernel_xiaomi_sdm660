@@ -400,6 +400,7 @@ struct synaptics_rmi4_data {
 	bool f11_wakeup_gesture;
 	bool f12_wakeup_gesture;
 	bool enable_wakeup_gesture;
+	bool enable_reversed_keys;
 	bool wedge_sensor;
 	bool report_pressure;
 	bool stylus_enable;
