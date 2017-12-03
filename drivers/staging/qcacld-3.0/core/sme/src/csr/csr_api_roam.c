@@ -18413,7 +18413,7 @@ csr_fetch_valid_ch_lst(tpAniSirGlobal mac_ctx,
 	}
 
 	if (CSR_IS_ROAM_INTRA_BAND_ENABLED(mac_ctx)) {
-		band = get_rf_band(mac_ctx->roam.roamSession[session_id].
+		band = (eCsrBand) get_rf_band(mac_ctx->roam.roamSession[session_id].
 				connectedProfile.operationChannel);
 		sme_debug("updated band %d operational ch %d", band,
 				mac_ctx->roam.roamSession[session_id].
