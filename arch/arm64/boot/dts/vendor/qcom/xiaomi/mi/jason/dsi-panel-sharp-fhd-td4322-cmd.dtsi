@@ -101,5 +101,34 @@
 		qcom,mdss-dsi-dispparam-dimmingon-command = [
 			39 01 00 00 01 00 02 53 2C
 			];
+
+		cm,mdss-livedisplay-command-state = "dsi_lp_mode";
+		cm,mdss-livedisplay-cabc-ui-cmd = [
+			29 01 00 00 00 00 02 B0 04
+			15 01 00 00 00 00 02 55 81
+			29 01 00 00 00 00 08 B8 89 51 0D 00 02 00 00
+			29 01 00 00 00 00 1A CE 55 40 4C 5A 69 77 84 93 A2 B1 C1 D1 E0 F0 F1 F2 FF 04 00 04 04 42 00 69 5A
+			29 01 00 00 00 00 0A F9 66 3F E0 BE 00 8D BF 80 00
+			29 01 00 00 00 00 02 B0 03
+		];
+		cm,mdss-livedisplay-cabc-image-cmd = [
+			29 01 00 00 00 00 02 B0 04
+			15 01 00 00 00 00 02 55 82
+			29 01 00 00 00 00 08 B9 FF 27 37 00 04 00 00
+			29 01 00 00 00 00 1A CE 55 40 4C 5A 69 77 84 93 A2 B1 C1 D1 E0 F0 F1 F2 FF 04 00 04 04 42 00 69 5A
+			29 01 00 00 00 00 0A F9 66 3F E0 BE 00 8D BF 80 00
+			29 01 00 00 00 00 02 B0 03
+		];
+		cm,mdss-livedisplay-cabc-video-cmd = [
+			29 01 00 00 00 00 02 B0 04
+			15 01 00 00 00 00 02 55 83
+			29 01 00 00 00 00 08 BA BB 3D 22 00 03 00 00
+			29 01 00 00 00 00 1A CE 55 40 4C 5A 69 77 84 93 A2 B1 C1 D1 E0 F0 F1 F2 FF 04 00 04 04 42 00 69 5A
+			29 01 00 00 00 00 0A F9 66 3F E0 BE 00 8D BF 80 00
+			29 01 00 00 00 00 02 B0 03
+		];
+		cm,mdss-livedisplay-cabc-cmd = [
+			39 01 00 00 01 00 02 55 00
+		];
 	};
 };
