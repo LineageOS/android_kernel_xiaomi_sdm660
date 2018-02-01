@@ -99,6 +99,7 @@ struct fpc1020_data {
 	bool fb_black;
 	bool wait_finger_down;
 	struct work_struct work;
+	bool proximity_state; /* 0:far 1:near */
 };
 
 static irqreturn_t fpc1020_irq_handler(int irq, void *handle);
@@ -336,6 +337,27 @@ static ssize_t hw_reset_set(struct device *dev,
 }
 static DEVICE_ATTR(hw_reset, 0200, NULL, hw_reset_set);
 
+static void config_irq(struct fpc1020_data *fpc1020, bool enabled)
+{
+	static bool irq_enabled = true;
+
+	mutex_lock(&fpc1020->lock);
+	if (enabled != irq_enabled) {
+		if (enabled)
+			enable_irq(gpio_to_irq(fpc1020->irq_gpio));
+		else
+			disable_irq(gpio_to_irq(fpc1020->irq_gpio));
+
+		dev_info(fpc1020->dev, "%s: %s fpc irq ---\n", __func__,
+			enabled ?  "enable" : "disable");
+		irq_enabled = enabled;
+	} else {
+		dev_info(fpc1020->dev, "%s: dual config irq status: %s\n", __func__,
+			enabled ?  "true" : "false");
+	}
+	mutex_unlock(&fpc1020->lock);
+}
+
 /**
  * Will setup GPIOs, and regulators to correctly initialize the touch sensor to
  * be ready for work.
@@ -547,6 +569,32 @@ static ssize_t irq_enable_set(struct device *dev,
 }
 static DEVICE_ATTR(irq_enable, S_IWUSR | S_IRUSR | S_IRGRP | S_IWGRP , NULL, irq_enable_set);
 
+static ssize_t proximity_state_set(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t count)
+{
+	struct fpc1020_data *fpc1020 = dev_get_drvdata(dev);
+	int rc, val;
+
+	rc = kstrtoint(buf, 10, &val);
+	if (rc)
+		return -EINVAL;
+
+	fpc1020->proximity_state = !!val;
+
+	if (fpc1020->fb_black) {
+		if (fpc1020->proximity_state) {
+			/* Disable IRQ when screen is off and proximity sensor is covered */
+			config_irq(fpc1020, false);
+		} else {
+			/* Enable IRQ when screen is off and proximity sensor is uncovered */
+			config_irq(fpc1020, true);
+		}
+	}
+
+	return count;
+}
+static DEVICE_ATTR(proximity_state, S_IWUSR, NULL, proximity_state_set);
+
 static struct attribute *attributes[] = {
 	&dev_attr_pinctl_set.attr,
 	&dev_attr_device_prepare.attr,
@@ -557,6 +605,7 @@ static struct attribute *attributes[] = {
 	&dev_attr_irq.attr,
 	&dev_attr_fingerdown_wait.attr,
 	&dev_attr_irq_enable.attr,
+	&dev_attr_proximity_state.attr,
 	NULL
 };
 
@@ -635,9 +684,19 @@ static int fpc_fb_notif_callback(struct notifier_block *nb,
 		switch (blank) {
 		case FB_BLANK_POWERDOWN:
 			fpc1020->fb_black = true;
+			/*
+			 * Disable IRQ when screen turns off,
+			 * if proximity sensor is covered
+			 */
+			if (fpc1020->proximity_state) {
+				config_irq(fpc1020, false);
+			}
 			break;
 		case FB_BLANK_UNBLANK:
+		case FB_BLANK_NORMAL:
 			fpc1020->fb_black = false;
+			/* Unconditionally enable IRQ when screen turns on */
+			config_irq(fpc1020, true);
 			break;
 		default:
 			pr_debug("%s defalut\n", __func__);
