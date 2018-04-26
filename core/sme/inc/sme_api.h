@@ -1758,6 +1758,17 @@ QDF_STATUS sme_ipa_uc_stat_request(tHalHandle hal,
 
 QDF_STATUS sme_set_smps_cfg(uint32_t vdev_id, uint32_t param_id,
 				uint32_t param_val);
+
+/**
+ * sme_get_peer_stats() - sme api to post peer info request
+ * @mac: mac handle
+ * @req: peer info request struct send to wma
+ *
+ * Return: QDF_STATUS_SUCCESS or non-zero on failure
+ */
+QDF_STATUS sme_get_peer_stats(tpAniSirGlobal mac,
+			      struct sir_peer_info_req req);
+
 /**
  * sme_get_peer_info() - sme api to get peer info
  * @hal: hal handle for getting global mac struct
@@ -1928,5 +1939,17 @@ void sme_display_disconnect_stats(tHalHandle hal, uint8_t session_id);
  * Return: QDF_STATUS
  */
 QDF_STATUS sme_set_vc_mode_config(uint32_t vc_bitmap);
+
+/**
+ * sme_is_sta_key_exchange_in_progress() - checks whether the STA/P2P client
+ * session has key exchange in progress
+ *
+ * @hal: global hal handle
+ * @session_id: session id
+ *
+ * Return: true - if key exchange in progress
+ *         false - if not in progress
+ */
+bool sme_is_sta_key_exchange_in_progress(tHalHandle hal, uint8_t session_id);
 
 #endif /* #if !defined( __SME_API_H ) */
