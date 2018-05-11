@@ -5288,6 +5288,15 @@ struct reg_table_entry g_registry_table[] = {
 		     CFG_TX_SCH_DELAY_DEFAULT,
 		     CFG_TX_SCH_DELAY_MIN,
 		     CFG_TX_SCH_DELAY_MAX),
+
+	REG_VARIABLE(CFG_ROAM_FORCE_RSSI_TRIGGER_NAME,
+		     WLAN_PARAM_Integer, struct hdd_config,
+		     roam_force_rssi_trigger,
+		     VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+		     CFG_ROAM_FORCE_RSSI_TRIGGER_DEFAULT,
+		     CFG_ROAM_FORCE_RSSI_TRIGGER_MIN,
+		     CFG_ROAM_FORCE_RSSI_TRIGGER_MAX),
+
 };
 
 /**
@@ -7094,6 +7103,10 @@ void hdd_cfg_print(hdd_context_t *pHddCtx)
 		  pHddCtx->config->enable_tx_sch_delay);
 
 	hdd_cfg_print_11k_offload_params(pHddCtx);
+	hdd_debug("Name = [%s] Value = [%u]",
+		  CFG_ROAM_FORCE_RSSI_TRIGGER_NAME,
+		  pHddCtx->config->roam_force_rssi_trigger);
+
 }
 
 /**
@@ -9592,6 +9605,8 @@ QDF_STATUS hdd_set_sme_config(hdd_context_t *pHddCtx)
 			pHddCtx->config->scan_adaptive_dwell_mode;
 	smeConfig->csrConfig.roamscan_adaptive_dwell_mode =
 			pHddCtx->config->roamscan_adaptive_dwell_mode;
+	smeConfig->csrConfig.roam_force_rssi_trigger =
+			pHddCtx->config->roam_force_rssi_trigger;
 
 	hdd_update_per_config_to_sme(pHddCtx, smeConfig);
 

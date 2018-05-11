@@ -1395,6 +1395,7 @@ typedef struct tagCsrConfigParam {
 	struct sir_score_config bss_score_params;
 	uint32_t offload_11k_enable_bitmask;
 	struct csr_neighbor_report_offload_params neighbor_report_offload;
+	bool roam_force_rssi_trigger;
 } tCsrConfigParam;
 
 /* Tush */
