@@ -1,6 +1,6 @@
 /* Copyright (c) 2005-2011 Atheros Communications Inc.
  * Copyright (c) 2011-2013 Qualcomm Atheros, Inc.
- * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2017-2018 The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -646,10 +646,6 @@ static int ath10k_snoc_hif_tx_sg(struct ath10k *ar, u8 pipe_id,
 	struct ath10k_snoc *ar_snoc = ath10k_snoc_priv(ar);
 	struct ath10k_snoc_pipe *snoc_pipe;
 	struct ath10k_ce_pipe *ce_pipe;
-	struct ath10k_ce_ring *src_ring;
-	unsigned int nentries_mask;
-	unsigned int sw_index;
-	unsigned int write_index;
 	int err, i = 0;
 
 	if (!ar_snoc)
@@ -660,18 +656,7 @@ static int ath10k_snoc_hif_tx_sg(struct ath10k *ar, u8 pipe_id,
 
 	snoc_pipe = &ar_snoc->pipe_info[pipe_id];
 	ce_pipe = snoc_pipe->ce_hdl;
-	src_ring = ce_pipe->src_ring;
 	spin_lock_bh(&ar_snoc->opaque_ctx.ce_lock);
-
-	nentries_mask = src_ring->nentries_mask;
-	sw_index = src_ring->sw_index;
-	write_index = src_ring->write_index;
-
-	if (unlikely(CE_RING_DELTA(nentries_mask,
-				   write_index, sw_index - 1) < n_items)) {
-		err = -ENOBUFS;
-		goto err;
-	}
 
 	for (i = 0; i < n_items - 1; i++) {
 		ath10k_dbg(ar, ATH10K_DBG_SNOC,
@@ -967,6 +952,8 @@ static void ath10k_snoc_hif_power_down(struct ath10k *ar)
 
 	if (!atomic_read(&ar_snoc->pm_ops_inprogress))
 		ath10k_snoc_qmi_wlan_disable(ar);
+
+	ce_remove_rri_on_ddr(ar);
 }
 
 int ath10k_snoc_get_ce_id(struct ath10k *ar, int irq)
@@ -1076,6 +1063,7 @@ static int ath10k_snoc_get_soc_info(struct ath10k *ar)
 static int ath10k_snoc_wlan_enable(struct ath10k *ar)
 {
 	struct ath10k_wlan_enable_cfg cfg;
+	enum ath10k_driver_mode mode;
 	int pipe_num;
 	struct ath10k_ce_tgt_pipe_cfg tgt_cfg[CE_COUNT_MAX];
 
@@ -1106,8 +1094,9 @@ static int ath10k_snoc_wlan_enable(struct ath10k *ar)
 	cfg.shadow_reg_cfg = (struct ath10k_shadow_reg_cfg *)
 		&target_shadow_reg_cfg_map;
 
-	return ath10k_snoc_qmi_wlan_enable(ar, &cfg,
-					   ATH10K_MISSION, "5.1.0.26N");
+	mode = ar->testmode.utf_monitor ? ATH10K_FTM : ATH10K_MISSION;
+	return ath10k_snoc_qmi_wlan_enable(ar, &cfg, mode,
+					   "5.1.0.26N");
 }
 
 static int ath10k_snoc_bus_configure(struct ath10k *ar)
@@ -1120,6 +1109,8 @@ static int ath10k_snoc_bus_configure(struct ath10k *ar)
 			   __func__, ret);
 		return ret;
 	}
+
+	ce_config_rri_on_ddr(ar);
 
 	return 0;
 }
