@@ -2234,8 +2234,12 @@ static int __hdd_open(struct net_device *dev)
 		return -EBUSY;
 	}
 
-	mutex_lock(&hdd_init_deinit_lock);
+	if (qdf_atomic_read(&hdd_ctx->con_mode_flag)) {
+		hdd_err("con_mode_handler is in progress; Please try again.");
+		return -EBUSY;
+	}
 
+	mutex_lock(&hdd_init_deinit_lock);
 	hdd_start_driver_ops_timer(eHDD_DRV_OP_IFF_UP);
 
 	/*
@@ -2394,6 +2398,13 @@ static int __hdd_stop(struct net_device *dev)
 
 	/* Make sure the interface is marked as closed */
 	clear_bit(DEVICE_IFACE_OPENED, &adapter->event_flags);
+
+	/*
+	 * Upon wifi turn off, DUT has to flush the scan results so if
+	 * this is the last cli iface, flush the scan database.
+	 */
+	if (!hdd_is_cli_iface_up(hdd_ctx))
+		sme_scan_flush_result(hdd_ctx->hHal);
 
 	/*
 	 * Find if any iface is up. If any iface is up then can't put device to
@@ -4112,9 +4123,14 @@ QDF_STATUS hdd_stop_adapter(hdd_context_t *hdd_ctx, hdd_adapter_t *adapter,
 					hdd_ctx->hHal,
 					adapter->sessionId,
 					eCSR_DISCONNECT_REASON_IBSS_LEAVE);
-			else if (QDF_STA_MODE == adapter->device_mode)
+			else if (QDF_STA_MODE == adapter->device_mode) {
 				qdf_ret_status =
 					wlan_hdd_try_disconnect(adapter);
+				hdd_debug("Send disconnected event to userspace");
+				wlan_hdd_cfg80211_indicate_disconnect(
+					adapter->dev, true,
+					WLAN_REASON_UNSPECIFIED);
+			}
 			else
 				qdf_ret_status = sme_roam_disconnect(
 					hdd_ctx->hHal,
@@ -4298,7 +4314,7 @@ void  hdd_deinit_all_adapters(hdd_context_t *hdd_ctx, bool rtnl_held)
 	EXIT();
 }
 
-QDF_STATUS hdd_stop_all_adapters(hdd_context_t *hdd_ctx, bool close_session)
+QDF_STATUS hdd_stop_all_adapters(hdd_context_t *hdd_ctx)
 {
 	hdd_adapter_list_node_t *adapterNode = NULL, *pNext = NULL;
 	QDF_STATUS status;
@@ -4317,7 +4333,7 @@ QDF_STATUS hdd_stop_all_adapters(hdd_context_t *hdd_ctx, bool close_session)
 
 	while (NULL != adapterNode && QDF_STATUS_SUCCESS == status) {
 		adapter = adapterNode->pAdapter;
-		hdd_stop_adapter(hdd_ctx, adapter, close_session);
+		hdd_stop_adapter(hdd_ctx, adapter, true);
 		status = hdd_get_next_adapter(hdd_ctx, adapterNode, &pNext);
 		adapterNode = pNext;
 	}
@@ -4756,7 +4772,7 @@ static void hdd_connect_done(struct net_device *dev, const u8 *bssid,
 	} else {
 		fils_params.status = status;
 		fils_params.bssid = bssid;
-		fils_params.timeout_reason = hdd_convert_timeout_reason(timeout_reason);
+		fils_params.timeout_reason = timeout_reason;
 		fils_params.req_ie = req_ie;
 		fils_params.req_ie_len = req_ie_len;
 		fils_params.resp_ie = resp_ie;
@@ -5878,7 +5894,7 @@ static void hdd_wlan_exit(hdd_context_t *hdd_ctx)
 		hdd_cleanup_scan_queue(hdd_ctx, NULL);
 		hdd_abort_mac_scan_all_adapters(hdd_ctx);
 		hdd_abort_sched_scan_all_adapters(hdd_ctx);
-		hdd_stop_all_adapters(hdd_ctx, true);
+		hdd_stop_all_adapters(hdd_ctx);
 	}
 
 	unregister_netdevice_notifier(&hdd_netdev_notifier);
@@ -6536,11 +6552,6 @@ static void hdd_bus_bw_work_handler(struct work_struct *work)
 	hdd_ipa_uc_stat_query(hdd_ctx, &ipa_tx_packets, &ipa_rx_packets);
 	tx_packets += (uint64_t)ipa_tx_packets;
 	rx_packets += (uint64_t)ipa_rx_packets;
-
-	if (adapter) {
-		adapter->stats.tx_packets += ipa_tx_packets;
-		adapter->stats.rx_packets += ipa_rx_packets;
-	}
 
 	if (!connected) {
 		hdd_err("bus bandwidth timer running in disconnected state");
@@ -9918,6 +9929,7 @@ int hdd_wlan_startup(struct device *dev)
 		goto err_hdd_free_context;
 
 	hdd_green_ap_init(hdd_ctx);
+	qdf_atomic_init(&hdd_ctx->con_mode_flag);
 
 	hdd_init_spectral_scan(hdd_ctx);
 
@@ -11596,29 +11608,6 @@ static enum tQDF_ADAPTER_MODE hdd_get_adpter_mode(
 	}
 }
 
-static void hdd_stop_present_mode(hdd_context_t *hdd_ctx,
-				  enum tQDF_GLOBAL_CON_MODE curr_mode)
-{
-
-	if (hdd_ctx->driver_status == DRIVER_MODULES_CLOSED)
-		return;
-
-	switch (curr_mode) {
-	case QDF_GLOBAL_MISSION_MODE:
-	case QDF_GLOBAL_MONITOR_MODE:
-	case QDF_GLOBAL_FTM_MODE:
-		hdd_abort_mac_scan_all_adapters(hdd_ctx);
-		hdd_cleanup_scan_queue(hdd_ctx, NULL);
-
-		/* re-use the existing session */
-		hdd_stop_all_adapters(hdd_ctx, false);
-		break;
-	default:
-		break;
-	}
-}
-
-
 static void hdd_cleanup_present_mode(hdd_context_t *hdd_ctx,
 				    enum tQDF_GLOBAL_CON_MODE curr_mode)
 {
@@ -11633,6 +11622,11 @@ static void hdd_cleanup_present_mode(hdd_context_t *hdd_ctx,
 				      WIFI_POWER_EVENT_WAKELOCK_MONITOR_MODE);
 	case QDF_GLOBAL_MISSION_MODE:
 	case QDF_GLOBAL_FTM_MODE:
+		if (driver_status != DRIVER_MODULES_CLOSED) {
+			hdd_abort_mac_scan_all_adapters(hdd_ctx);
+			hdd_cleanup_scan_queue(hdd_ctx, NULL);
+			hdd_stop_all_adapters(hdd_ctx);
+		}
 		hdd_deinit_all_adapters(hdd_ctx, false);
 		hdd_close_all_adapters(hdd_ctx, false);
 		break;
@@ -11728,9 +11722,11 @@ static int __con_mode_handler(const char *kmessage, struct kernel_param *kp,
 	if (ret)
 		return ret;
 
+	qdf_atomic_set(&hdd_ctx->con_mode_flag, 1);
 	cds_set_load_in_progress(true);
 
 	ret = param_set_int(kmessage, kp);
+	mutex_lock(&hdd_init_deinit_lock);
 
 	if (!(is_con_mode_valid(con_mode))) {
 		hdd_err("invlaid con_mode %d", con_mode);
@@ -11745,12 +11741,6 @@ static int __con_mode_handler(const char *kmessage, struct kernel_param *kp,
 		ret = 0;
 		goto reset_flags;
 	}
-
-	if (!cds_wait_for_external_threads_completion(__func__))
-		hdd_warn("Waiting for monitor mode: External threads are active");
-
-	/* ensure adapters are stopped */
-	hdd_stop_present_mode(hdd_ctx, curr_mode);
 
 	ret = hdd_wlan_stop_modules(hdd_ctx, true);
 	if (ret) {
@@ -11790,7 +11780,7 @@ static int __con_mode_handler(const char *kmessage, struct kernel_param *kp,
 	}
 
 	if (con_mode == QDF_GLOBAL_MONITOR_MODE ||
-	    con_mode == QDF_GLOBAL_FTM_MODE) {
+		con_mode == QDF_GLOBAL_FTM_MODE) {
 		if (hdd_start_adapter(adapter)) {
 			hdd_err("Failed to start %s adapter", kmessage);
 			ret = -EINVAL;
@@ -11808,7 +11798,9 @@ static int __con_mode_handler(const char *kmessage, struct kernel_param *kp,
 	ret = 0;
 
 reset_flags:
+	mutex_unlock(&hdd_init_deinit_lock);
 	cds_set_load_in_progress(false);
+	qdf_atomic_set(&hdd_ctx->con_mode_flag, 0);
 	return ret;
 }
 
@@ -12261,6 +12253,28 @@ void hdd_pld_ipa_uc_shutdown_pipes(void)
 		return;
 
 	hdd_ipa_uc_force_pipe_shutdown(hdd_ctx);
+}
+
+bool hdd_is_cli_iface_up(hdd_context_t *hdd_ctx)
+{
+	hdd_adapter_list_node_t *adapter_node = NULL, *next = NULL;
+	hdd_adapter_t *adapter;
+	QDF_STATUS status;
+
+	status = hdd_get_front_adapter(hdd_ctx, &adapter_node);
+	while (NULL != adapter_node && QDF_STATUS_SUCCESS == status) {
+		adapter = adapter_node->pAdapter;
+		if ((adapter->device_mode == QDF_STA_MODE ||
+		     adapter->device_mode == QDF_P2P_CLIENT_MODE) &&
+		    qdf_atomic_test_bit(DEVICE_IFACE_OPENED,
+					&adapter->event_flags)){
+			return true;
+		}
+		status = hdd_get_next_adapter(hdd_ctx, adapter_node, &next);
+		adapter_node = next;
+	}
+
+	return false;
 }
 
 /* Register the module init/exit functions */

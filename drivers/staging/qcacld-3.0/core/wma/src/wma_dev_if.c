@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2018 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2017 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -686,18 +686,8 @@ QDF_STATUS wma_vdev_detach(tp_wma_handle wma_handle,
 	return status;
 
 send_fail_rsp:
-	if (!cds_is_driver_recovering()) {
-		if (cds_is_self_recovery_enabled()) {
-			WMA_LOGE("rcvd del_self_sta without del_bss, trigger recovery, vdev_id %d",
-				 vdev_id);
-			cds_trigger_recovery(CDS_REASON_UNSPECIFIED);
-		} else {
-			WMA_LOGE("rcvd del_self_sta without del_bss, BUG_ON(), vdev_id %d",
-				 vdev_id);
-			QDF_BUG(0);
-		}
-	}
-
+	WMA_LOGE("rcvd del_self_sta without del_bss, send fail rsp, vdev_id %d",
+			 vdev_id);
 	pdel_sta_self_req_param->status = QDF_STATUS_E_FAILURE;
 	wma_send_del_sta_self_resp(pdel_sta_self_req_param);
 	return status;
@@ -1011,7 +1001,8 @@ int wma_vdev_start_resp_handler(void *handle, uint8_t *cmd_param_info,
 	if ((resp_event->vdev_id < wma->max_bssid) &&
 	    (qdf_atomic_read(
 	    &wma->interfaces[resp_event->vdev_id].vdev_restart_params.hidden_ssid_restart_in_progress))
-	    && (wma_is_vdev_in_ap_mode(wma, resp_event->vdev_id) == true)) {
+	    && (wma_is_vdev_in_ap_mode(wma, resp_event->vdev_id) == true)
+	    && (req_msg->msg_type == WMA_HIDDEN_SSID_VDEV_RESTART)) {
 		tpHalHiddenSsidVdevRestart hidden_ssid_restart =
 			(tpHalHiddenSsidVdevRestart)req_msg->user_data;
 		WMA_LOGE("%s: vdev restart event recevied for hidden ssid set using IOCTL",
@@ -1145,11 +1136,8 @@ bool wma_is_vdev_valid(uint32_t vdev_id)
 		return false;
 
 	/* No of interface are allocated based on max_bssid value */
-	if (vdev_id >= wma_handle->max_bssid) {
-		WMA_LOGD("%s: vdev_id: %d is invalid, max_bssid: %d",
-				__func__, vdev_id, wma_handle->max_bssid);
+	if (vdev_id >= wma_handle->max_bssid)
 		return false;
-	}
 
 	return wma_handle->interfaces[vdev_id].vdev_active;
 }
@@ -1784,6 +1772,13 @@ int wma_vdev_stop_resp_handler(void *handle, uint8_t *cmd_param_info,
 	}
 
 	resp_event = param_buf->fixed_param;
+
+	if (resp_event->vdev_id >= wma->max_bssid) {
+		WMA_LOGE("%s: Invalid vdev_id %d from FW",
+			 __func__, resp_event->vdev_id);
+		return -EINVAL;
+	}
+
 	iface = &wma->interfaces[resp_event->vdev_id];
 	wma_release_wakelock(&iface->vdev_stop_wakelock);
 
@@ -1795,8 +1790,7 @@ int wma_vdev_stop_resp_handler(void *handle, uint8_t *cmd_param_info,
 		return -EINVAL;
 	}
 
-	if ((resp_event->vdev_id < wma->max_bssid) &&
-	    (qdf_atomic_read
+	if ((qdf_atomic_read
 		     (&wma->interfaces[resp_event->vdev_id].vdev_restart_params.
 		     hidden_ssid_restart_in_progress))
 	    && ((wma->interfaces[resp_event->vdev_id].type == WMI_VDEV_TYPE_AP)
@@ -1833,14 +1827,6 @@ int wma_vdev_stop_resp_handler(void *handle, uint8_t *cmd_param_info,
 	if (req_msg->msg_type == WMA_DELETE_BSS_REQ) {
 		tpDeleteBssParams params =
 			(tpDeleteBssParams) req_msg->user_data;
-
-		if (resp_event->vdev_id >= wma->max_bssid) {
-			WMA_LOGE("%s: Invalid vdev_id %d", __func__,
-				 resp_event->vdev_id);
-			wma_cleanup_target_req_param(req_msg);
-			status = -EINVAL;
-			goto free_req_msg;
-		}
 
 		if (iface->handle == NULL) {
 			WMA_LOGE("%s vdev id %d is already deleted",
@@ -2308,32 +2294,11 @@ QDF_STATUS wma_vdev_start(tp_wma_handle wma,
 	uint32_t temp_reg_info_1 = 0;
 	uint32_t temp_reg_info_2 = 0;
 	uint16_t bw_val;
-	struct wma_txrx_node *iface = &wma->interfaces[req->vdev_id];
-	struct wma_target_req *req_msg;
 
 	mac_ctx = cds_get_context(QDF_MODULE_ID_PE);
 	if (mac_ctx == NULL) {
 		WMA_LOGE("%s: vdev start failed as mac_ctx is NULL", __func__);
 		return QDF_STATUS_E_FAILURE;
-	}
-
-	if (!isRestart &&
-	    qdf_atomic_read(&iface->bss_status) == WMA_BSS_STATUS_STARTED) {
-		req_msg = wma_find_vdev_req(wma, req->vdev_id,
-					    WMA_TARGET_REQ_TYPE_VDEV_STOP,
-					    false);
-		if (!req_msg || req_msg->msg_type != WMA_DELETE_BSS_REQ) {
-			if (!cds_is_driver_recovering()) {
-				if (cds_is_self_recovery_enabled()) {
-					WMA_LOGE("BSS is in started state before vdev start, trigger recovery");
-					cds_trigger_recovery(
-						CDS_REASON_UNSPECIFIED);
-				} else {
-					WMA_LOGE("BSS is in started state before vdev start, BUG_ON()");
-					QDF_BUG(0);
-				}
-			}
-		}
 	}
 
 	dfs = (struct ath_dfs *)wma->dfs_ic->ic_dfs;

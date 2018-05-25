@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2017 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2011-2018 The Linux Foundation. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -144,12 +144,7 @@ void ol_rx_send_pktlog_event(struct ol_txrx_pdev_t *pdev,
 {
 	struct ol_rx_remote_data data;
 
-	/**
-	 * pktlog is meant to log rx_desc information which is
-	 * already overwritten by radio header when monitor mode is ON.
-	 * Therefore, Do not log pktlog event when monitor mode is ON.
-	 */
-	if (!pktlog_bit || (cds_get_conparam() == QDF_GLOBAL_MONITOR_MODE))
+	if (!pktlog_bit)
 		return;
 
 	data.msdu = msdu;
@@ -165,14 +160,6 @@ void ol_rx_send_pktlog_event(struct ol_txrx_pdev_t *pdev,
 	struct ol_txrx_peer_t *peer, qdf_nbuf_t msdu, uint8_t pktlog_bit)
 {
 	struct ol_rx_remote_data data;
-
-	/**
-	 * pktlog is meant to log rx_desc information which is
-	 * already overwritten by radio header when monitor mode is ON.
-	 * Therefore, Do not log pktlog event when monitor mode is ON.
-	 */
-	if (cds_get_conparam() == QDF_GLOBAL_MONITOR_MODE)
-		return;
 
 	data.msdu = msdu;
 	if (peer)
@@ -928,24 +915,13 @@ ol_rx_inspect(struct ol_txrx_vdev_t *vdev,
 
 void
 ol_rx_offload_deliver_ind_handler(ol_txrx_pdev_handle pdev,
-				  qdf_nbuf_t msg, uint16_t msdu_cnt)
+				  qdf_nbuf_t msg, int msdu_cnt)
 {
 	int vdev_id, peer_id, tid;
 	qdf_nbuf_t head_buf, tail_buf, buf;
 	struct ol_txrx_peer_t *peer;
 	uint8_t fw_desc;
 	htt_pdev_handle htt_pdev = pdev->htt_pdev;
-
-	if (msdu_cnt > htt_rx_offload_msdu_cnt(htt_pdev)) {
-		ol_txrx_err("%s: invalid msdu_cnt=%u\n",
-			__func__,
-			msdu_cnt);
-
-		if (pdev->cfg.is_high_latency)
-			htt_rx_desc_frame_free(htt_pdev, msg);
-
-		return;
-	}
 
 	while (msdu_cnt) {
 		if (!htt_rx_offload_msdu_pop(htt_pdev, msg, &vdev_id, &peer_id,
@@ -1478,6 +1454,11 @@ ol_rx_in_order_indication_handler(ol_txrx_pdev_handle pdev,
 	uint8_t pktlog_bit;
 #endif
 	uint32_t filled = 0;
+	if (tid >= OL_TXRX_NUM_EXT_TIDS) {
+		ol_txrx_err("%s:  invalid tid, %u\n", __FUNCTION__, tid);
+		WARN_ON(1);
+		return;
+	}
 
 	if (pdev) {
 		if (qdf_unlikely(QDF_GLOBAL_MONITOR_MODE == cds_get_conparam()))

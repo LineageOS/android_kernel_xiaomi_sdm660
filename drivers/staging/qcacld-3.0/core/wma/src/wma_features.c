@@ -1652,8 +1652,7 @@ int wma_nan_rsp_event_handler(void *handle, uint8_t *event_buf,
 	alloc_len = sizeof(tSirNanEvent);
 	alloc_len += nan_rsp_event_hdr->data_len;
 	if (nan_rsp_event_hdr->data_len > ((WMI_SVC_MSG_MAX_SIZE -
-	    sizeof(*nan_rsp_event_hdr)) / sizeof(uint8_t)) ||
-	    nan_rsp_event_hdr->data_len > param_buf->num_data) {
+	    sizeof(*nan_rsp_event_hdr)) / sizeof(uint8_t))) {
 		WMA_LOGE("excess data length:%d", nan_rsp_event_hdr->data_len);
 		QDF_ASSERT(0);
 		return -EINVAL;
@@ -4505,11 +4504,6 @@ int wma_wow_wakeup_host_event(void *handle, uint8_t *event,
 		 * In case of wow_packet_buffer, first 4 bytes is the length.
 		 * Following the length is the actual buffer.
 		 */
-		if (param_buf->num_wow_packet_buffer <= 4) {
-			WMA_LOGE("Invalid wow packet buffer from firmware %u",
-				  param_buf->num_wow_packet_buffer);
-			return -EINVAL;
-		}
 		wow_buf_pkt_len = *(uint32_t *)param_buf->wow_packet_buffer;
 		if (wow_buf_pkt_len > (param_buf->num_wow_packet_buffer - 4)) {
 			WMA_LOGE("Invalid wow buf pkt len from firmware, wow_buf_pkt_len: %u, num_wow_packet_buffer: %u",
@@ -10304,8 +10298,7 @@ int wma_unified_power_debug_stats_event_handler(void *handle,
 
 	if (param_buf->num_debug_register > ((WMI_SVC_MSG_MAX_SIZE -
 		sizeof(wmi_pdev_chip_power_stats_event_fixed_param)) /
-		sizeof(uint32_t)) ||
-	    param_buf->num_debug_register > param_tlvs->num_debug_registers) {
+		sizeof(uint32_t))) {
 		WMA_LOGE("excess payload: LEN num_debug_register:%u",
 				param_buf->num_debug_register);
 		return -EINVAL;
