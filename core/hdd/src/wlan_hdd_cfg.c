@@ -4043,6 +4043,30 @@ struct reg_table_entry g_registry_table[] = {
 		CFG_ROAM_BG_SCAN_BAD_RSSI_OFFSET_2G_MIN,
 		CFG_ROAM_BG_SCAN_BAD_RSSI_OFFSET_2G_MAX),
 
+	REG_VARIABLE(CFG_ROAM_HO_DELAY_FOR_RX_NAME,
+		WLAN_PARAM_Integer, struct hdd_config,
+		ho_delay_for_rx,
+		VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+		CFG_ROAM_HO_DELAY_FOR_RX_DEFAULT,
+		CFG_ROAM_HO_DELAY_FOR_RX_MIN,
+		CFG_ROAM_HO_DELAY_FOR_RX_MAX),
+
+	REG_VARIABLE(CFG_MIN_DELAY_BTW_ROAM_SCAN_NAME,
+		WLAN_PARAM_Integer, struct hdd_config,
+		min_delay_btw_roam_scans,
+		VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+		CFG_MIN_DELAY_BTW_ROAM_SCAN_DEFAULT,
+		CFG_MIN_DELAY_BTW_ROAM_SCAN_MIN,
+		CFG_MIN_DELAY_BTW_ROAM_SCAN_MAX),
+
+	REG_VARIABLE(CFG_ROAM_SCAN_TRIGGER_REASON_BITMASK_NAME,
+		WLAN_PARAM_HexInteger, struct hdd_config,
+		roam_trigger_reason_bitmask,
+		VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+		CFG_ROAM_SCAN_TRIGGER_REASON_BITMASK_DEFAULT,
+		CFG_ROAM_SCAN_TRIGGER_REASON_BITMASK_MIN,
+		CFG_ROAM_SCAN_TRIGGER_REASON_BITMASK_MAX),
+
 	REG_VARIABLE(CFG_ENABLE_FATAL_EVENT_TRIGGER, WLAN_PARAM_Integer,
 			struct hdd_config, enable_fatal_event,
 			VAR_FLAGS_OPTIONAL |
@@ -6746,6 +6770,15 @@ void hdd_cfg_print(hdd_context_t *pHddCtx)
 	hdd_debug("Name = [%s] Value = [%u]",
 		CFG_ROAM_BG_SCAN_BAD_RSSI_OFFSET_2G_NAME,
 		pHddCtx->config->roam_bad_rssi_thresh_offset_2g);
+	hdd_debug("Name = [%s] Value = [%u]",
+		CFG_ROAM_HO_DELAY_FOR_RX_NAME,
+		pHddCtx->config->ho_delay_for_rx);
+	hdd_debug("Name = [%s] Value = [%u]",
+		CFG_MIN_DELAY_BTW_ROAM_SCAN_NAME,
+		pHddCtx->config->min_delay_btw_roam_scans);
+	hdd_debug("Name = [%s] Value = [%u]",
+		CFG_ROAM_SCAN_TRIGGER_REASON_BITMASK_NAME,
+		pHddCtx->config->roam_trigger_reason_bitmask);
 	hdd_debug("Name = [%s] Value = [%u]",
 		CFG_MIN_REST_TIME_NAME,
 		pHddCtx->config->min_rest_time_conc);
@@ -9539,6 +9572,12 @@ QDF_STATUS hdd_set_sme_config(hdd_context_t *pHddCtx)
 		pHddCtx->config->roam_bg_scan_client_bitmap;
 	smeConfig->csrConfig.roam_bad_rssi_thresh_offset_2g =
 		pHddCtx->config->roam_bad_rssi_thresh_offset_2g;
+	smeConfig->csrConfig.ho_delay_for_rx =
+		pHddCtx->config->ho_delay_for_rx;
+	smeConfig->csrConfig.min_delay_btw_roam_scans =
+		pHddCtx->config->min_delay_btw_roam_scans;
+	smeConfig->csrConfig.roam_trigger_reason_bitmask =
+		pHddCtx->config->roam_trigger_reason_bitmask;
 	smeConfig->csrConfig.obss_width_interval =
 			pHddCtx->config->obss_width_trigger_interval;
 	smeConfig->csrConfig.obss_active_dwelltime =

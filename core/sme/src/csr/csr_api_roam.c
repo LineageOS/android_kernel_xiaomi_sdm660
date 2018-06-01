@@ -2693,6 +2693,12 @@ QDF_STATUS csr_change_default_config_param(tpAniSirGlobal pMac,
 			pParam->max_amsdu_num;
 		pMac->roam.configParam.nSelect5GHzMargin =
 			pParam->nSelect5GHzMargin;
+		pMac->roam.configParam.ho_delay_for_rx =
+			pParam->ho_delay_for_rx;
+		pMac->roam.configParam.min_delay_btw_roam_scans =
+			pParam->min_delay_btw_roam_scans;
+		pMac->roam.configParam.roam_trigger_reason_bitmask =
+			pParam->roam_trigger_reason_bitmask;
 		pMac->roam.configParam.isCoalesingInIBSSAllowed =
 			pParam->isCoalesingInIBSSAllowed;
 #ifdef FEATURE_WLAN_MCC_TO_SCC_SWITCH
@@ -3013,6 +3019,10 @@ QDF_STATUS csr_get_config_param(tpAniSirGlobal pMac, tCsrConfigParam *pParam)
 			cfg_params->rx_ldpc_support_for_2g;
 	pParam->max_amsdu_num = cfg_params->max_amsdu_num;
 	pParam->nSelect5GHzMargin = cfg_params->nSelect5GHzMargin;
+	pParam->ho_delay_for_rx = cfg_params->ho_delay_for_rx;
+	pParam->min_delay_btw_roam_scans = cfg_params->min_delay_btw_roam_scans;
+	pParam->roam_trigger_reason_bitmask =
+			cfg_params->roam_trigger_reason_bitmask;
 	pParam->isCoalesingInIBSSAllowed = cfg_params->isCoalesingInIBSSAllowed;
 	pParam->allowDFSChannelRoam = cfg_params->allowDFSChannelRoam;
 	pParam->nInitialDwellTime = cfg_params->nInitialDwellTime;
@@ -18025,6 +18035,11 @@ csr_update_roam_scan_offload_request(tpAniSirGlobal mac_ctx,
 	req_buf->Prefer5GHz = mac_ctx->roam.configParam.nRoamPrefer5GHz;
 	req_buf->RoamRssiCatGap = mac_ctx->roam.configParam.bCatRssiOffset;
 	req_buf->Select5GHzMargin = mac_ctx->roam.configParam.nSelect5GHzMargin;
+	req_buf->ho_delay_for_rx = mac_ctx->roam.configParam.ho_delay_for_rx;
+	req_buf->min_delay_btw_roam_scans =
+			mac_ctx->roam.configParam.min_delay_btw_roam_scans;
+	req_buf->roam_trigger_reason_bitmask =
+			mac_ctx->roam.configParam.roam_trigger_reason_bitmask;
 	if (wlan_cfg_get_int(mac_ctx, WNI_CFG_REASSOCIATION_FAILURE_TIMEOUT,
 			     (uint32_t *) &req_buf->ReassocFailureTimeout)
 	    != eSIR_SUCCESS) {
