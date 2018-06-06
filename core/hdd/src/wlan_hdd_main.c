@@ -4066,7 +4066,6 @@ static void hdd_wait_for_sme_close_sesion(hdd_context_t *hdd_ctx,
 			if (adapter->device_mode == QDF_NDI_MODE)
 				hdd_ndp_session_end_handler(adapter);
 			clear_bit(SME_SESSION_OPENED, &adapter->event_flags);
-			return;
 		}
 		adapter->sessionId = HDD_SESSION_ID_INVALID;
 	}
