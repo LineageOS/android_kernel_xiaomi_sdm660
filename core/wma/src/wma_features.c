@@ -1654,7 +1654,7 @@ int wma_nan_rsp_event_handler(void *handle, uint8_t *event_buf,
 	alloc_len = sizeof(tSirNanEvent);
 	alloc_len += nan_rsp_event_hdr->data_len;
 	if (nan_rsp_event_hdr->data_len > ((WMI_SVC_MSG_MAX_SIZE -
-	    sizeof(*nan_rsp_event_hdr)) / sizeof(uint8_t)) ||
+	    WMI_TLV_HDR_SIZE - sizeof(*nan_rsp_event_hdr)) / sizeof(uint8_t)) ||
 	    nan_rsp_event_hdr->data_len > param_buf->num_data) {
 		WMA_LOGE("excess data length:%d, num_data:%d",
 			nan_rsp_event_hdr->data_len, param_buf->num_data);
@@ -2728,6 +2728,11 @@ static QDF_STATUS spectral_process_phyerr(tp_wma_handle wma, uint8_t *data,
 	combined_rssi = p_rfqual->rssi_comb;
 
 	get_spectral_control_info(wma, &upper_is_control, &lower_is_control);
+
+	if (!wma->dfs_ic || !wma->dfs_ic->ic_curchan) {
+		WMA_LOGE("%s: channel information is not available", __func__);
+		return QDF_STATUS_E_FAILURE;
+	}
 
 	if (upper_is_control)
 		rssi_up = control_rssi;
