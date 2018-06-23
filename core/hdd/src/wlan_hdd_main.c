@@ -4067,7 +4067,6 @@ static void hdd_wait_for_sme_close_sesion(hdd_context_t *hdd_ctx,
 			if (adapter->device_mode == QDF_NDI_MODE)
 				hdd_ndp_session_end_handler(adapter);
 			clear_bit(SME_SESSION_OPENED, &adapter->event_flags);
-			return;
 		}
 		adapter->sessionId = HDD_SESSION_ID_INVALID;
 	}
@@ -7143,8 +7142,7 @@ static void hdd_restart_sap(hdd_adapter_t *adapter, uint8_t channel)
 	}
 
 	hdd_ap_ctx->sapConfig.channel = channel;
-	hdd_ap_ctx->sapConfig.ch_params.ch_width =
-		hdd_ap_ctx->sapConfig.ch_width_orig;
+	hdd_ap_ctx->sapConfig.ch_params.ch_width = CH_WIDTH_MAX;
 
 	hdd_debug("chan:%d width:%d",
 		channel, hdd_ap_ctx->sapConfig.ch_width_orig);
