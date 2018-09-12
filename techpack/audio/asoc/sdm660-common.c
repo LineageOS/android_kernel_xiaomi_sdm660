@@ -238,8 +238,8 @@ static struct wcd_mbhc_config mbhc_cfg = {
 	.key_code[2] = KEY_VOLUMEUP,
 	.key_code[3] = KEY_VOLUMEDOWN,
 #else
-	.key_code[1] = BTN_1,
-	.key_code[2] = BTN_2,
+	.key_code[1] = KEY_VOLUMEUP,
+	.key_code[2] = KEY_VOLUMEDOWN,
 	.key_code[3] = 0,
 #endif
 	.key_code[4] = 0,
