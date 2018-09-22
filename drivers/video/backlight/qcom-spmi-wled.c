@@ -1037,12 +1037,15 @@ static irqreturn_t wled_ovp_irq_handler(int irq, void *_wled)
 	rc = wled_get_ovp_fault_status(wled, &fault_set);
 	if (rc < 0) {
 		pr_err("Error in getting OVP fault_sts, rc=%d\n", rc);
-		return rc;
+		goto END;
 	}
 
 	if (fault_set)
 		handle_ovp_fault(wled);
 
+END:
+	disable_irq_nosync(wled->ovp_irq);
+	wled->ovp_irq_disabled = true;
 	return IRQ_HANDLED;
 }
 
