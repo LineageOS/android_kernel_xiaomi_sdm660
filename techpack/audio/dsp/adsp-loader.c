@@ -34,6 +34,7 @@ static ssize_t adsp_ssr_store(struct kobject *kobj,
 
 struct adsp_loader_private {
 	void *pil_h;
+	const char *fw_name;
 	struct kobject *boot_adsp_obj;
 	struct attribute_group *attr_group;
 	char *adsp_fw_name;
@@ -135,7 +136,7 @@ load_adsp:
 			if (!priv->adsp_fw_name) {
 				dev_dbg(&pdev->dev, "%s: Load default ADSP\n",
 					__func__);
-				priv->pil_h = subsystem_get("adsp");
+				priv->pil_h = subsystem_get_with_fwname("adsp", priv->fw_name);
 			} else {
 				dev_dbg(&pdev->dev, "%s: Load ADSP with fw name %s\n",
 					__func__, priv->adsp_fw_name);
@@ -282,6 +283,10 @@ static int adsp_loader_init_sysfs(struct platform_device *pdev)
 							__func__, ret);
 		goto error_return;
 	}
+
+	/*get fw name*/
+	of_property_read_string(pdev->dev.of_node, "qcom,firmware-name",
+							&priv->fw_name);
 
 	adsp_private = pdev;
 
