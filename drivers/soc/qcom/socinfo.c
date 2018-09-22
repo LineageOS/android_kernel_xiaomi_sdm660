@@ -70,6 +70,9 @@ enum {
 #ifdef CONFIG_MACH_XIAOMI_JASON
 	HW_PLATFORM_C8 = 30,
 #endif
+#ifdef CONFIG_MACH_XIAOMI_PLATINA
+	HW_PLATFORM_D2T = 34,
+#endif
 	HW_PLATFORM_INVALID
 };
 
@@ -93,6 +96,9 @@ const char *hw_platform[] = {
 	[HW_PLATFORM_ADP] = "ADP",
 #ifdef CONFIG_MACH_XIAOMI_JASON
 	[HW_PLATFORM_C8] = "Forte",
+#endif
+#ifdef CONFIG_MACH_XIAOMI_PLATINA
+	[HW_PLATFORM_D2T] = "Forte",
 #endif
 };
 
