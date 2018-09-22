@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012-2014, 2017, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -34,6 +35,9 @@ static ssize_t adsp_boot_store(struct kobject *kobj,
 
 struct adsp_loader_private {
 	void *pil_h;
+#ifdef CONFIG_MACH_MI
+	const char *fw_name;
+#endif
 	struct kobject *boot_adsp_obj;
 	struct attribute_group *attr_group;
 };
@@ -127,7 +131,12 @@ load_adsp:
 				goto fail;
 			}
 
+#ifndef CONFIG_MACH_MI
 			priv->pil_h = subsystem_get("adsp");
+#else
+			priv->pil_h = subsystem_get_with_fwname("adsp", priv->fw_name);
+#endif
+
 			if (IS_ERR(priv->pil_h)) {
 				dev_err(&pdev->dev, "%s: pil get failed,\n",
 					__func__);
@@ -232,6 +241,12 @@ static int adsp_loader_init_sysfs(struct platform_device *pdev)
 							__func__, ret);
 		goto error_return;
 	}
+
+#ifdef CONFIG_MACH_MI
+	/* get fw name */
+	of_property_read_string(pdev->dev.of_node, "qcom,firmware-name",
+							&priv->fw_name);
+#endif
 
 	adsp_private = pdev;
 
