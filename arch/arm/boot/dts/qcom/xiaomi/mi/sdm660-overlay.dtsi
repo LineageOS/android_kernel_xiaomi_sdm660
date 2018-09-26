@@ -408,26 +408,6 @@
 	};
 };
 
-&gpio_key_active {
-	mux {
-		pins = "gpio7";
-	};
-
-	config {
-		pins = "gpio7";
-	};
-};
-
-&gpio_key_suspend {
-	mux {
-		pins = "gpio7";
-	};
-
-	config {
-		pins = "gpio7";
-	};
-};
-
 // sdm660-pm.dtsi
 &soc {
 	qcom,gpio-map =
