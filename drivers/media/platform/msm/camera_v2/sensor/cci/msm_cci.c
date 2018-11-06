@@ -2145,7 +2145,7 @@ static int msm_cci_probe(struct platform_device *pdev)
 	new_cci_dev->msm_sd.sd.internal_ops = &msm_cci_internal_ops;
 	new_cci_dev->msm_sd.sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
 	media_entity_pads_init(&new_cci_dev->msm_sd.sd.entity, 0, NULL);
-	new_cci_dev->msm_sd.sd.entity.function = MSM_CAMERA_SUBDEV_CCI;
+	new_cci_dev->msm_sd.sd.entity.group_id = MSM_CAMERA_SUBDEV_CCI;
 	new_cci_dev->msm_sd.sd.entity.name = new_cci_dev->msm_sd.sd.name;
 	new_cci_dev->msm_sd.close_seq = MSM_SD_CLOSE_2ND_CATEGORY | 0x6;
 	msm_sd_register(&new_cci_dev->msm_sd);

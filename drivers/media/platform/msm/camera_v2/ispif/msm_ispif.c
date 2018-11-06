@@ -2080,7 +2080,7 @@ static int ispif_probe(struct platform_device *pdev)
 	platform_set_drvdata(pdev, &ispif->msm_sd.sd);
 
 	media_entity_pads_init(&ispif->msm_sd.sd.entity, 0, NULL);
-	ispif->msm_sd.sd.entity.function = MSM_CAMERA_SUBDEV_ISPIF;
+	ispif->msm_sd.sd.entity.group_id = MSM_CAMERA_SUBDEV_ISPIF;
 	ispif->msm_sd.sd.entity.name = pdev->name;
 	ispif->msm_sd.close_seq = MSM_SD_CLOSE_1ST_CATEGORY | 0x1;
 	rc = msm_sd_register(&ispif->msm_sd);
