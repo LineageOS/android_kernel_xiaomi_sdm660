@@ -909,7 +909,7 @@ static int32_t __init msm_buf_mngr_init(void)
 	v4l2_set_subdevdata(&msm_buf_mngr_dev->subdev.sd, msm_buf_mngr_dev);
 
 	media_entity_pads_init(&msm_buf_mngr_dev->subdev.sd.entity, 0, NULL);
-	msm_buf_mngr_dev->subdev.sd.entity.function =
+	msm_buf_mngr_dev->subdev.sd.entity.group_id =
 		MSM_CAMERA_SUBDEV_BUF_MNGR;
 	msm_buf_mngr_dev->subdev.sd.internal_ops =
 		&msm_generic_buf_mngr_subdev_internal_ops;
