@@ -269,7 +269,9 @@ struct media_entity {
 	const char *name;
 	enum media_entity_type obj_type;
 	u32 function;
+	u32 revision;
 	unsigned long flags;
+	u32 group_id;
 
 	u16 num_pads;
 	u16 num_links;
