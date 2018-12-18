@@ -1754,6 +1754,7 @@ static struct attribute *nvt_attr_group[] = {
 	&dev_attr_panel_color.attr,
 	&dev_attr_panel_display.attr,
 	&dev_attr_grip_area.attr,
+	NULL,
 };
 
 static int grip_area_open(struct inode *inode, struct file *file)
