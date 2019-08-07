@@ -381,6 +381,7 @@ QDF_STATUS reg_save_new_11d_country(struct wlan_objmgr_psoc *psoc,
 	struct wlan_lmac_if_reg_tx_ops *tx_ops;
 	struct set_country country_code;
 	uint8_t pdev_id;
+	uint8_t ctr;
 
 	psoc_priv_obj = reg_get_psoc_obj(psoc);
 	if (!psoc_priv_obj) {
@@ -389,8 +390,14 @@ QDF_STATUS reg_save_new_11d_country(struct wlan_objmgr_psoc *psoc,
 		return QDF_STATUS_E_FAILURE;
 	}
 
-	pdev_id = psoc_priv_obj->def_pdev_id;
-	psoc_priv_obj->new_11d_ctry_pending[pdev_id] = true;
+	/*
+	 * Need firmware to send channel list event
+	 * for all phys. Therefore set pdev_id to 0xFF
+	 */
+	pdev_id = 0xFF;
+	for (ctr = 0; ctr < psoc_priv_obj->num_phy; ctr++)
+		psoc_priv_obj->new_11d_ctry_pending[ctr] = true;
+
 	qdf_mem_copy(country_code.country, country, REG_ALPHA2_LEN + 1);
 	country_code.pdev_id = pdev_id;
 
@@ -399,8 +406,10 @@ QDF_STATUS reg_save_new_11d_country(struct wlan_objmgr_psoc *psoc,
 		if (tx_ops->set_country_code) {
 			tx_ops->set_country_code(psoc, &country_code);
 		} else {
-			reg_err("NULL country set handler");
-			psoc_priv_obj->new_11d_ctry_pending[pdev_id] = false;
+			reg_err("country set handler is not present");
+			for (ctr = 0; ctr < psoc_priv_obj->num_phy; ctr++)
+				psoc_priv_obj->new_11d_ctry_pending[ctr] =
+					false;
 			return QDF_STATUS_E_FAULT;
 		}
 	}
