@@ -558,8 +558,13 @@ static void msm_isp_cfg_framedrop_reg(
 	if (!runtime_init_frame_drop)
 		framedrop_period = stream_info->current_framedrop_period;
 
-	if (framedrop_period != MSM_VFE_STREAM_STOP_PERIOD)
+	if (framedrop_period != MSM_VFE_STREAM_STOP_PERIOD) {
 		framedrop_pattern = 0x1;
+#ifdef CONFIG_MACH_LONGCHEER
+		if (framedrop_period > 1)
+			framedrop_pattern = framedrop_pattern << (framedrop_period - 1);
+#endif
+	}
 
 	if (WARN_ON(framedrop_period == 0))
 		pr_err("%s framedrop_period is 0\n", __func__);
@@ -4137,6 +4142,10 @@ int msm_isp_update_axi_stream(struct vfe_device *vfe_dev, void *arg)
 			UPDATE_STREAM_REQUEST_FRAMES &&
 			update_cmd->update_type !=
 			UPDATE_STREAM_REMOVE_BUFQ &&
+#ifdef CONFIG_MACH_LONGCHEER
+			update_cmd->update_type !=
+			UPDATE_STREAM_REQUEST_FRAMES_VER2 &&
+#endif
 			update_cmd->update_type !=
 			UPDATE_STREAM_SW_FRAME_DROP &&
 			update_cmd->update_type !=
