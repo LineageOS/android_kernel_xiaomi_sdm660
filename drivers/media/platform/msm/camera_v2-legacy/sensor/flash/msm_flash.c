@@ -1073,6 +1073,11 @@ static int32_t msm_flash_get_pmic_source_info(
 				continue;
 			}
 
+#ifdef CONFIG_MACH_XIAOMI_LAVENDER
+			if (fctrl->torch_max_current[i] < 1000)
+				fctrl->torch_max_current[i] = 1000;
+#endif
+
 			of_node_put(torch_src_node);
 
 			CDBG("max_current[%d] %d\n",

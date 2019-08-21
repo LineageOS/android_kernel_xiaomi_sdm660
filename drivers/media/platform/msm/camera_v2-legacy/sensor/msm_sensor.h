@@ -104,6 +104,10 @@ int msm_sensor_match_id(struct msm_sensor_ctrl_t *s_ctrl);
 
 int msm_sensor_update_cfg(struct msm_sensor_ctrl_t *s_ctrl);
 
+#ifdef CONFIG_MACH_LONGCHEER
+int msm_sensor_match_vendor_id(struct msm_sensor_ctrl_t *s_ctrl);
+#endif
+
 int msm_sensor_free_sensor_data(struct msm_sensor_ctrl_t *s_ctrl);
 
 int32_t msm_sensor_init_default_params(struct msm_sensor_ctrl_t *s_ctrl);
