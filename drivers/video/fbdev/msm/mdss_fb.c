@@ -44,6 +44,11 @@
 #include <linux/pm_wakeup.h>
 #endif
 
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+#include <linux/mdss_io_util.h>
+#include <linux/wakelock.h>
+#endif
+
 #include "mdss_fb.h"
 #include "mdss_mdp_splash_logo.h"
 #define CREATE_TRACE_POINTS
@@ -51,6 +56,12 @@
 #include "mdss_smmu.h"
 #include "mdss_mdp.h"
 #include "mdss_sync.h"
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+#include "mdss_dsi.h"
+extern struct mdss_dsi_ctrl_pdata *change_par_ctrl ;
+extern int change_par_buf;
+extern int LCM_effect[4];
+#endif
 
 #include "mdss_livedisplay.h"
 
@@ -124,7 +135,7 @@ static int mdss_fb_send_panel_event(struct msm_fb_data_type *mfd,
 static void mdss_fb_set_mdp_sync_pt_threshold(struct msm_fb_data_type *mfd,
 		int type);
 
-#ifdef CONFIG_MACH_XIAOMI_SDM660
+#if defined(CONFIG_MACH_XIAOMI_SDM660) || defined(CONFIG_MACH_XIAOMI_CLOVER)
 #define WAIT_RESUME_TIMEOUT 200
 static struct fb_info *prim_fbi;
 static atomic_t prim_panel_is_on;
@@ -844,6 +855,144 @@ static int mdss_fb_blanking_mode_switch(struct msm_fb_data_type *mfd, int mode)
 	return 0;
 }
 
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+static ssize_t mdss_fb_change_dispparam(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t len)
+{
+	struct dsi_panel_cmds *CABC_on_cmds_point;
+	struct dsi_panel_cmds *CABC_off_cmds_point;
+	struct dsi_panel_cmds *CE_on_cmds_point;
+	struct dsi_panel_cmds *CE_off_cmds_point;
+	struct dsi_panel_cmds *cold_gamma_cmds_point;
+	struct dsi_panel_cmds *warm_gamma_cmds_point;
+	struct dsi_panel_cmds *default_gamma_cmds_point;
+	struct dsi_panel_cmds *PM1_cmds_point;
+	struct dsi_panel_cmds *PM2_cmds_point;
+	struct dsi_panel_cmds *PM3_cmds_point;
+	struct dsi_panel_cmds *PM4_cmds_point;
+	struct dsi_panel_cmds *PM5_cmds_point;
+	struct dsi_panel_cmds *PM6_cmds_point;
+	struct dsi_panel_cmds *PM7_cmds_point;
+	struct dsi_panel_cmds *PM8_cmds_point;
+	struct dsi_panel_cmds *sRGB_on_cmds_point;
+	struct dsi_panel_cmds *sRGB_off_cmds_point;
+
+	sscanf(buf, "%x", &change_par_buf) ;
+
+	CABC_on_cmds_point = &change_par_ctrl->CABC_on_cmds;
+	CABC_off_cmds_point = &change_par_ctrl->CABC_off_cmds;
+	CE_on_cmds_point = &change_par_ctrl->CE_on_cmds;
+	CE_off_cmds_point = &change_par_ctrl->CE_off_cmds;
+	cold_gamma_cmds_point = &change_par_ctrl->cold_gamma_cmds;
+	warm_gamma_cmds_point = &change_par_ctrl->warm_gamma_cmds;
+	default_gamma_cmds_point = &change_par_ctrl->default_gamma_cmds;
+	PM1_cmds_point = &change_par_ctrl->PM1_cmds;
+	PM2_cmds_point = &change_par_ctrl->PM2_cmds;
+	PM3_cmds_point = &change_par_ctrl->PM3_cmds;
+	PM4_cmds_point = &change_par_ctrl->PM4_cmds;
+	PM5_cmds_point = &change_par_ctrl->PM5_cmds;
+	PM6_cmds_point = &change_par_ctrl->PM6_cmds;
+	PM7_cmds_point = &change_par_ctrl->PM7_cmds;
+	PM8_cmds_point = &change_par_ctrl->PM8_cmds;
+	sRGB_on_cmds_point = &change_par_ctrl->sRGB_on_cmds;
+	sRGB_off_cmds_point = &change_par_ctrl->sRGB_off_cmds;
+
+	if ((change_par_buf >= 0x01) && (change_par_buf <= 0x0c)) {
+		LCM_effect[0] = change_par_buf;
+	} else if ((change_par_buf == 0x10) || (change_par_buf == 0xf0)) {
+		LCM_effect[1] = change_par_buf;
+	} else if ((change_par_buf == 0x100) || (change_par_buf == 0xf00)) {
+		LCM_effect[2] = change_par_buf;
+	} else if ((change_par_buf == 0x1000) || (change_par_buf == 0xf000)) {
+		LCM_effect[3] = change_par_buf;
+	}
+
+	switch(change_par_buf) {
+		case 0x0001:
+			if (warm_gamma_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, warm_gamma_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0002:
+			if (default_gamma_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, default_gamma_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0003:
+			if (cold_gamma_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, cold_gamma_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0006:
+			if (PM1_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM1_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0007:
+			if (PM2_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM2_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0008:
+			if (PM3_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM3_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0009:
+			if (PM4_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM4_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x000a:
+			if (PM5_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM5_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x000b:
+			if (PM6_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM6_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x000c:
+			if (PM7_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM7_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0005:
+			if (PM8_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM8_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0010:
+			if (CE_on_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, CE_on_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x00f0:
+			if (CE_off_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, CE_off_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0100:
+			if (CABC_on_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, CABC_on_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0f00:
+			if (CABC_off_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, CABC_off_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x1000:
+			if (sRGB_on_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, sRGB_on_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0xf000:
+			if (sRGB_off_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, sRGB_off_cmds_point, CMD_REQ_COMMIT);
+			break;
+	}
+
+	return len;
+}
+
+static ssize_t mdss_fb_get_dispparam(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	int ret;
+
+	ret = scnprintf(buf, PAGE_SIZE, "%x%x%x%x\n",
+		LCM_effect[0] , LCM_effect[1] ,LCM_effect[2] , LCM_effect[3]);
+
+	return ret;
+}
+#endif
+
 static ssize_t msm_fb_dfps_mode_store(struct device *dev,
 	struct device_attribute *attr, const char *buf, size_t len)
 {
@@ -999,6 +1148,10 @@ static DEVICE_ATTR_RW(msm_fb_dfps_mode);
 static DEVICE_ATTR_RO(measured_fps);
 static DEVICE_ATTR_RW(msm_fb_persist_mode);
 static DEVICE_ATTR_RO(idle_power_collapse);
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+static DEVICE_ATTR(msm_fb_dispparam, S_IRUGO | S_IWUSR,
+	mdss_fb_get_dispparam, mdss_fb_change_dispparam);
+#endif
 
 static struct attribute *mdss_fb_attrs[] = {
 	&dev_attr_msm_fb_type.attr,
@@ -1015,6 +1168,9 @@ static struct attribute *mdss_fb_attrs[] = {
 	&dev_attr_measured_fps.attr,
 	&dev_attr_msm_fb_persist_mode.attr,
 	&dev_attr_idle_power_collapse.attr,
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+	&dev_attr_msm_fb_dispparam.attr,
+#endif
 	NULL,
 };
 
@@ -1346,6 +1502,9 @@ void mdss_fb_prim_panel_recover(void)
 }
 #endif
 
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+static int ffbm_first_close_bl;
+#endif
 static int mdss_fb_probe(struct platform_device *pdev)
 {
 	struct msm_fb_data_type *mfd = NULL;
@@ -1436,6 +1595,13 @@ static int mdss_fb_probe(struct platform_device *pdev)
 	fbi_list[fbi_list_index++] = fbi;
 
 	platform_set_drvdata(pdev, mfd);
+
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+	if (strnstr(saved_command_line, "androidboot.mode=ffbm-01",
+			strlen(saved_command_line))) {
+		ffbm_first_close_bl = true;
+	}
+#endif
 
 	rc = mdss_fb_register(mfd);
 	if (rc)
@@ -1565,7 +1731,7 @@ static int mdss_fb_remove(struct platform_device *pdev)
 	if (!mfd)
 		return -ENODEV;
 
-#ifdef CONFIG_MACH_XIAOMI_SDM660
+#if defined(CONFIG_MACH_XIAOMI_SDM660) || defined(CONFIG_MACH_XIAOMI_CLOVER)
 	if (mfd->panel_info && mfd->panel_info->is_prim_panel) {
 		atomic_set(&prim_panel_is_on, false);
 		cancel_delayed_work_sync(&mfd->prim_panel_work);
@@ -1749,7 +1915,7 @@ static int mdss_fb_resume(struct platform_device *pdev)
 #endif
 
 #ifdef CONFIG_PM_SLEEP
-#ifdef CONFIG_MACH_XIAOMI_SDM660
+#if defined(CONFIG_MACH_XIAOMI_SDM660) || defined(CONFIG_MACH_XIAOMI_CLOVER)
 static int mdss_fb_pm_prepare(struct device *dev)
 {
 	struct msm_fb_data_type *mfd = dev_get_drvdata(dev);
@@ -1830,7 +1996,7 @@ static int mdss_fb_pm_resume(struct device *dev)
 #endif
 
 static const struct dev_pm_ops mdss_fb_pm_ops = {
-#ifdef CONFIG_MACH_XIAOMI_SDM660
+#if defined(CONFIG_MACH_XIAOMI_SDM660) || defined(CONFIG_MACH_XIAOMI_CLOVER)
 	.prepare = mdss_fb_pm_prepare,
 	.complete = mdss_fb_pm_complete,
 #endif
@@ -1919,6 +2085,12 @@ void mdss_fb_set_backlight(struct msm_fb_data_type *mfd, u32 bkl_lvl)
 		 */
 		if (mfd->bl_level_scaled == temp) {
 			mfd->bl_level = bkl_lvl;
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+			if ((0 == temp) && (ffbm_first_close_bl == true)) {
+				pdata->set_backlight(pdata, temp);
+				ffbm_first_close_bl = false;
+			}
+#endif
 		} else {
 			if (mfd->bl_level != bkl_lvl)
 				bl_notify_needed = true;
@@ -2268,7 +2440,7 @@ static int mdss_fb_blank(int blank_mode, struct fb_info *info)
 	struct mdss_panel_data *pdata;
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
 
-#ifdef CONFIG_MACH_XIAOMI_SDM660
+#if defined(CONFIG_MACH_XIAOMI_SDM660) || defined(CONFIG_MACH_XIAOMI_CLOVER)
 	if ((info == prim_fbi) && (blank_mode == FB_BLANK_UNBLANK) &&
 		atomic_read(&prim_panel_is_on)) {
 		atomic_set(&prim_panel_is_on, false);
@@ -2909,7 +3081,7 @@ static int mdss_fb_register(struct msm_fb_data_type *mfd)
 	atomic_set(&mfd->commits_pending, 0);
 	atomic_set(&mfd->ioctl_ref_cnt, 0);
 	atomic_set(&mfd->kickoff_pending, 0);
-#ifdef CONFIG_MACH_XIAOMI_SDM660
+#if defined(CONFIG_MACH_XIAOMI_SDM660) || defined(CONFIG_MACH_XIAOMI_CLOVER)
 	atomic_set(&mfd->resume_pending, 0);
 #endif
 
@@ -2926,7 +3098,7 @@ static int mdss_fb_register(struct msm_fb_data_type *mfd)
 	init_waitqueue_head(&mfd->idle_wait_q);
 	init_waitqueue_head(&mfd->ioctl_q);
 	init_waitqueue_head(&mfd->kickoff_wait_q);
-#ifdef CONFIG_MACH_XIAOMI_SDM660
+#if defined(CONFIG_MACH_XIAOMI_SDM660) || defined(CONFIG_MACH_XIAOMI_CLOVER)
 	init_waitqueue_head(&mfd->resume_wait_q);
 #endif
 
@@ -2946,7 +3118,7 @@ static int mdss_fb_register(struct msm_fb_data_type *mfd)
 	mdss_panel_debugfs_init(panel_info, panel_name);
 	pr_info("FrameBuffer[%d] %dx%d registered successfully!\n", mfd->index,
 					fbi->var.xres, fbi->var.yres);
-#ifdef CONFIG_MACH_XIAOMI_SDM660
+#if defined(CONFIG_MACH_XIAOMI_SDM660) || defined(CONFIG_MACH_XIAOMI_CLOVER)
 	if (panel_info->is_prim_panel) {
 		prim_fbi = fbi;
 		atomic_set(&prim_panel_is_on, false);
@@ -5491,7 +5663,6 @@ void mdss_fb_report_panel_dead(struct msm_fb_data_type *mfd)
 	pr_err("Panel has gone bad, sending uevent - %s\n", envp[0]);
 }
 
-
 /*
  * mdss_fb_calc_fps() - Calculates fps value.
  * @mfd   : frame buffer structure associated with fb device.
@@ -5535,7 +5706,7 @@ void mdss_fb_idle_pc(struct msm_fb_data_type *mfd)
 	}
 }
 
-#ifdef CONFIG_MACH_XIAOMI_SDM660
+#if defined(CONFIG_MACH_XIAOMI_SDM660) || defined(CONFIG_MACH_XIAOMI_CLOVER)
 /*
  * mdss_prim_panel_fb_unblank() - Unblank primary panel FB
  * @timeout : >0 blank primary panel FB after timeout (ms)

@@ -17,11 +17,18 @@
 #include <linux/pwm.h>
 #include <linux/err.h>
 #include <linux/string.h>
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+#include <linux/platform_data/lp855x.h>
+#endif
 
 #include "mdss_dsi.h"
 #include "mdss_dba_utils.h"
 #include "mdss_debug.h"
 #include "mdss_livedisplay.h"
+
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+#include <linux/hardware_info.h>
+#endif
 
 #define DT_CMD_HDR 6
 #define DEFAULT_MDP_TRANSFER_TIME 14000
@@ -45,6 +52,11 @@ extern bool synaptics_gesture_func_on;
 #endif
 
 bool ESD_TE_status = false;
+#endif
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+struct mdss_dsi_ctrl_pdata *change_par_ctrl ;
+int change_par_buf;
+int LCM_effect[4] = {0x2,0xf0,0xf00,0xf000};
 #endif
 
 #ifndef CONFIG_BACKLIGHT_QCOM_SPMI_WLED
@@ -296,7 +308,6 @@ static void mdss_dsi_panel_apply_settings(struct mdss_dsi_ctrl_pdata *ctrl,
 	mdss_dsi_cmdlist_put(ctrl, &cmdreq);
 }
 
-
 void mdss_dsi_panel_cmds_send(struct mdss_dsi_ctrl_pdata *ctrl,
 			struct dsi_panel_cmds *pcmds, u32 flags)
 {
@@ -326,7 +337,11 @@ void mdss_dsi_panel_cmds_send(struct mdss_dsi_ctrl_pdata *ctrl,
 	mdss_dsi_cmdlist_put(ctrl, &cmdreq);
 }
 
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+static char led_pwm1[2] = {0x9F, 0x7F};	/* DTYPE_DCS_WRITE1 */
+#else
 static char led_pwm1[2] = {0x51, 0x0};	/* DTYPE_DCS_WRITE1 */
+#endif
 static struct dsi_cmd_desc backlight_cmd = {
 	{DTYPE_DCS_WRITE1, 1, 0, 0, 1, sizeof(led_pwm1)},
 	led_pwm1
@@ -417,6 +432,9 @@ int mdss_dsi_bl_gpio_ctrl(struct mdss_panel_data *pdata, int enable)
 {
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata = NULL;
 	int rc = 0, val = 0;
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+	static bool bklt_en_gpio_once_disabled;
+#endif
 
 	if (pdata == NULL) {
 		pr_err("%s: Invalid input data\n", __func__);
@@ -459,6 +477,18 @@ int mdss_dsi_bl_gpio_ctrl(struct mdss_panel_data *pdata, int enable)
 			goto free;
 		}
 		ctrl_pdata->bklt_en_gpio_state = true;
+
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+		if (ctrl_pdata->bklt_ctrl == BL_I2C_CMD) {
+			if (bklt_en_gpio_once_disabled){
+				usleep_range(1000, 2000);
+				rc = lp855x_init();
+				if (rc)
+					pr_err("%s: init lp855x bklt failed %d\n",
+							__func__, rc);
+			}
+		}
+#endif
 		goto ret;
 	} else if (ctrl_pdata->bklt_en_gpio_state && !enable) {
 		/*
@@ -474,6 +504,10 @@ int mdss_dsi_bl_gpio_ctrl(struct mdss_panel_data *pdata, int enable)
 		if (rc)
 			pr_err("%s: unable to set dir for bklt gpio val %d\n",
 						__func__, val);
+
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+		bklt_en_gpio_once_disabled = true;
+#endif
 		goto free;
 	}
 
@@ -567,6 +601,9 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 					goto exit;
 				}
 			}
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+			mdelay(5);
+#endif
 
 #ifdef CONFIG_MACH_LONGCHEER
 			usleep_range(12 * 1000, 12 * 1000);
@@ -1150,6 +1187,12 @@ static void mdss_dsi_panel_bl_ctrl(struct mdss_panel_data *pdata,
 				mdss_dsi_panel_bklt_dcs(sctrl, bl_level);
 		}
 		break;
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+	case BL_I2C_CMD:
+		if (ctrl_pdata->bklt_en_gpio_state)
+			lp855x_brightness_ctrl(bl_level);
+		break;
+#endif
 	default:
 		pr_err("%s: Unknown bl_ctrl configuration\n",
 			__func__);
@@ -1202,6 +1245,25 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 	struct mdss_panel_info *pinfo;
 	struct dsi_panel_cmds *on_cmds;
 	int ret = 0;
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+	struct dsi_panel_cmds *CABC_on_cmds_point;
+	struct dsi_panel_cmds *CABC_off_cmds_point;
+	struct dsi_panel_cmds *CE_on_cmds_point;
+	struct dsi_panel_cmds *CE_off_cmds_point;
+	struct dsi_panel_cmds *cold_gamma_cmds_point;
+	struct dsi_panel_cmds *warm_gamma_cmds_point;
+	struct dsi_panel_cmds *default_gamma_cmds_point;
+	struct dsi_panel_cmds *PM1_cmds_point;
+	struct dsi_panel_cmds *PM2_cmds_point;
+	struct dsi_panel_cmds *PM3_cmds_point;
+	struct dsi_panel_cmds *PM4_cmds_point;
+	struct dsi_panel_cmds *PM5_cmds_point;
+	struct dsi_panel_cmds *PM6_cmds_point;
+	struct dsi_panel_cmds *PM7_cmds_point;
+	struct dsi_panel_cmds *PM8_cmds_point;
+	struct dsi_panel_cmds *sRGB_on_cmds_point;
+	struct dsi_panel_cmds *sRGB_off_cmds_point;
+#endif
 
 	if (pdata == NULL) {
 		pr_err("%s: Invalid input data\n", __func__);
@@ -1248,6 +1310,105 @@ static int mdss_dsi_panel_on(struct mdss_panel_data *pdata)
 	if (!pinfo->panel_on_dimming_delay)
 		mdss_panel_disparam_set(ctrl, PANEL_DIMMING_ON_CMD);
 #endif
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+	CABC_on_cmds_point = &change_par_ctrl->CABC_on_cmds;
+	CABC_off_cmds_point = &change_par_ctrl->CABC_off_cmds;
+	CE_on_cmds_point = &change_par_ctrl->CE_on_cmds;
+	CE_off_cmds_point = &change_par_ctrl->CE_off_cmds;
+	cold_gamma_cmds_point = &change_par_ctrl->cold_gamma_cmds;
+	warm_gamma_cmds_point = &change_par_ctrl->warm_gamma_cmds;
+	default_gamma_cmds_point = &change_par_ctrl->default_gamma_cmds;
+	PM1_cmds_point = &change_par_ctrl->PM1_cmds;
+	PM2_cmds_point = &change_par_ctrl->PM2_cmds;
+	PM3_cmds_point = &change_par_ctrl->PM3_cmds;
+	PM4_cmds_point = &change_par_ctrl->PM4_cmds;
+	PM5_cmds_point = &change_par_ctrl->PM5_cmds;
+	PM6_cmds_point = &change_par_ctrl->PM6_cmds;
+	PM7_cmds_point = &change_par_ctrl->PM7_cmds;
+	PM8_cmds_point = &change_par_ctrl->PM8_cmds;
+	sRGB_on_cmds_point = &change_par_ctrl->sRGB_on_cmds;
+	sRGB_off_cmds_point = &change_par_ctrl->sRGB_off_cmds;
+
+	switch(LCM_effect[0]) {
+		case 0x0001:
+			if (warm_gamma_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, warm_gamma_cmds_point, CMD_REQ_COMMIT); 
+			break;
+		case 0x0002:
+			if (default_gamma_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, default_gamma_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0003:
+			if (cold_gamma_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, cold_gamma_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0006:
+			if (PM1_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM1_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0007:
+			if (PM2_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM2_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0008:
+			if (PM3_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM3_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0009:
+			if (PM4_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM4_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x000a:
+			if (PM5_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM5_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x000b:
+			if (PM6_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM6_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x000c:
+			if (PM7_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM7_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0005:
+			if (PM8_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, PM8_cmds_point, CMD_REQ_COMMIT);
+			break;
+	}
+
+	switch(LCM_effect[1]) {
+		case 0x0010:
+			if (CE_on_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, CE_on_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x00f0:
+			if (CE_off_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, CE_off_cmds_point, CMD_REQ_COMMIT);
+			break;
+	}
+
+	switch(LCM_effect[2]) {
+		case 0x0100:
+			if (CABC_on_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, CABC_on_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0x0f00:
+			if (CABC_off_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, CABC_off_cmds_point, CMD_REQ_COMMIT);
+			break;
+	}
+
+	switch(LCM_effect[3]) {
+		case 0x1000:
+			if (sRGB_on_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, sRGB_on_cmds_point, CMD_REQ_COMMIT);
+			break;
+		case 0xf000:
+			if (sRGB_off_cmds_point->cmd_cnt)
+				mdss_dsi_panel_cmds_send(change_par_ctrl, sRGB_off_cmds_point, CMD_REQ_COMMIT);
+			break;
+	}
+#endif
 
 	if (pinfo->compression_mode == COMPRESSION_DSC)
 		mdss_dsi_panel_dsc_pps_send(ctrl, pinfo);
@@ -1285,6 +1446,10 @@ static int mdss_dsi_post_panel_on(struct mdss_panel_data *pdata)
 
 	ctrl = container_of(pdata, struct mdss_dsi_ctrl_pdata,
 				panel_data);
+
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+	change_par_ctrl = ctrl;
+#endif
 
 	pr_debug("%s: ctrl=%pK ndx=%d\n", __func__, ctrl, ctrl->ndx);
 
@@ -2564,6 +2729,7 @@ static int mdss_dsi_parse_panel_features(struct device_node *np,
 		pinfo->esd_check_enabled = false;
 	}
 
+#ifndef CONFIG_MACH_XIAOMI_CLOVER
 	if (ctrl->disp_en_gpio <= 0) {
 		ctrl->disp_en_gpio = of_get_named_gpio(
 			np,
@@ -2573,6 +2739,7 @@ static int mdss_dsi_parse_panel_features(struct device_node *np,
 			pr_debug("%s:%d, Disp_en gpio not specified\n",
 					__func__, __LINE__);
 	}
+#endif
 
 	mdss_dsi_parse_dcs_cmds(np, &ctrl->lp_on_cmds,
 			"qcom,mdss-dsi-lp-mode-on", NULL);
@@ -2826,6 +2993,12 @@ int mdss_panel_parse_bl_settings(struct device_node *np,
 
 			pr_debug("%s: Configured DCS_CMD bklt ctrl\n",
 								__func__);
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+		} else if (!strcmp(data, "bl_ctrl_i2c")) {
+			ctrl_pdata->bklt_ctrl = BL_I2C_CMD;
+			pr_debug("%s: Configured I2C_CMD bklt ctrl\n",
+								__func__);
+#endif
 		}
 	}
 	return 0;
@@ -3307,6 +3480,17 @@ static int mdss_panel_parse_dt(struct device_node *np,
 		pinfo->mode_sel_state = MODE_SEL_DUAL_PORT;
 	}
 
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+	ctrl_pdata->bklt_en_gpio = of_get_named_gpio(np,
+		"qcom,platform-bklight-en-gpio", 0);
+	if (!gpio_is_valid(ctrl_pdata->bklt_en_gpio))
+		pr_info("%s: bklt_en gpio not specified\n", __func__);
+
+	ctrl_pdata->bklt_en_gpio_invert =
+			of_property_read_bool(np,
+				"qcom,platform-bklight-en-gpio-invert");
+#endif
+
 	rc = of_property_read_u32(np, "qcom,mdss-mdp-transfer-time-us", &tmp);
 	pinfo->mdp_transfer_time_us = (!rc ? tmp : DEFAULT_MDP_TRANSFER_TIME);
 
@@ -3328,6 +3512,59 @@ static int mdss_panel_parse_dt(struct device_node *np,
 
 	mdss_dsi_parse_reset_seq(np, pinfo->rst_seq, &(pinfo->rst_seq_len),
 		"qcom,mdss-dsi-reset-sequence");
+
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->CABC_on_cmds,
+		"qcom,mdss-dsi-CABC_on-command", "qcom,mdss-dsi-CABC_on-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->CABC_off_cmds,
+		"qcom,mdss-dsi-CABC_off-command", "qcom,mdss-dsi-CABC_off-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->CE_on_cmds,
+		"qcom,mdss-dsi-CE_on-command", "qcom,mdss-dsi-CE_on-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->CE_off_cmds,
+		"qcom,mdss-dsi-CE_off-command", "qcom,mdss-dsi-CE_off-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->cold_gamma_cmds,
+		"qcom,mdss-dsi-cold_gamma-command", "qcom,mdss-dsi-cold_gamma-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->warm_gamma_cmds,
+		"qcom,mdss-dsi-warm_gamma-command", "qcom,mdss-dsi-warm_gamma-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->default_gamma_cmds,
+		"qcom,mdss-dsi-default_gamma-command", "qcom,mdss-dsi-default_gamma-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->sRGB_on_cmds,
+		"qcom,mdss-dsi-sRGB_on-command", "qcom,mdss-dsi-sRGB_on-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->sRGB_off_cmds,
+		"qcom,mdss-dsi-sRGB_off-command", "qcom,mdss-dsi-sRGB_off-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->PM1_cmds,
+		"qcom,mdss-dsi-PM1-command", "qcom,mdss-dsi-PM1-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->PM2_cmds,
+		"qcom,mdss-dsi-PM2-command", "qcom,mdss-dsi-PM2-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->PM3_cmds,
+		"qcom,mdss-dsi-PM3-command", "qcom,mdss-dsi-PM3-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->PM4_cmds,
+		"qcom,mdss-dsi-PM4-command", "qcom,mdss-dsi-PM4-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->PM5_cmds,
+		"qcom,mdss-dsi-PM5-command", "qcom,mdss-dsi-PM5-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->PM6_cmds,
+		"qcom,mdss-dsi-PM6-command", "qcom,mdss-dsi-PM6-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->PM7_cmds,
+		"qcom,mdss-dsi-PM7-command", "qcom,mdss-dsi-PM7-command-state");
+
+	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->PM8_cmds,
+		"qcom,mdss-dsi-PM8-command", "qcom,mdss-dsi-PM8-command-state");
+#endif
 
 	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->off_cmds,
 		"qcom,mdss-dsi-off-command", "qcom,mdss-dsi-off-command-state");
@@ -3484,6 +3721,10 @@ int mdss_dsi_panel_init(struct device_node *node,
 	} else {
 		pr_info("%s: Panel Name = %s\n", __func__, panel_name);
 		strlcpy(&pinfo->panel_name[0], panel_name, MDSS_MAX_PANEL_LEN);
+
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+		get_hardware_info_data(HWID_LCM, &pinfo->panel_name[0]);
+#endif
 	}
 #ifdef CONFIG_MACH_LONGCHEER
 	if (strstr(panel_name,"tianma") == NULL)
