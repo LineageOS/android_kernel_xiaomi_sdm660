@@ -29,8 +29,11 @@
 #include "mdss_dsi.h"
 #include "mdss_panel.h"
 #include "mdss_mdp.h"
-
-#define STATUS_CHECK_INTERVAL_MS 5000
+#ifdef CONFIG_MACH_LONGCHEER
+#define STATUS_CHECK_INTERVAL_MS 1000
+#else
+#define	STATUS_CHECK_INTERVAL_MS 5000
+#endif
 #define STATUS_CHECK_INTERVAL_MIN_MS 50
 #define DSI_STATUS_CHECK_INIT -1
 #define DSI_STATUS_CHECK_DISABLE 1
