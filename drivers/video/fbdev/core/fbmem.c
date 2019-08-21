@@ -1061,13 +1061,22 @@ EXPORT_SYMBOL(fb_set_var);
 
 int
 fb_blank(struct fb_info *info, int blank)
-{	
+{
 	struct fb_event event;
 	int ret = -EINVAL, early_ret;
 
  	if (blank > FB_BLANK_POWERDOWN)
  		blank = FB_BLANK_POWERDOWN;
-
+#ifdef CONFIG_MACH_LONGCHEER
+	if(info->blank==blank){
+		if(info->fbops->fb_blank){
+			printk("fb_mem 01\n");
+			ret=info->fbops->fb_blank(blank,info);
+		}
+		printk("fb_mem 02 ret\n");
+		return ret;
+	}
+#endif
 	event.info = info;
 	event.data = &blank;
 
@@ -1086,7 +1095,10 @@ fb_blank(struct fb_info *info, int blank)
 		if (!early_ret)
 			fb_notifier_call_chain(FB_R_EARLY_EVENT_BLANK, &event);
 	}
-
+#ifdef CONFIG_MACH_LONGCHEER
+	if (!ret)
+		info->blank=blank;
+#endif
  	return ret;
 }
 EXPORT_SYMBOL(fb_blank);
@@ -1648,6 +1660,9 @@ static int do_register_framebuffer(struct fb_info *fb_info)
 		if (!registered_fb[i])
 			break;
 	fb_info->node = i;
+#ifdef CONFIG_MACH_LONGCHEER
+	fb_info->blank = -1;
+#endif
 	atomic_set(&fb_info->count, 1);
 	mutex_init(&fb_info->lock);
 	mutex_init(&fb_info->mm_lock);
