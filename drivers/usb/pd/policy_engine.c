@@ -380,6 +380,9 @@ struct usbpd {
 	struct device		dev;
 	struct workqueue_struct	*wq;
 	struct work_struct	sm_work;
+#ifdef CONFIG_MACH_LONGCHEER
+	struct delayed_work 	vbus_work;
+#endif
 	struct work_struct	start_periph_work;
 	struct work_struct	restart_host_work;
 	struct hrtimer		timer;
@@ -4589,6 +4592,79 @@ static ssize_t get_battery_status_show(struct device *dev,
 }
 static DEVICE_ATTR_RW(get_battery_status);
 
+#ifdef CONFIG_MACH_LONGCHEER
+struct usbpd *pd_lobal;
+unsigned int pd_vbus_ctrl = 0;
+
+module_param(pd_vbus_ctrl, uint, S_IRUGO | S_IWUSR);
+MODULE_PARM_DESC(pd_vbus_ctrl, "PD VBUS CONTROL");
+
+void pd_vbus_reset(struct usbpd *pd)
+{
+	if (!pd) {
+		pr_err("pd_vbus_reset, pd is null\n");
+		return;
+	}
+	if (pd->vbus_enabled) {
+		regulator_disable(pd->vbus);
+		pd->vbus_enabled = false;
+		if(0 == pd_vbus_ctrl) pd_vbus_ctrl = 500;
+		msleep(pd_vbus_ctrl);
+		enable_vbus(pd);
+	} else {
+		pr_err("pd_vbus is not enabled yet\n");
+	}
+}
+
+/* Handles VBUS off on */
+void usbpd_vbus_sm(struct work_struct *w)
+{
+	struct usbpd *pd = pd_lobal;
+
+	pr_err("usbpd_vbus_sm handle state %s, vbus %d\n",
+	usbpd_state_strings[pd->current_state],pd->vbus_enabled);
+
+	pd_vbus_reset(pd);
+
+}
+void kick_usbpd_vbus_sm(void)
+{
+	 pm_stay_awake(&pd_lobal->dev);
+
+	 pr_err("kick_usbpd_vbus_sm handle state %s, vbus %d\n",
+	 usbpd_state_strings[pd_lobal->current_state],pd_lobal->vbus_enabled);
+	 queue_delayed_work(pd_lobal->wq, &(pd_lobal->vbus_work), msecs_to_jiffies(400));
+}
+
+static ssize_t pd_vbus_show(struct device *dev, struct device_attribute *attr,
+	char *buf)
+{
+	struct usbpd *pd = dev_get_drvdata(dev);
+	pr_err("pd_vbus_show handle state %s, vbus %d\n",
+	usbpd_state_strings[pd_lobal->current_state],pd_lobal->vbus_enabled);
+	pd_vbus_reset(pd);
+
+	return 0;
+}
+
+static ssize_t pd_vbus_store(struct device *dev,
+	struct device_attribute *attr, const char *buf, size_t size)
+{
+	int val = 0;
+
+	if (sscanf(buf, "%d\n", &val) != 0)
+	{
+		pr_err("pd_vbus_store input err\n");
+	}
+	pr_err("pd_vbus_store handle state %s, vbus %d,val %d\n",
+	usbpd_state_strings[pd_lobal->current_state],pd_lobal->vbus_enabled,val);
+	kick_usbpd_vbus_sm();
+
+	return size;
+}
+static DEVICE_ATTR_RW(pd_vbus);
+#endif
+
 static struct attribute *usbpd_attrs[] = {
 	&dev_attr_contract.attr,
 	&dev_attr_initial_pr.attr,
@@ -4613,6 +4689,9 @@ static struct attribute *usbpd_attrs[] = {
 	&dev_attr_get_pps_status.attr,
 	&dev_attr_get_battery_cap.attr,
 	&dev_attr_get_battery_status.attr,
+#ifdef CONFIG_MACH_LONGCHEER
+	&dev_attr_pd_vbus.attr,
+#endif
 	NULL,
 };
 ATTRIBUTE_GROUPS(usbpd);
@@ -4736,6 +4815,9 @@ struct usbpd *usbpd_create(struct device *parent)
 		goto del_pd;
 	}
 	INIT_WORK(&pd->sm_work, usbpd_sm);
+#ifdef CONFIG_MACH_LONGCHEER
+	INIT_DELAYED_WORK(&pd->vbus_work,usbpd_vbus_sm);
+#endif
 	INIT_WORK(&pd->start_periph_work, start_usb_peripheral_work);
 	INIT_WORK(&pd->restart_host_work, restart_usb_host_work);
 	hrtimer_init(&pd->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
@@ -4882,6 +4964,10 @@ struct usbpd *usbpd_create(struct device *parent)
 
 	/* force read initial power_supply values */
 	psy_changed(&pd->psy_nb, PSY_EVENT_PROP_CHANGED, pd->usb_psy);
+
+#ifdef CONFIG_MACH_LONGCHEER
+	pd_lobal = pd;
+#endif
 
 	return pd;
 
