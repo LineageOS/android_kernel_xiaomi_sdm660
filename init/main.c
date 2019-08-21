@@ -493,10 +493,17 @@ static void __init mm_init(void)
 	kaiser_init();
 }
 
+#ifdef CONFIG_MACH_LONGCHEER
+int fpsensor = 1;
+bool is_poweroff_charge = false;
+#endif
 asmlinkage __visible void __init start_kernel(void)
 {
 	char *command_line;
 	char *after_dashes;
+#ifdef CONFIG_MACH_LONGCHEER
+	char *p = NULL;
+#endif
 
 	/*
 	 * Need to run as early as possible, to initialize the
@@ -536,6 +543,21 @@ asmlinkage __visible void __init start_kernel(void)
 	pr_notice("Kernel command line: %s\n", boot_command_line);
 	/* parameters may set static keys */
 	jump_label_init();
+
+#ifdef CONFIG_MACH_LONGCHEER
+	p = NULL;
+	p = strstr(boot_command_line, "androidboot.fpsensor=fpc");
+	if (p)
+		fpsensor = 1;
+	else
+		fpsensor = 2;
+
+	p = NULL;
+	p = strstr(boot_command_line, "androidboot.mode=charger");
+	if (p)
+		is_poweroff_charge = true;
+#endif
+
 	parse_early_param();
 	after_dashes = parse_args("Booting kernel",
 				  static_command_line, __start___param,
