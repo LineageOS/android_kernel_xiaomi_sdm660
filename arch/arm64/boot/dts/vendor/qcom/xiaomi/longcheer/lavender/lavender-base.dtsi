@@ -1,0 +1,105 @@
+/* Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include "sdm660-camera-sensor-mtp_f7a.dtsi"
+#include "sdm660-novatek-i2c_f7a.dtsi"
+#include "sdm660-synaptics-tcm-i2c_f7a.dtsi"
+
+/* msm-pm660.dtsi lavender specific diff */
+&spmi_bus {
+	qcom,pm660@0 {
+		qcom,power-on@800 {
+			qcom,pon_3 {
+				qcom,use-bark;
+			};
+		};
+	};
+};
+
+&pm660_coincell {
+	qcom,charge-enable = <0>;
+};
+
+&pm660_charger {
+	qcom,usb-icl-ua = <2900000>;
+	qcom,otg-cl-ua = <1500000>;
+	qcom,dc-icl-ua = <2900000>;
+	qcom,fcc-max-ua = <2900000>;
+	qcom,fv-max-uv  = <4400000>;
+			qcom,thermal-mitigation
+					= <2900000 2400000 2000000 1500000 800000 500000 100000>;
+};
+
+&pm660_fg {
+	qcom,fg-recharge-voltage = <4350>;
+	qcom,battery-thermal-coefficients = [d2 50 ff];
+};
+
+&pm660_haptics {
+	qcom,actuator-type = "erm";
+};
+
+/* sdm660-common.dtsi lavender specific diff */
+&qusb_phy0 {
+	qcom,qusb-phy-init-seq = <0xf8 0x80
+		0x33 0x84
+		0x83 0x88
+		0xc5 0x8c
+		0x30 0x08
+		0x79 0x0c
+		0x21 0x10
+		0x14 0x9c
+		0x9f 0x1c
+		0x00 0x18>;
+};
+
+/* sdm660-mtp.dtsi lavender specific diff */
+&mtp_batterydata {
+	#include "fg-gen3-batterydata-m6100atl-4000mah.dtsi"
+	#include "fg-gen3-batterydata-m6100sun-4000mah.dtsi"
+	#include "fg-gen3-batterydata-m6100default-4000mah.dtsi"
+};
+
+&i2c_2 {
+	/delete-property/ status;
+	/delete-node/ smb1351-charger@1d;
+};
+
+/* sdm660.dtsi lavender specific diff */
+&firmware {
+	android {
+		vbmeta {
+			compatible = "android,vbmeta";
+			parts = "vbmeta,boot,system,vendor,dtbo,recovery";
+		};
+
+		fstab {
+			vendor {
+				fsmgr_flags = "wait,avb";
+			};
+		};
+	};
+};
+
+&soc {
+	qcom,bcl {
+		qcom,bcl-soc-hotplug-list = <&CPU5 &CPU7>;
+	};
+};
+
+&pil_modem {
+	/delete-property/ qcom,complete-ramdump;
+};
+
+&qcom_seecom {
+	qcom,qsee-reentrancy-support = <0>;
+};
