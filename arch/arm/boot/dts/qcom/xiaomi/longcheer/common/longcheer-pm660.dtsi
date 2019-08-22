@@ -1,0 +1,121 @@
+/* Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/* common diff with msm-pm660.dtsi */
+&spmi_bus {
+	qcom,pm660@0 {
+		qcom,power-on@800 {
+			qcom,pon_1 {
+				qcom,support-reset = <1>;
+				qcom,s1-timer = <4480>;
+				qcom,s2-timer = <2000>;
+				qcom,s2-type = <7>;
+			};
+
+			qcom,pon_3 {
+				qcom,pon-type = <3>;
+				qcom,pull-up = <1>;
+				qcom,support-reset = <1>;
+				qcom,s1-timer = <4480>;
+				qcom,s2-timer = <1000>;
+				qcom,s2-type = <1>;
+			};
+		};
+	};
+};
+
+&pm660_vadc {
+	chan@50 {
+		label = "backlight_therm";
+		reg = <0x50>;
+		qcom,decimation = <2>;
+		qcom,pre-div-channel-scaling = <0>;
+		qcom,calibration-type = "ratiometric";
+		qcom,scale-function = <2>;
+		qcom,hw-settle-time = <2>;
+		qcom,fast-avg-setup = <0>;
+		qcom,vadc-thermal-node;
+	};
+};
+
+&pm660_charger {
+	qcom,sw-jeita-enable;
+};
+
+&pm660_fg {
+	qcom,fg-cutoff-voltage = <3400>;
+	qcom,fg-chg-term-current = <200>;
+	qcom,fg-sys-term-current = <300>;
+	qcom,fg-jeita-thresholds = <0 15 45 60>;
+	qcom,fg-jeita-hyst-temp = <0>;
+};
+
+/* common diff with msm-pm660l.dtsi */
+&red_led {
+	qcom,ramp-step-ms = <128>;
+	qcom,idx-len = <26>;
+	qcom,duty-pcts =
+		[3C 3C 3B 3A 3B 37 35 33 31 2E 2A 27 23
+		1F 1B 17 13 0E 09 05 00 00 00 00 00 00];
+};
+
+&pm660l_wled {
+	/delete-property/ qcom,auto-calibration-enable;
+	qcom,fs-curr-ua = <20000>;
+	qcom,en-cabc;
+};
+
+&pm660l_flash0 {
+	qcom,current-ma = <900>;
+};
+
+&pm660l_flash1{
+	qcom,current-ma = <900>;
+};
+
+&pm660l_flash2 {
+	qcom,max-current = <100>;
+	qcom,current-ma = <90>;
+};
+
+&pm660l_torch0 {
+	qcom,max-current = <1000>;
+	qcom,current-ma = <100>;
+};
+
+&pm660l_torch1 {
+	qcom,max-current = <1000>;
+	qcom,current-ma = <100>;
+};
+
+&pm660l_torch2 {
+	qcom,max-current = <150>;
+	qcom,current-ma = <90>;
+};
+
+&flash_led {
+	qcom,flashlight_0 {
+		label = "flashlight";
+		qcom,led-name = "flashlight";
+		qcom,torch-name = "led:torch_0", "led:torch_1";
+		qcom,switch-name = "led:switch_0";
+		qcom,id = <0>;
+	};
+};
+
+&lcdb_ldo_vreg {
+	qcom,ldo-ilim-ma = <260>;
+};
+
+&lcdb_ncp_vreg {
+	qcom,ncp-ilim-ma = <260>;
+};

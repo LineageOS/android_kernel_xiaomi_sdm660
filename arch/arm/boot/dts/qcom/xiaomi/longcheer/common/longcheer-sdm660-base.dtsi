@@ -1,0 +1,127 @@
+/* Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+#include "longcheer-pm660.dtsi"
+#include "longcheer-sdm660-audio.dtsi"
+#include "longcheer-sdm660-camera.dtsi"
+#include "longcheer-sdm660-mdss.dtsi"
+#include "longcheer-sdm660-mtp.dtsi"
+#include "longcheer-sdm660-pinctrl.dtsi"
+
+/* sdm660.dtsi common diff */
+/ {
+	pstore_reserve_mem: pstore_reserve_mem_region@0 {
+		linux,reserve-contiguous-region;
+		linux,reserve-region;
+		linux,remove-completely;
+		reg = <0x0 0xA0000000 0x0 0x00400000>;
+		label = "pstore_reserve_mem";
+	};
+};
+
+&soc {
+	/delete-node/ qcom,qbt1000;
+
+	qcom,sensor-information {
+		sensor_information22: qcom,sensor-information-22 {
+			qcom,sensor-type = "adc";
+			qcom,sensor-name = "backlight_therm";
+		};
+	};
+
+	sn_fuse: snfuse@0xA4128 {
+		compatible = "qcom,sn-fuse";
+		reg = <0x786134 0x4>,
+			<0x78607C 0x4>;
+		reg-names = "sn-base","fuse-state";
+	};
+};
+
+&qcom_seecom {
+	qcom,qsee-reentrancy-support = <0>;
+};
+
+/* sdm660-blsp.dtsi common diff */
+&spi_7 {
+	status = "okay";
+
+	device@1 {
+		compatible = "qcom,spi-msm-codec-slave";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <1>; /* Chip select 0 */
+		spi-max-frequency = <1000000>;
+		spi-cpol;
+	};
+};
+
+/* sdm660-internal-codec.dtsi common diff */
+&spi_7 {
+	status = "okay";
+};
+
+&int_codec {
+	qcom,wsa-disable;
+};
+
+&i2c_6 { /* SmartPA TI */
+	status = "okay";
+	tas2557@4c {
+		compatible = "ti,tas2557";
+		reg = <0x4c>;
+		#ti,load = <0>;   /* 0, 8Ohm; 1, 6Ohm; 2, 4Ohm */
+		#ti,channel = <0>;   /* 0, left channel; 1, right channel */
+		i2c-pull-up;
+		vdd-supply = <&pm660l_l6>;
+		vcc_i2c-supply = <&pm660l_l6>;
+		ti,cdc-reset-gpio = <&tlmm 77 0>;
+		ti,irq-gpio = <&tlmm 73 0>;
+		ti,i2s-bits = <16>;
+		status = "ok";
+	};
+
+	max98927@3a {
+		compatible = "maxim,max98927L";
+		status = "okay";
+		reg = <0x3a>;
+		mono_stereo_mode = <0>;
+		interleave_mode = <0>;
+		maxim,98927-reset-gpio = <&tlmm 77 0>;
+	};
+
+ 	tfa98xx@34 {
+		compatible = "nxp,tfa98xx";
+		reg = <0x34>;
+		i2c-pull-up;
+		vdd-supply = <&pm660l_l6>;
+		vcc_i2c-supply = <&pm660l_l6>;
+		reset-gpio = <&tlmm 77 0>;
+		irq-gpio = <&tlmm 73 0>;
+		status = "ok";
+	};
+};
+
+/* sdm660-regulator common diff */
+&rpm_bus {
+	rpm-regulator-ldoa16 {
+		status = "okay";
+		pm660_l16: regulator-l16 {
+			regulator-min-microvolt = <2800000>;
+			regulator-max-microvolt = <2800000>;
+			status = "okay";
+			regulator-always-on;
+		};
+	};
+};
+
+&pm660l_l3 {
+	regulator-always-on;
+};

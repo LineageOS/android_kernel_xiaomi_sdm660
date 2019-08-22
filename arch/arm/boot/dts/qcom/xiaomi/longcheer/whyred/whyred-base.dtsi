@@ -1,0 +1,66 @@
+/* Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include "whyred-camera-sensor-mtp.dtsi"
+#include "sdm660-novatek-i2c_d2s.dtsi"
+#include "sdm636-touchpad-whyred.dsi"
+
+/* msm-pm660.dtsi whyred specific diff */
+&pm660_charger {
+	qcom,micro-usb;
+	qcom,fv-max-uv  = <4408000>;
+	qcom,thermal-mitigation
+			= <2500000 2300000 2000000 1500000 1000000 400000 200000>;
+	qcom,thermal-mitigation-china
+			= <2500000 2300000 2000000 1500000 1000000 400000 200000>;
+};
+
+/* msm-audio.dtsi whyred specific diff */
+&int_codec {
+	qcom,wsa-disable;
+	/delete-property/ qcom,msm-micbias2-ext-cap;
+};
+
+/* sdm660-mtp.dtsi whyred specific diff */
+&mtp_batterydata {
+	#include "fg-gen3-batterydata-l6650sun-4000mah.dtsi"
+	#include "fg-gen3-batterydata-l6650cos-4000mah.dtsi"
+	#include "fg-gen3-batterydata-l6650desay-4000mah.dtsi"
+};
+
+&dsi_nt36672_tianma_fhd_video {
+	qcom,mdss-brightness-max-level = <4095>;
+};
+
+&dsi_td4310_tianma_fhd_video {
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,mdss-brightness-max-level = <4095>;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+};
+
+&dsi_nt36672_huaxing_fhd_video {
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,mdss-brightness-max-level = <4095>;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+};
+
+&dsi_td4310_shenchao_fhd_video {
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,mdss-brightness-max-level = <4095>;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+}; 

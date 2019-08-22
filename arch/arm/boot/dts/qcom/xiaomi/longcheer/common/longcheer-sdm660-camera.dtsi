@@ -1,0 +1,51 @@
+/* Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/* Delete sdm660-camera-sensor-mtp.dtsi nodes */
+&soc {
+	/delete-node/ qcom,camera-flash@0;
+	/delete-node/ qcom,camera-flash@1;
+	/delete-node/ cam_avdd_fixed_regulator;
+	/delete-node/ cam_actuator_fixed_regulator;
+	/delete-node/ cam_dvdd_fixed_regulator;
+	/delete-node/ cam_rear_dvdd_fixed_regulator;
+};
+
+&cci {
+	/delete-node/ qcom,ois@0;
+	/delete-node/ qcom,tof@29;
+	/delete-node/ qcom,eeprom@0;
+	/delete-node/ qcom,eeprom@1;
+	/delete-node/ qcom,eeprom@2;
+	/delete-node/ qcom,camera@0;
+	/delete-node/ qcom,camera@1;
+	/delete-node/ qcom,camera@2;
+	/delete-node/ qcom,camera@3;
+};
+
+&pm660l_gpios {
+	/delete-node/ gpio@c300;
+	/delete-node/ gpio@c200;
+};
+
+/* sdm660-camera.dtsi common diff */
+&soc {
+	qcom,csiphy@c824000 {
+		qcom,clock-rates = <0 0 0 0 0 0 310000000 0 0 269333333 0
+				0 269000000 0 0>;
+	};
+
+	qcom,csiphy@c826000 {
+		qcom,clock-rates = <0 0 0 0 0 0 310000000 0 0 269333333 0
+				0 269000000 0 0>;
+	};
+};
