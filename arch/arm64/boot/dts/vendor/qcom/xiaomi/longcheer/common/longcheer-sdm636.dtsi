@@ -1,0 +1,117 @@
+/* Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/* sdm660.dtsi tulip/whyred specific diff */
+&firmware {
+	android {
+		fstab {
+			vendor {
+				mnt_flags = "ro,barrier=1";
+				fsmgr_flags = "wait,verify";
+			};
+
+			system {
+				compatible = "android,system";
+				dev = "/dev/block/platform/soc/c0c4000.sdhci/by-name/system";
+				type = "ext4";
+				mnt_flags = "ro,barrier=1";
+				fsmgr_flags = "wait,verify";
+				status = "ok";
+			};
+		};
+	};
+};
+
+&qcom_seecom {
+	/delete-property/ qcom,fde-key-size;
+};
+
+
+/* sdm660-common.dtsi tulip/whyred specific diff */
+&usb3 {
+	extcon = <&pm660_charger>;
+	vbus_dwc3-supply = <&smb2_vbus>;
+
+	dwc3@a800000 {
+		usb-phy = <&qusb_phy0>, <&usb_nop_phy>;
+		maximum-speed = "high-speed";
+	};
+
+	qcom,usbbam@a904000 {
+		qcom,pipe2 {
+			qcom,dst-bam-pipe-index = <2>;
+		};
+	};
+};
+
+&qusb_phy0 {
+	qcom,qusb-phy-init-seq = <0xf8 0x80
+				0x63 0x84
+				0x83 0x88
+				0xc0 0x8c
+				0x30 0x08
+				0x79 0x0c
+				0x21 0x10
+				0x14 0x9c
+				0x9f 0x1c
+				0x00 0x18>;
+};
+
+&soc {
+	usb_nop_phy: usb_nop_phy {
+		compatible = "usb-nop-xceiv";
+	};
+};
+
+
+/* msm-pm660.dtsi tulip/whyred specific diff */
+&pm660_charger {
+	qcom,micro-usb;
+};
+
+&pm660_charger {
+	qcom,usb-icl-ua = <2000000>;
+	qcom,dc-icl-ua = <2000000>;
+	qcom,fcc-max-ua = <2500000>;
+};
+
+&pm660_pdphy {
+	status = "disabled";
+};
+
+&pm660_fg {
+	qcom,fg-recharge-voltage = <4320>;
+};
+
+&pm660_haptics {
+	qcom,actuator-type = "erm";
+	qcom,vmax-mv = <3000>;
+};
+
+/* sdm636-mtp.dtsi diff */
+&mdss_dsi0 {
+	qcom,dsi-pref-prim-pan = <&dsi_nt36672_tianma_fhd_video>;
+};
+
+&dsi_nt36672_tianma_fhd_video {
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+};
+
+&dsi_nt36672_jdi_fhd_video {
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+};
