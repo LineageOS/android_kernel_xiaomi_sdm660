@@ -1,0 +1,88 @@
+/* Copyright (c) 2019-2020, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include "tulip-camera-sensor-mtp.dtsi"
+#include "focaltech-ft8719-i2c.dtsi"
+
+/* msm-pm660.dtsi tulip specific diff */
+&pm660_charger {
+	qcom,micro-usb;
+	qcom,fv-max-uv  = <4408000>;
+	qcom,thermal-mitigation
+			= <2500000 2300000 2200000 2000000 1500000 1000000 800000 400000 100000>;
+	qcom,thermal-mitigation-china
+			= <2500000 2300000 2200000 2000000 1500000 1000000 800000 400000 100000>;
+};
+
+&pm660_fg {
+	qcom,fg-recharge-soc-thr = <99>;
+	qcom,fg-auto-recharge-soc;
+};
+
+/* sdm660-mtp.dtsi tulip specific diff */
+&mtp_batterydata {
+	#include "fg-gen3-batterydata-l6660cos-4000mah.dtsi"
+	#include "fg-gen3-batterydata-l6660desay-4000mah.dtsi"
+	#include "fg-gen3-batterydata-l6660atl-4000mah.dtsi"
+};
+
+&dsi_nt36672a_e7t_tianma_fhdplus_video {
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+};
+
+&dsi_nt36672a_e7t_shenchao_fhdplus_video {
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+};
+
+&dsi_ft8719_e7t_boe_fhdplus_video {
+	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
+	qcom,mdss-dsi-bl-min-level = <1>;
+	qcom,mdss-dsi-bl-max-level = <4095>;
+	qcom,panel-supply-entries = <&dsi_panel_pwr_supply>;
+};
+
+/* SAR-sensor-regulator-e7t.dtsi */
+&rpm_bus{
+	rpm-regulator-ldoa18 {
+		compatible = "qcom,rpm-smd-regulator-resource";
+		qcom,resource-name = "ldoa";
+		qcom,resource-id = <18>;
+		qcom,regulator-type = <0>;
+		status = "okay";
+
+		pm660_l18:regulator-l18 {
+			compatible = "qcom,rpm-smd-regulator";
+			regulator-name = "pm660_l18";
+			qcom,set = <3>;
+			regulator-min-microvolt = <1780000>;
+			regulator-max-microvolt = <1950000>;
+			status = "okay";
+			regulator-always-on;
+		};
+	};
+
+	rpm-regulator-ldoa13 {
+		status = "okay";
+		pm660_l13: regulator-l13 {
+			regulator-min-microvolt = <1780000>;
+			regulator-max-microvolt = <1950000>;
+			status = "okay";
+			regulator-always-on;
+		};
+	};
+}; 
