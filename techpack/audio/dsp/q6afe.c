@@ -22,6 +22,9 @@
 #include <ipc/apr_tal.h>
 #include "adsp_err.h"
 #include "q6afecal-hwdep.h"
+#ifdef CONFIG_ELLIPTICLABS
+#include <dsp/apr_elliptic.h>
+#endif
 
 #define WAKELOCK_TIMEOUT	5000
 #define AFE_CLK_TOKEN	1024
@@ -249,6 +252,9 @@ struct afe_ctl {
 	uint32_t v_vali_flag;
 	uint32_t num_spkrs;
 	uint32_t cps_ch_mask;
+#ifdef CONFIG_SND_SOC_MAX98937
+	uint8_t *dsm_payload;
+#endif
 	struct afe_cps_hw_intf_cfg *cps_config;
 	int lsm_afe_ports[MAX_LSM_SESSIONS];
 };
@@ -765,6 +771,17 @@ static int32_t sp_make_afe_callback(uint32_t opcode, uint32_t *payload,
 		expected_size += sizeof(struct afe_sp_ex_vi_ftm_params);
 		data_dest = (u32 *) &this_afe.ex_vi_resp;
 		break;
+#ifdef CONFIG_SND_SOC_MAX98937
+	case AFE_PARAM_ID_DSM_CFG:
+	case AFE_PARAM_ID_DSM_INFO:
+		expected_size += sizeof(struct afe_dsm_param_array);
+		data_dest = (u32*) this_afe.dsm_payload;
+		break;
+	case AFE_PARAM_ID_CALIB:
+		expected_size = 84;
+		data_dest = (u32*) this_afe.dsm_payload;
+		break;
+#endif
 	case AFE_PARAM_ID_SP_RX_TMAX_XMAX_LOGGING:
 		expected_size += sizeof(
 				struct afe_sp_rx_tmax_xmax_logging_param);
@@ -1032,6 +1049,13 @@ static int32_t afe_callback(struct apr_client_data *data, void *priv)
 			wake_up(&this_afe.wait[data->token]);
 		else
 			return -EINVAL;
+#ifdef CONFIG_ELLIPTICLABS
+	} else if (data->opcode == ULTRASOUND_OPCODE) {
+		if (NULL != data->payload)
+			elliptic_process_apr_payload(data->payload);
+		else
+			pr_err("[EXPORT_SYMBOLLUS]: payload ptr is Invalid");
+#endif
 	} else if (data->opcode == AFE_EVENT_MBHC_DETECTION_SW_WA) {
 		msm_aud_evt_notifier_call_chain(SWR_WAKE_IRQ_EVENT, NULL);
 	} else if (data->opcode ==
@@ -2322,6 +2346,141 @@ static int afe_send_cps_config(int src_port)
 	return ret;
 }
 
+#ifdef CONFIG_SND_SOC_MAX98937
+static int afe_dsm_set_params(int port, int module_id, int param_id,
+		uint8_t *payload, int size)
+{
+	struct param_hdr_v3 param_info = {0};
+	int ret = -EINVAL;
+
+	param_info.module_id = module_id;
+	param_info.instance_id = INSTANCE_ID_0;
+	param_info.param_id = param_id;
+	param_info.param_size = size;
+
+	ret = q6afe_pack_and_set_param_in_band(port,
+					       q6audio_get_port_index(port),
+					       param_info, payload);
+	if (ret) {
+		pr_err("%s: Failed to set speaker cfg param, err %d\n",
+		       __func__, ret);
+		goto fail_cmd;
+	}
+	ret = 0;
+fail_cmd:
+	pr_debug("%s: config.pdata.param_id 0x%x status %d\n", __func__,
+		 param_info.param_id, ret);
+	return ret;
+}
+
+static int afe_dsm_get_params(int port, int module_id, int param_id,
+		uint8_t *payload, int size)
+{
+	struct param_hdr_v3 param_hdr = {0};
+	int ret = -EINVAL;
+
+	param_hdr.module_id = module_id;
+	param_hdr.instance_id = INSTANCE_ID_0;
+	param_hdr.param_id = param_id;
+	param_hdr.param_size = size;
+
+	this_afe.dsm_payload = payload - (sizeof(struct param_hdr_v3) +
+			sizeof(uint32_t));
+
+	ret = q6afe_get_params(port, NULL, &param_hdr);
+	if (ret) {
+		pr_err("%s: Failed to get dsm cfg data\n", __func__);
+		goto done;
+	}
+
+	ret = 0;
+done:
+	return ret;
+}
+
+int afe_dsm_rx_get_params(uint8_t *payload, int size)
+{
+	return afe_dsm_get_params(DSM_RX_PORT_ID, AFE_MODULE_DSM_RX,
+			AFE_PARAM_ID_DSM_CFG, payload, size);
+}
+
+int afe_dsm_rx_set_params(uint8_t *payload, int size)
+{
+	return afe_dsm_set_params(DSM_RX_PORT_ID, AFE_MODULE_DSM_RX,
+			AFE_PARAM_ID_DSM_CFG, payload, size);
+}
+
+int afe_dsm_set_calib(uint8_t* payload)
+{
+	return afe_dsm_set_params(DSM_TX_PORT_ID, AFE_MODULE_DSM_TX,
+			AFE_PARAM_ID_CALIB, payload, sizeof(uint32_t) * 3);
+}
+
+int afe_dsm_ramp_dn_cfg(uint8_t *payload, uint32_t delay_in_ms)
+{
+	int ret;
+	uint32_t *params = (uint32_t *)payload;
+
+	*(params)	= 0;
+	*(params + 1)	= 3;
+	*(params + 2)	= 0x03000063;
+	*(params + 3)	= 5;
+	*(params + 4)	= 0x03000064;
+	*(params + 5)	= 500;
+	*(params + 6)	= 0x03000066;
+	*(params + 7)	= 1;
+
+	ret = afe_dsm_rx_set_params(payload, sizeof(uint32_t)*8);
+	if (ret) {
+		pr_err("%s: Failed to set speaker ramp duration param, err %d\n",
+		       __func__, ret);
+		goto fail_cmd;
+	}
+	/* dsp needs atleast 15ms to ramp down pilot tone*/
+	usleep_range(delay_in_ms * 1000, delay_in_ms * 1000 + 10);
+	ret = 0;
+fail_cmd:
+	pr_debug("%s: status %d\n", __func__, ret);
+	return ret;
+}
+
+int afe_dsm_pre_calib(uint8_t* payload)
+{
+	uint32_t *params = (uint32_t *)payload;
+	*(params)	= 0;
+	*(params + 1)	= 1;
+	*(params + 2)	= 0x03000001;
+	*(params + 3)	= 4;
+
+	afe_dsm_rx_set_params(payload, 4 * sizeof(uint32_t));
+	usleep_range(1000 * 1000, 1000 * 1000 + 10);
+	return 0;
+}
+
+int afe_dsm_post_calib(uint8_t* payload)
+{
+	uint32_t *params = (uint32_t *)payload;
+	*(params)	= 0;
+	*(params + 1)	= 1;
+	*(params + 2)	= 0x03000001;
+	*(params + 3)	= 1;
+	return afe_dsm_rx_set_params(payload, 4 * sizeof(uint32_t));
+}
+
+int afe_dsm_get_calib(uint8_t* payload)
+{
+	return afe_dsm_get_params(DSM_TX_PORT_ID, AFE_MODULE_DSM_TX,
+			AFE_PARAM_ID_CALIB, payload, sizeof(uint32_t) * 14);
+}
+
+int afe_dsm_set_status(uint8_t* payload)
+{
+	return afe_dsm_set_params(DSM_RX_PORT_ID, AFE_MODULE_DSM_RX,
+			AFE_PARAM_ID_DSM_INFO, (int8_t*)payload,
+			sizeof(uint32_t) * 8);
+}
+#endif
+
 static int afe_spk_prot_prepare(int src_port, int dst_port, int param_id,
 		union afe_spkr_prot_config *prot_config, uint32_t param_size)
 {
@@ -2402,6 +2561,17 @@ fail_cmd:
 		 param_info.param_id, ret, src_port);
 	return ret;
 }
+
+#ifdef CONFIG_ELLIPTICLABS
+afe_ultrasound_state_t elus_afe = {
+	.ptr_apr = &this_afe.apr,
+	.ptr_status = &this_afe.status,
+	.ptr_state = &this_afe.state,
+	.ptr_wait = this_afe.wait,
+	.timeout_ms = TIMEOUT_MS,
+};
+EXPORT_SYMBOL(elus_afe);
+#endif
 
 static int afe_spkr_prot_reg_event_cfg(u16 port_id, uint32_t module_id)
 {

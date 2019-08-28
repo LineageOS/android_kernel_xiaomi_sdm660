@@ -208,6 +208,16 @@ ifdef CONFIG_DIGITAL_CDC_RSC_MGR
 	Q6_OBJS += digital-cdc-rsc-mgr.o
 endif
 
+ifdef CONFIG_ELLIPTICLABS
+	ELLIPTICLABS_OBJS += apr_elliptic.o
+	ELLIPTICLABS_OBJS += elliptic/elliptic.o
+	ELLIPTICLABS_OBJS += elliptic/elliptic_sysfs.o
+	ELLIPTICLABS_OBJS += elliptic/elliptic_mixer_controls.o
+	ELLIPTICLABS_OBJS += elliptic/io_modules/msm/elliptic_data_msm_io.o
+	ELLIPTICLABS_OBJS += elliptic/io_modules/userspace/elliptic_data_userspace_io.o
+	ELLIPTICLABS_OBJS += elliptic/io_modules/userspace/elliptic_data_userspace_ctrl.o
+endif
+
 LINUX_INC +=	-Iinclude/linux
 
 INCS +=		$(COMMON_INC) \
@@ -277,3 +287,6 @@ q6_pdr_dlkm-y := $(QDSP6_PDR_OBJS)
 
 obj-$(CONFIG_MSM_QDSP6_NOTIFIER) += q6_notifier_dlkm.o
 q6_notifier_dlkm-y := $(QDSP6_NOTIFIER_OBJS)
+
+obj-$(CONFIG_ELLIPTICLABS) += elliptic_dlkm.o
+elliptic_dlkm-y := $(ELLIPTICLABS_OBJS)
