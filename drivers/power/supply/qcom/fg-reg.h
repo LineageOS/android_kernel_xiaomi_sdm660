@@ -29,7 +29,9 @@
 #define BATT_SOC_STS_CLR(chip)			(chip->batt_soc_base + 0x4A)
 #define BATT_SOC_LOW_PWR_CFG(chip)		(chip->batt_soc_base + 0x52)
 #define BATT_SOC_LOW_PWR_STS(chip)		(chip->batt_soc_base + 0x56)
-
+#ifdef CONFIG_MACH_LONGCHEER
+#define BATT_SOC_RST_CTRL0(chip)		(chip->batt_soc_base + 0xBA)
+#endif
 /* BATT_SOC_INT_RT_STS */
 #define MSOC_EMPTY_BIT				BIT(5)
 
@@ -38,7 +40,10 @@
 
 /* BATT_SOC_RESTART */
 #define RESTART_GO_BIT				BIT(0)
-
+#ifdef CONFIG_MACH_LONGCHEER
+/* BCL_RESET */
+#define BCL_RESET_BIT				BIT(2)
+#endif
 /* FG_BATT_INFO register definitions */
 #define BATT_INFO_BATT_TEMP_STS(chip)		(chip->batt_info_base + 0x06)
 #define BATT_INFO_SYS_BATT(chip)		(chip->batt_info_base + 0x07)
@@ -95,7 +100,10 @@
 #define BATT_INFO_IADC_MSB(chip)		(chip->batt_info_base + 0xAF)
 #define BATT_INFO_TM_MISC(chip)			(chip->batt_info_base + 0xE5)
 #define BATT_INFO_TM_MISC1(chip)		(chip->batt_info_base + 0xE6)
-
+#ifdef CONFIG_MACH_LONGCHEER
+#define BATT_INFO_PEEK_MUX1(chip)		(chip->batt_info_base + 0xEB)
+#define BATT_INFO_RDBACK(chip)			(chip->batt_info_base + 0xEF)
+#endif
 /* BATT_INFO_BATT_TEMP_STS */
 #define JEITA_TOO_HOT_STS_BIT			BIT(7)
 #define JEITA_HOT_STS_BIT			BIT(6)
@@ -263,9 +271,15 @@
 /* for v2.0 and above */
 #define ESR_REQ_CTL_BIT				BIT(1)
 #define ESR_REQ_CTL_EN_BIT			BIT(0)
-
+#ifdef CONFIG_MACH_LONGCHEER
+/* BATT_INFO_PEEK_MUX1 */
+#define PEEK_MUX1_BIT				BIT(0)
+#endif
 /* FG_MEM_IF register and bit definitions */
 #define MEM_IF_INT_RT_STS(chip)			((chip->mem_if_base) + 0x10)
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+#define MEM_IF_MEM_ARB_CFG(chip)		((chip->mem_if_base) + 0x40)
+#endif
 #define MEM_IF_MEM_INTF_CFG(chip)		((chip->mem_if_base) + 0x50)
 #define MEM_IF_IMA_CTL(chip)			((chip->mem_if_base) + 0x51)
 #define MEM_IF_IMA_CFG(chip)			((chip->mem_if_base) + 0x52)
@@ -286,6 +300,7 @@
 
 /* MEM_IF_INT_RT_STS */
 #define MEM_XCP_BIT				BIT(1)
+#define MEM_GNT_BIT				BIT(2)
 
 /* MEM_IF_MEM_INTF_CFG */
 #define MEM_ACCESS_REQ_BIT			BIT(7)
@@ -326,4 +341,8 @@
 
 /* MEM_IF_DMA_CTL */
 #define DMA_CLEAR_LOG_BIT			BIT(0)
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+/* MEM_IF_REQ */
+#define MEM_IF_ARB_REQ_BIT			BIT(0)
+#endif
 #endif
