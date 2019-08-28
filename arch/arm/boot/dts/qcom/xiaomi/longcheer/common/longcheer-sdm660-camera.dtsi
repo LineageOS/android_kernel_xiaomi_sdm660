@@ -32,11 +32,6 @@
 	/delete-node/ qcom,camera@3;
 };
 
-&pm660l_gpios {
-	/delete-node/ gpio@c300;
-	/delete-node/ gpio@c200;
-};
-
 /* sdm660-camera.dtsi common diff */
 &soc {
 	qcom,csiphy@c824000 {
