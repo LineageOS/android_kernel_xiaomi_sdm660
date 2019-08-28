@@ -118,25 +118,59 @@ static struct step_chg_cfg step_chg_config = {
 static struct jeita_fcc_cfg jeita_fcc_config = {
 	.psy_prop	= POWER_SUPPLY_PROP_TEMP,
 	.prop_name	= "BATT_TEMP",
+#ifdef CONFIG_MACH_LONGCHEER
+	.hysteresis	= 0, /* 1degC hysteresis */
+#else
 	.hysteresis	= 10, /* 1degC hysteresis */
+#endif
 	.fcc_cfg	= {
 		/* TEMP_LOW	TEMP_HIGH	FCC */
+#ifdef CONFIG_MACH_LONGCHEER
+#if defined(CONFIG_MACH_XIAOMI_WAYNE)
+		{0,		50,		300000},
+		{51,		150,		900000},
+		{151,		450,		2900000},
+		{451,		600,		1500000},
+#elif defined(CONFIG_MACH_XIAOMI_WHYRED)
+		{0,		50,		400000},
+		{51,		150,		1200000},
+		{151,		450,		2500000},
+		{451,		600,		1200000},
+#elif defined(CONFIG_MACH_XIAOMI_TULIP)
+		{0,		50,		400000},
+		{51,		150,		1200000},
+		{151,		450,		2500000},
+		{451,		600,		2000000},
+#endif
+#else
 		{0,		100,		600000},
 		{101,		200,		2000000},
 		{201,		450,		3000000},
 		{451,		550,		600000},
+#endif
 	},
 };
 
 static struct jeita_fv_cfg jeita_fv_config = {
 	.psy_prop	= POWER_SUPPLY_PROP_TEMP,
 	.prop_name	= "BATT_TEMP",
+#ifdef CONFIG_MACH_LONGCHEER
+	.hysteresis	= 0, /* 1degC hysteresis */
+#else
 	.hysteresis	= 10, /* 1degC hysteresis */
+#endif
 	.fv_cfg		= {
+#ifdef CONFIG_MACH_LONGCHEER
+		/* TEMP_LOW	TEMP_HIGH	FV */
+		{0,	150,		4400000},
+		{151,	450,		4400000},
+		{451,	600,		4100000},
+#else
 		/* TEMP_LOW	TEMP_HIGH	FCC */
 		{0,		100,		4200000},
 		{101,		450,		4400000},
 		{451,		550,		4200000},
+#endif
 	},
 };
 
@@ -266,11 +300,36 @@ reschedule:
 	return (STEP_CHG_HYSTERISIS_DELAY_US - elapsed_us + 1000);
 }
 
+#ifdef CONFIG_MACH_XIAOMI_WAYNE
+extern union power_supply_propval lct_therm_lvl_reserved;
+extern int LctIsInVideo;
+extern int hwc_check_india;
+union power_supply_propval lct_therm_video_level = {6,};
+#endif
+
 static int handle_jeita(struct step_chg_info *chip)
 {
 	union power_supply_propval pval = {0, };
 	int rc = 0, fcc_ua = 0, fv_uv = 0;
 	u64 elapsed_us;
+#ifdef CONFIG_MACH_LONGCHEER
+	int temp = 1;
+#endif
+
+#ifdef CONFIG_MACH_XIAOMI_WAYNE
+	if (hwc_check_india) {
+		pr_err("lct video LctIsInVideo=%d, lct_therm_lvl_reserved=%d\n",
+				LctIsInVideo, lct_therm_lvl_reserved.intval);
+		if (LctIsInVideo)
+			rc = power_supply_set_property(chip->batt_psy,
+					POWER_SUPPLY_PROP_SYSTEM_TEMP_LEVEL,
+					&lct_therm_video_level);
+		else
+			rc = power_supply_set_property(chip->batt_psy,
+					POWER_SUPPLY_PROP_SYSTEM_TEMP_LEVEL,
+					&lct_therm_lvl_reserved);
+	}
+#endif
 
 	rc = power_supply_get_property(chip->batt_psy,
 		POWER_SUPPLY_PROP_SW_JEITA_ENABLED, &pval);
@@ -297,6 +356,10 @@ static int handle_jeita(struct step_chg_info *chip)
 		pr_err("Couldn't read %s property rc=%d\n",
 				step_chg_config.prop_name, rc);
 		return rc;
+#ifdef CONFIG_MACH_LONGCHEER
+	} else {
+		temp = pval.intval;
+#endif
 	}
 
 	rc = get_val(jeita_fcc_config.fcc_cfg, jeita_fcc_config.hysteresis,
@@ -318,6 +381,11 @@ static int handle_jeita(struct step_chg_info *chip)
 		return -EINVAL;
 
 	vote(chip->fcc_votable, JEITA_VOTER, true, fcc_ua);
+
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+	if ((temp < 0) || (temp > 600))
+		vote(chip->fcc_votable, JEITA_VOTER, true, 0);
+#endif
 
 	rc = get_val(jeita_fv_config.fv_cfg, jeita_fv_config.hysteresis,
 			chip->jeita_fv_index,
