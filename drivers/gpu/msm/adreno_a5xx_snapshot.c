@@ -809,6 +809,7 @@ static void _a5xx_do_crashdump(struct kgsl_device *device)
 	crash_dump_valid = true;
 }
 
+#ifndef CONFIG_MACH_LONGCHEER
 static int get_hlsq_registers(struct kgsl_device *device,
 		const struct a5xx_hlsq_sp_tp_regs *regs, unsigned int *data)
 {
@@ -848,6 +849,8 @@ static size_t a5xx_snapshot_dump_hlsq_sp_tp_regs(struct kgsl_device *device,
 	/* Return the size of the section */
 	return (count * 8) + sizeof(*header);
 }
+#endif
+/*Delete-end-HMI_L8867_A02-364*/
 
 /*
  * a5xx_snapshot() - A5XX GPU snapshot function
@@ -895,12 +898,11 @@ void a5xx_snapshot(struct adreno_device *adreno_dev,
 		kgsl_snapshot_add_section(device, KGSL_SNAPSHOT_SECTION_REGS,
 				snapshot, a5xx_snapshot_registers, &regs);
 	}
-
-
+#ifndef CONFIG_MACH_LONGCHEER
 	/* Dump SP TP HLSQ registers */
 	kgsl_snapshot_add_section(device, KGSL_SNAPSHOT_SECTION_REGS, snapshot,
 		a5xx_snapshot_dump_hlsq_sp_tp_regs, NULL);
-
+#endif
 	/* CP_PFP indexed registers */
 	kgsl_snapshot_indexed_registers(device, snapshot,
 		A5XX_CP_PFP_STAT_ADDR, A5XX_CP_PFP_STAT_DATA,
