@@ -743,11 +743,35 @@ static void handle_jeita_fcc_scaling(struct step_chg_info *chip)
 }
 
 #define JEITA_SUSPEND_HYST_UV		50000
+#ifdef CONFIG_MACH_XIAOMI_WAYNE
+extern union power_supply_propval lct_therm_lvl_reserved;
+extern int LctIsInVideo;
+extern int hwc_check_india;
+union power_supply_propval lct_therm_video_level = {6,};
+#endif
 static int handle_jeita(struct step_chg_info *chip)
 {
 	union power_supply_propval pval = {0, };
 	int rc = 0, fcc_ua = 0, fv_uv = 0;
 	u64 elapsed_us;
+#ifdef CONFIG_MACH_LONGCHEER
+	int temp = 1;
+#endif
+
+#ifdef CONFIG_MACH_XIAOMI_WAYNE
+	if (hwc_check_india) {
+		pr_err("lct video LctIsInVideo=%d, lct_therm_lvl_reserved=%d\n",
+				LctIsInVideo, lct_therm_lvl_reserved.intval);
+		if (LctIsInVideo)
+			rc = power_supply_set_property(chip->batt_psy,
+					POWER_SUPPLY_PROP_SYSTEM_TEMP_LEVEL,
+					&lct_therm_video_level);
+		else
+			rc = power_supply_set_property(chip->batt_psy,
+					POWER_SUPPLY_PROP_SYSTEM_TEMP_LEVEL,
+					&lct_therm_lvl_reserved);
+	}
+#endif
 
 	rc = power_supply_get_property(chip->batt_psy,
 		POWER_SUPPLY_PROP_SW_JEITA_ENABLED, &pval);
@@ -786,6 +810,10 @@ static int handle_jeita(struct step_chg_info *chip)
 		pr_err("Couldn't read %s property rc=%d\n",
 				chip->jeita_fcc_config->param.prop_name, rc);
 		return rc;
+#ifdef CONFIG_MACH_LONGCHEER
+	} else {
+		temp = pval.intval;
+#endif
 	}
 
 	rc = get_val(chip->jeita_fcc_config->fcc_cfg,
@@ -805,6 +833,11 @@ static int handle_jeita(struct step_chg_info *chip)
 		return -EINVAL;
 
 	vote(chip->fcc_votable, JEITA_VOTER, fcc_ua ? true : false, fcc_ua);
+
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+	if ((temp < 0) || (temp > 600))
+		vote(chip->fcc_votable, JEITA_VOTER, true, 0);
+#endif
 
 	rc = get_val(chip->jeita_fv_config->fv_cfg,
 			chip->jeita_fv_config->param.rise_hys,
@@ -1014,12 +1047,22 @@ int qcom_step_chg_init(struct device *dev,
 
 	chip->jeita_fcc_config->param.psy_prop = POWER_SUPPLY_PROP_TEMP;
 	chip->jeita_fcc_config->param.prop_name = "BATT_TEMP";
+#ifdef CONFIG_MACH_LONGCHEER
+	chip->jeita_fcc_config->param.rise_hys = 0;
+	chip->jeita_fcc_config->param.fall_hys = 0;
+#else
 	chip->jeita_fcc_config->param.rise_hys = 10;
 	chip->jeita_fcc_config->param.fall_hys = 10;
+#endif
 	chip->jeita_fv_config->param.psy_prop = POWER_SUPPLY_PROP_TEMP;
 	chip->jeita_fv_config->param.prop_name = "BATT_TEMP";
+#ifdef CONFIG_MACH_LONGCHEER
+	chip->jeita_fv_config->param.rise_hys = 0;
+	chip->jeita_fv_config->param.fall_hys = 0;
+#else
 	chip->jeita_fv_config->param.rise_hys = 10;
 	chip->jeita_fv_config->param.fall_hys = 10;
+#endif
 
 	INIT_DELAYED_WORK(&chip->status_change_work, status_change_work);
 	INIT_DELAYED_WORK(&chip->get_config_work, get_config_work);

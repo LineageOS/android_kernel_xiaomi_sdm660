@@ -366,6 +366,9 @@ enum power_supply_property {
 	POWER_SUPPLY_PROP_CC_TOGGLE_ENABLE,
 	POWER_SUPPLY_PROP_FG_TYPE,
 	POWER_SUPPLY_PROP_CHARGER_STATUS,
+#ifdef CONFIG_MACH_LONGCHEER
+	POWER_SUPPLY_PROP_RERUN_APSD,
+#endif
 	/* Local extensions of type int64_t */
 	POWER_SUPPLY_PROP_CHARGE_COUNTER_EXT,
 	/* Properties of type `const char *' */

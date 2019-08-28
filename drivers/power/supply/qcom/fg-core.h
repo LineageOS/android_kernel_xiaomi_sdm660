@@ -76,7 +76,9 @@
 #define FG_PARALLEL_EN_VOTER	"fg_parallel_en"
 #define MEM_ATTN_IRQ_VOTER	"fg_mem_attn_irq"
 
+#ifndef CONFIG_MACH_LONGCHEER
 #define DEBUG_BOARD_VOTER	"fg_debug_board"
+#endif
 
 #define BUCKET_COUNT			8
 #define BUCKET_SOC_PCT			(256 / BUCKET_COUNT)
@@ -85,6 +87,9 @@
 
 #define FULL_CAPACITY			100
 #define FULL_SOC_RAW			255
+#if defined(CONFIG_MACH_XIAOMI_LAVENDER) || defined(CONFIG_MACH_XIAOMI_WAYNE)
+#define FULL_SOC_REPORT_THR		250
+#endif
 
 #define DEBUG_BATT_SOC			67
 #define BATT_MISS_SOC			50
@@ -473,12 +478,18 @@ struct fg_dev {
 	int			last_msoc;
 	int			last_recharge_volt_mv;
 	int			delta_temp_irq_count;
+#ifdef CONFIG_MACH_LONGCHEER
+	int			battery_full_design;
+#endif
 	enum esr_filter_status	esr_flt_sts;
 	bool			profile_available;
 	enum prof_load_status	profile_load_status;
 	bool			battery_missing;
 	bool			fg_restarting;
 	bool			charge_full;
+#if defined(CONFIG_MACH_XIAOMI_LAVENDER) || defined(CONFIG_MACH_XIAOMI_WAYNE)
+	bool			report_full;
+#endif
 	bool			recharge_soc_adjusted;
 	bool			soc_reporting_ready;
 	bool			use_ima_single_mode;
