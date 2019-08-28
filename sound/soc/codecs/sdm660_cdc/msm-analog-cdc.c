@@ -58,8 +58,16 @@
 #define EAR_PMU 1
 #define SPK_PMD 2
 #define SPK_PMU 3
-
+#ifdef CONFIG_MACH_LONGCHEEER
+/*modify for D2S main-mic 2.3-3.6v sub-mic 1.5-3.6v tsx 11/6 */
+#if defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_XIAOMI_TULIP)
+#define MICBIAS_DEFAULT_VAL 2600000
+#else
+#define MICBIAS_DEFAULT_VAL 2600000
+#endif
+#else
 #define MICBIAS_DEFAULT_VAL 1800000
+#endif
 #define MICBIAS_MIN_VAL 1600000
 #define MICBIAS_STEP_SIZE 50000
 
