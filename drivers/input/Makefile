@@ -29,3 +29,5 @@ obj-$(CONFIG_INPUT_APMPOWER)	+= apm-power.o
 obj-$(CONFIG_INPUT_KEYRESET)	+= keyreset.o
 obj-$(CONFIG_INPUT_KEYCOMBO)	+= keycombo.o
 obj-y   += sensors/bmi160/
+
+obj-$(CONFIG_INPUT_HALL_SENSOR_E7S)	+= hall_e7s.o
