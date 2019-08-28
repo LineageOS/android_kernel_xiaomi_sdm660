@@ -17,7 +17,7 @@
 		fstab {
 			vendor {
 				mnt_flags = "ro,barrier=1";
-				fsmgr_flags = "wait,slotselect,verify";
+				fsmgr_flags = "wait,slotselect";
 			};
 		};
 	};
