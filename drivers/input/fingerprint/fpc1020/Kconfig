@@ -1,0 +1,5 @@
+config FINGERPRINT_FPC1020
+        tristate "FPC1020 fingerprint driver support"
+        help
+          say Y here to enable fpc1020 fingerprint driver support!
+
