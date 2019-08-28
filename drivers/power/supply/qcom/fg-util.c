@@ -715,7 +715,11 @@ static inline bool is_sec_access(struct fg_dev *fg, int addr)
 	if (fg->version != GEN3_FG)
 		return false;
 
+#if defined(CONFIG_MACH_XIAOMI_TULIP) || defined(CONFIG_MACH_XIAOMI_WAYNE)
+	return ((addr & 0x00FF) > 0xBA);
+#else
 	return ((addr & 0x00FF) > 0xB8);
+#endif
 }
 
 int fg_write(struct fg_dev *fg, int addr, u8 *val, int len)
@@ -911,6 +915,16 @@ int fg_get_msoc(struct fg_dev *fg, int *msoc)
 	 */
 	if (*msoc == FULL_SOC_RAW)
 		*msoc = 100;
+#if defined(CONFIG_MACH_XIAOMI_LAVENDER) || defined(CONFIG_MACH_XIAOMI_WAYNE)
+	else if ((*msoc >= FULL_SOC_REPORT_THR - 2)
+			&& (*msoc < FULL_SOC_RAW) && fg->report_full) {
+		*msoc = DIV_ROUND_CLOSEST(*msoc * FULL_CAPACITY, FULL_SOC_RAW) + 1;
+		if (*msoc >= FULL_CAPACITY)
+			*msoc = FULL_CAPACITY;
+	} else if (*msoc >= FULL_SOC_REPORT_THR - 4
+			&& *msoc <= FULL_SOC_REPORT_THR - 3 && fg->report_full)
+		*msoc = DIV_ROUND_CLOSEST(*msoc * FULL_CAPACITY, FULL_SOC_RAW);
+#endif
 	else if (*msoc == 0)
 		*msoc = 0;
 	else

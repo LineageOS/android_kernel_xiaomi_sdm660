@@ -15,6 +15,9 @@
 #include <linux/iio/consumer.h>
 #include <linux/qpnp/qpnp-revid.h>
 #include <linux/qpnp/qpnp-misc.h>
+#ifdef CONFIG_MACH_LONGCHEER
+#include <linux/thermal.h>
+#endif
 #include "fg-core.h"
 #include "fg-reg.h"
 
@@ -509,6 +512,11 @@ static DEVICE_ATTR_RW(sram_dump_period_ms);
 
 static int fg_restart_mp;
 static bool fg_sram_dump;
+#ifdef CONFIG_MACH_LONGCHEER
+int hwc_check_india;
+int hwc_check_global;
+extern bool is_poweroff_charge;
+#endif
 
 /* All getters HERE */
 
@@ -615,6 +623,56 @@ static int fg_get_battery_temp(struct fg_dev *fg, int *val)
 
 	/* Value is in Kelvin; Convert it to deciDegC */
 	temp = (temp - 273) * 10;
+#ifdef CONFIG_MACH_LONGCHEER
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+	if (temp < -40) {
+		switch (temp) {
+			case -50:
+				temp = -70;
+				break;
+			case -60:
+				temp = -80;
+				break;
+			case -70:
+				temp = -90;
+				break;
+			case -80:
+				temp = -100;
+				break;
+#else
+	if (temp < -80) {
+		switch (temp) {
+#endif
+			case -90:
+				temp = -110;
+				break;
+			case -100:
+				temp = -120;
+				break;
+			case -110:
+				temp = -130;
+				break;
+			case -120:
+				temp = -150;
+				break;
+			case -130:
+				temp = -170;
+				break;
+			case -140:
+				temp = -190;
+				break;
+			case -150:
+				temp = -200;
+				break;
+			case -160:
+				temp = -210;
+				break;
+			default:
+				temp -= 50;
+				break;
+		};
+	}
+#endif
 	*val = temp;
 	return 0;
 }
@@ -803,6 +861,22 @@ out:
 	return rc;
 }
 
+#ifdef CONFIG_MACH_LONGCHEER
+static int __init hwc_setup(char *s)
+{
+	if (strcmp(s, "India") == 0)
+		hwc_check_india = 1;
+	else
+		hwc_check_india = 0;
+	if (strcmp(s, "Global") == 0)
+		hwc_check_global = 1;
+	else
+		hwc_check_global = 0;
+	return 1;
+}
+__setup("androidboot.hwc=", hwc_setup);
+#endif
+
 static int fg_get_batt_profile(struct fg_dev *fg)
 {
 	struct fg_gen3_chip *chip = container_of(fg, struct fg_gen3_chip, fg);
@@ -848,6 +922,20 @@ static int fg_get_batt_profile(struct fg_dev *fg)
 		fg->bp.fastchg_curr_ma = -EINVAL;
 	}
 
+#ifdef CONFIG_MACH_LONGCHEER
+	if (hwc_check_global)
+		fg->bp.fastchg_curr_ma = 2300;
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+	else
+		if (is_poweroff_charge) {
+			if (hwc_check_india)
+				fg->bp.fastchg_curr_ma = 2200;
+			else
+				fg->bp.fastchg_curr_ma = 2300;
+		}
+#endif
+#endif
+
 	rc = of_property_read_u32(profile_node, "qcom,fg-cc-cv-threshold-mv",
 			&fg->bp.vbatt_full_mv);
 	if (rc < 0) {
@@ -860,6 +948,14 @@ static int fg_get_batt_profile(struct fg_dev *fg)
 		pr_err("No profile data available\n");
 		return -ENODATA;
 	}
+
+#ifdef CONFIG_MACH_LONGCHEER
+	rc = of_property_read_u32(profile_node, "qcom,battery-full-design", &fg->battery_full_design);
+	if (rc < 0) {
+		pr_err("No profile data available\n");
+		return -ENODATA;
+	}
+#endif
 
 	if (len != PROFILE_LEN) {
 		pr_err("battery profile incorrect size: %d\n", len);
@@ -1855,9 +1951,28 @@ static int fg_adjust_recharge_voltage(struct fg_dev *fg)
 	recharge_volt_mv = chip->dt.recharge_volt_thr_mv;
 
 	/* Lower the recharge voltage in soft JEITA */
+#ifdef CONFIG_MACH_LONGCHEER
+#if defined(CONFIG_MACH_XIAOMI_WHYRED)
+	if (fg->health == POWER_SUPPLY_HEALTH_WARM)
+		recharge_volt_mv = 4050;
+	if (fg->health == POWER_SUPPLY_HEALTH_COOL)
+		recharge_volt_mv = 4282;
+#elif defined(CONFIG_MACH_XIAOMI_TULIP)
+	if (fg->health == POWER_SUPPLY_HEALTH_WARM)
+		recharge_volt_mv = 4050;
+	if (fg->health == POWER_SUPPLY_HEALTH_COOL)
+		recharge_volt_mv = 4250;
+#else
+	if (fg->health == POWER_SUPPLY_HEALTH_WARM)
+		recharge_volt_mv = 4050;
+	if (fg->health == POWER_SUPPLY_HEALTH_COOL)
+		recharge_volt_mv = 4280;
+#endif
+#else
 	if (fg->health == POWER_SUPPLY_HEALTH_WARM ||
 			fg->health == POWER_SUPPLY_HEALTH_COOL)
 		recharge_volt_mv -= 200;
+#endif
 
 	rc = fg_set_recharge_voltage(fg, recharge_volt_mv);
 	if (rc < 0) {
@@ -4182,6 +4297,9 @@ static int fg_hw_init(struct fg_dev *fg)
 	if (chip->dt.delta_soc_thr > 0 && chip->dt.delta_soc_thr < 100) {
 		fg_encode(fg->sp, FG_SRAM_DELTA_MSOC_THR,
 			chip->dt.delta_soc_thr, buf);
+#ifdef CONFIG_MACH_XIAOMI_WAYNE
+		buf[0] = 0x8;
+#endif
 		rc = fg_sram_write(fg,
 				fg->sp[FG_SRAM_DELTA_MSOC_THR].addr_word,
 				fg->sp[FG_SRAM_DELTA_MSOC_THR].addr_byte,
@@ -4417,6 +4535,14 @@ static int fg_hw_init(struct fg_dev *fg)
 		}
 	}
 
+#ifdef CONFIG_MACH_LONGCHEER
+	buf[0] = 0x33;
+	buf[1] = 0x3;
+	rc = fg_sram_write(fg, 4, 0, buf, 2, FG_IMA_DEFAULT);
+	if (rc < 0)
+		pr_err("Error in configuring Sram, rc = %d\n", rc);
+#endif
+
 	return 0;
 }
 
@@ -4622,6 +4748,12 @@ static irqreturn_t fg_delta_msoc_irq_handler(int irq, void *data)
 	struct fg_gen3_chip *chip = container_of(fg, struct fg_gen3_chip, fg);
 	int rc;
 
+#ifdef CONFIG_MACH_LONGCHEER
+	struct thermal_zone_device *quiet_them;
+	int msoc, volt_uv, batt_temp, ibatt_now,temp_qt ;
+	bool input_present;
+#endif
+
 	fg_dbg(fg, FG_IRQ, "irq %d triggered\n", irq);
 	fg_cycle_counter_update(fg);
 
@@ -4650,6 +4782,20 @@ static irqreturn_t fg_delta_msoc_irq_handler(int irq, void *data)
 
 	if (batt_psy_initialized(fg))
 		power_supply_changed(fg->batt_psy);
+
+#ifdef CONFIG_MACH_LONGCHEER
+	input_present = is_input_present(fg);
+	quiet_them = thermal_zone_get_zone_by_name("quiet_therm");
+	rc = fg_get_battery_voltage(fg, &volt_uv);
+	if (!rc)
+		rc = fg_get_prop_capacity(fg, &msoc);
+	if (!rc)
+		rc = fg_get_battery_temp(fg, &batt_temp);
+	if (quiet_them)
+		rc = thermal_zone_get_temp(quiet_them, &temp_qt);
+	if (!rc)
+		rc = fg_get_battery_current(fg, &ibatt_now);
+#endif
 
 	return IRQ_HANDLED;
 }
@@ -5076,7 +5222,11 @@ static int fg_parse_dt(struct fg_gen3_chip *chip)
 	if (rc < 0)
 		chip->dt.sys_term_curr_ma = DEFAULT_SYS_TERM_CURR_MA;
 	else
+#ifdef CONFIG_MACH_LONGCHEER
+		chip->dt.sys_term_curr_ma = -temp;
+#else
 		chip->dt.sys_term_curr_ma = temp;
+#endif
 
 	rc = of_property_read_u32(node, "qcom,fg-chg-term-base-current", &temp);
 	if (rc < 0)

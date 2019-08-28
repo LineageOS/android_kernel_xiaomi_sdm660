@@ -734,7 +734,9 @@ static int smb1351_fastchg_current_set(struct smb1351_charger *chip,
 		(fastchg_current > SMB1351_CHG_FAST_MAX_MA)) {
 		pr_err("bad pre_fastchg current mA=%d asked to set\n",
 					fastchg_current);
+#ifndef CONFIG_MACH_LONGCHEER
 		return -EINVAL;
+#endif
 	}
 
 	/*
@@ -1567,7 +1569,9 @@ static int smb1351_parallel_set_chg_suspend(struct smb1351_charger *chip,
 	if (chip->parallel_charger_suspended == suspend) {
 		pr_debug("Skip same state request suspended = %d suspend=%d\n",
 				chip->parallel_charger_suspended, !suspend);
+#ifndef CONFIG_MACH_LONGCHEER
 		return 0;
+#endif
 	}
 
 	if (!suspend) {
@@ -1661,6 +1665,17 @@ static int smb1351_parallel_set_chg_suspend(struct smb1351_charger *chip,
 		}
 		chip->parallel_charger_suspended = false;
 	} else {
+#ifdef CONFIG_MACH_LONGCHEER
+		smb1351_enable_volatile_writes(chip);
+		/* control USB suspend via command bits */
+		rc = smb1351_masked_write(chip, VARIOUS_FUNC_REG,
+						APSD_EN_BIT | SUSPEND_MODE_CTRL_BIT,
+						SUSPEND_MODE_CTRL_BY_I2C);
+		if (rc) {
+			pr_err("Couldn't set USB suspend rc=%d\n", rc);
+			return rc;
+		}
+#endif
 		rc = smb1351_usb_suspend(chip, CURRENT, true);
 		if (rc)
 			pr_debug("failed to suspend rc=%d\n", rc);
@@ -2936,6 +2951,9 @@ fail_smb1351_regulator_init:
 	return rc;
 }
 
+#ifdef CONFIG_MACH_LONGCHEER
+extern int hwc_check_global;
+#endif
 static int smb1351_parallel_charger_probe(struct i2c_client *client,
 				const struct i2c_device_id *id)
 {
@@ -2952,6 +2970,13 @@ static int smb1351_parallel_charger_probe(struct i2c_client *client,
 	chip->dev = &client->dev;
 	chip->parallel_charger = true;
 	chip->parallel_charger_suspended = true;
+
+#ifdef CONFIG_MACH_LONGCHEER
+	if (hwc_check_global) {
+		pr_err("Global hasn't smb1350 ragulator,return\n");
+		return -ENODEV;
+	}
+#endif
 
 	chip->usb_suspended_status = of_property_read_bool(node,
 					"qcom,charging-disabled");
@@ -3117,8 +3142,29 @@ static struct i2c_driver smb1351_charger_driver = {
 	.id_table	= smb1351_charger_id,
 };
 
-module_i2c_driver(smb1351_charger_driver);
+#ifdef CONFIG_MACH_LONGCHEER
+static int __init smb1351_charger_init(void)
+{
+	struct power_supply *pl_psy = power_supply_get_by_name("parallel");
 
+	if (pl_psy) {
+		pr_info("Another parallel driver has been registered\n");
+		return -ENOENT;
+	}
+
+	return i2c_add_driver(&smb1351_charger_driver);
+}
+
+static void __exit smb1351_charger_exit(void)
+{
+	i2c_del_driver(&smb1351_charger_driver);
+}
+
+late_initcall(smb1351_charger_init);
+module_exit(smb1351_charger_exit);
+#else
+module_i2c_driver(smb1351_charger_driver);
+#endif
 MODULE_DESCRIPTION("smb1351 Charger");
 MODULE_LICENSE("GPL v2");
 MODULE_ALIAS("i2c:smb1351-charger");
