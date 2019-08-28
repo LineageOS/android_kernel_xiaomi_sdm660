@@ -69,6 +69,9 @@ enum print_reason {
 #define OV_VOTER			"OV_VOTER"
 #define FCC_STEPPER_VOTER		"FCC_STEPPER_VOTER"
 
+#ifdef CONFIG_MACH_LONGCHEER
+#define THERMAL_CONFIG_FB	1
+#endif
 #define VCONN_MAX_ATTEMPTS	3
 #define OTG_MAX_ATTEMPTS	3
 #define BOOST_BACK_STORM_COUNT	3
@@ -265,6 +268,9 @@ struct smb_charger {
 	struct power_supply		*usb_main_psy;
 	struct power_supply		*usb_port_psy;
 	enum power_supply_type		real_charger_type;
+#ifdef CONFIG_MACH_LONGCHEER
+	struct power_supply		*pl_psy;
+#endif
 
 	/* notifiers */
 	struct notifier_block	nb;
@@ -323,6 +329,9 @@ struct smb_charger {
 	int			dcp_icl_ua;
 	int			fake_capacity;
 	bool			step_chg_enabled;
+#ifdef CONFIG_MACH_LONGCHEER
+	int			charging_enabled;
+#endif
 	bool			sw_jeita_enabled;
 	bool			is_hdc;
 	bool			chg_done;
@@ -348,14 +357,27 @@ struct smb_charger {
 	bool			use_extcon;
 	bool			otg_present;
 	bool			fcc_stepper_mode;
+#ifdef CONFIG_MACH_LONGCHEER
+#ifdef THERMAL_CONFIG_FB
+	struct notifier_block	notifier;
+	struct work_struct	fb_notify_work;
+#endif
+#endif
 
 	/* workaround flag */
 	u32			wa_flags;
 	bool			cc2_detach_wa_active;
 	bool			typec_en_dis_active;
+#ifdef CONFIG_MACH_LONGCHEER
+	bool			float_rerun_apsd;
+#endif
 	bool			try_sink_active;
 	int			boost_current_ua;
 	int			temp_speed_reading_count;
+#ifdef CONFIG_MACH_LONGCHEER
+	int			qc2_max_pulses;
+	bool			non_compliant_chg_detected;
+#endif
 
 	/* extcon for VBUS / ID notification to USB for uUSB */
 	struct extcon_dev	*extcon;
@@ -436,6 +458,10 @@ int smblib_get_prop_input_current_limited(struct smb_charger *chg,
 				union power_supply_propval *val);
 int smblib_set_prop_input_suspend(struct smb_charger *chg,
 				const union power_supply_propval *val);
+#ifdef CONFIG_MACH_LONGCHEER
+int lct_set_prop_input_suspend(struct smb_charger *chg,
+				const union power_supply_propval *val);
+#endif
 int smblib_set_prop_batt_capacity(struct smb_charger *chg,
 				const union power_supply_propval *val);
 int smblib_set_prop_system_temp_level(struct smb_charger *chg,
@@ -527,7 +553,13 @@ int smblib_get_prop_from_bms(struct smb_charger *chg,
 int smblib_set_prop_pr_swap_in_progress(struct smb_charger *chg,
 				const union power_supply_propval *val);
 void smblib_usb_typec_change(struct smb_charger *chg);
+#ifdef CONFIG_MACH_LONGCHEER
+int smblib_get_prop_battery_full_design(struct smb_charger *chg,
+				union power_supply_propval *val);
 
+int smblib_set_prop_rerun_apsd(struct smb_charger *chg,
+				const union power_supply_propval *val);
+#endif
 int smblib_init(struct smb_charger *chg);
 int smblib_deinit(struct smb_charger *chg);
 #endif /* __SMB2_CHARGER_H */
