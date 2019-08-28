@@ -20,6 +20,9 @@
 #include <linux/platform_device.h>
 #include <linux/iio/consumer.h>
 #include <linux/qpnp/qpnp-revid.h>
+#ifdef CONFIG_MACH_LONGCHEER
+#include <linux/thermal.h>
+#endif
 #include "fg-core.h"
 #include "fg-reg.h"
 
@@ -407,6 +410,14 @@ module_param_named(
 
 static int fg_restart;
 static bool fg_sram_dump;
+#ifdef CONFIG_MACH_LONGCHEER
+int hwc_check_india;
+int hwc_check_global;
+extern bool is_poweroff_charge;
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+extern int rradc_die;
+#endif
+#endif
 
 /* All getters HERE */
 
@@ -638,6 +649,9 @@ static int fg_get_battery_temp(struct fg_chip *chip, int *val)
 {
 	int rc = 0, temp;
 	u8 buf[2];
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+	struct thermal_zone_device *quiet_them;
+#endif
 
 	rc = fg_read(chip, BATT_INFO_BATT_TEMP_LSB(chip), buf, 2);
 	if (rc < 0) {
@@ -652,6 +666,66 @@ static int fg_get_battery_temp(struct fg_chip *chip, int *val)
 
 	/* Value is in Kelvin; Convert it to deciDegC */
 	temp = (temp - 273) * 10;
+#ifdef CONFIG_MACH_LONGCHEER
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+	if (temp < -40) {
+		switch (temp) {
+			case -50:
+				temp = -70;
+				break;
+			case -60:
+				temp = -80;
+				break;
+			case -70:
+				temp = -90;
+				break;
+			case -80:
+				temp = -100;
+				break;
+#else
+	if (temp < -80) {
+		switch (temp) {
+#endif
+			case -90:
+				temp = -110;
+				break;
+			case -100:
+				temp = -120;
+				break;
+			case -110:
+				temp = -130;
+				break;
+			case -120:
+				temp = -150;
+				break;
+			case -130:
+				temp = -170;
+				break;
+			case -140:
+				temp = -190;
+				break;
+			case -150:
+				temp = -200;
+				break;
+			case -160:
+				temp = -210;
+				break;
+			default:
+				temp -= 50;
+				break;
+		};
+	}
+
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+	if (rradc_die) {
+		quiet_them = thermal_zone_get_zone_by_name("quiet_therm");
+		if (quiet_them)
+			rc = thermal_zone_get_temp(quiet_them, &temp);
+		temp = (temp - 3) * 10;
+		pr_err("LCT USE QUIET_THERM AS BATTERY TEMP \n");
+	}
+#endif
+#endif
 	*val = temp;
 	return 0;
 }
@@ -760,6 +834,9 @@ static int fg_get_msoc_raw(struct fg_chip *chip, int *val)
 
 #define FULL_CAPACITY	100
 #define FULL_SOC_RAW	255
+#ifdef CONFIG_MACH_XIAOMI_WAYNE
+#define FULL_SOC_REPORT_THR 250
+#endif
 static int fg_get_msoc(struct fg_chip *chip, int *msoc)
 {
 	int rc;
@@ -776,6 +853,16 @@ static int fg_get_msoc(struct fg_chip *chip, int *msoc)
 	 */
 	if (*msoc == FULL_SOC_RAW)
 		*msoc = 100;
+#ifdef CONFIG_MACH_XIAOMI_WAYNE
+	else if ((*msoc >= FULL_SOC_REPORT_THR - 2)
+			&& (*msoc < FULL_SOC_RAW) && chip->report_full) {
+		*msoc = DIV_ROUND_CLOSEST(*msoc * FULL_CAPACITY, FULL_SOC_RAW) + 1;
+		if (*msoc >= FULL_CAPACITY)
+			*msoc = FULL_CAPACITY;
+	} else if (*msoc >= FULL_SOC_REPORT_THR - 4
+			&& *msoc <= FULL_SOC_REPORT_THR - 3 && chip->report_full)
+		*msoc = DIV_ROUND_CLOSEST(*msoc * FULL_CAPACITY, FULL_SOC_RAW);
+#endif
 	else if (*msoc == 0)
 		*msoc = 0;
 	else
@@ -978,6 +1065,22 @@ out:
 	return rc;
 }
 
+#ifdef CONFIG_MACH_LONGCHEER
+static int __init hwc_setup(char *s)
+{
+	if (strcmp(s, "India") == 0)
+		hwc_check_india = 1;
+	else
+		hwc_check_india = 0;
+	if (strcmp(s, "Global") == 0)
+		hwc_check_global = 1;
+	else
+		hwc_check_global = 0;
+	return 1;
+}
+__setup("androidboot.hwc=", hwc_setup);
+#endif
+
 static int fg_get_batt_profile(struct fg_chip *chip)
 {
 	struct device_node *node = chip->dev->of_node;
@@ -1022,6 +1125,20 @@ static int fg_get_batt_profile(struct fg_chip *chip)
 		chip->bp.fastchg_curr_ma = -EINVAL;
 	}
 
+#ifdef CONFIG_MACH_LONGCHEER
+	if (hwc_check_global)
+		chip->bp.fastchg_curr_ma = 2300;
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+	else
+		if (is_poweroff_charge) {
+			if (hwc_check_india)
+				chip->bp.fastchg_curr_ma = 2200;
+			else
+				chip->bp.fastchg_curr_ma = 2300;
+		}
+#endif
+#endif
+
 	rc = of_property_read_u32(profile_node, "qcom,fg-cc-cv-threshold-mv",
 			&chip->bp.vbatt_full_mv);
 	if (rc < 0) {
@@ -1034,6 +1151,14 @@ static int fg_get_batt_profile(struct fg_chip *chip)
 		pr_err("No profile data available\n");
 		return -ENODATA;
 	}
+
+#ifdef CONFIG_MACH_LONGCHEER
+	rc = of_property_read_u32(profile_node, "qcom,battery-full-design", &chip->battery_full_design);
+	if (rc < 0) {
+		pr_err("No profile data available\n");
+		return -ENODATA;
+	}
+#endif
 
 	if (len != PROFILE_LEN) {
 		pr_err("battery profile incorrect size: %d\n", len);
@@ -2148,9 +2273,28 @@ static int fg_adjust_recharge_voltage(struct fg_chip *chip)
 	recharge_volt_mv = chip->dt.recharge_volt_thr_mv;
 
 	/* Lower the recharge voltage in soft JEITA */
+#ifdef CONFIG_MACH_LONGCHEER
+#if defined(CONFIG_MACH_XIAOMI_WHYRED)
+	if (chip->health == POWER_SUPPLY_HEALTH_WARM)
+		recharge_volt_mv = 4050;
+	if (chip->health == POWER_SUPPLY_HEALTH_COOL)
+		recharge_volt_mv = 4282;
+#elif defined(CONFIG_MACH_XIAOMI_TULIP)
+	if (chip->health == POWER_SUPPLY_HEALTH_WARM)
+		recharge_volt_mv = 4050;
+	if (chip->health == POWER_SUPPLY_HEALTH_COOL)
+		recharge_volt_mv = 4250;
+#else
+	if (chip->health == POWER_SUPPLY_HEALTH_WARM)
+		recharge_volt_mv = 4050;
+	if (chip->health == POWER_SUPPLY_HEALTH_COOL)
+		recharge_volt_mv = 4280;
+#endif
+#else
 	if (chip->health == POWER_SUPPLY_HEALTH_WARM ||
 			chip->health == POWER_SUPPLY_HEALTH_COOL)
 		recharge_volt_mv -= 200;
+#endif
 
 	rc = fg_set_recharge_voltage(chip, recharge_volt_mv);
 	if (rc < 0) {
@@ -2713,6 +2857,9 @@ static void status_change_work(struct work_struct *work)
 			struct fg_chip, status_change_work);
 	union power_supply_propval prop = {0, };
 	int rc, batt_temp;
+#ifdef CONFIG_MACH_XIAOMI_WAYNE
+	int msoc;
+#endif
 
 	if (!batt_psy_initialized(chip)) {
 		fg_dbg(chip, FG_STATUS, "Charger not available?!\n");
@@ -2745,6 +2892,18 @@ static void status_change_work(struct work_struct *work)
 	chip->charge_done = prop.intval;
 	fg_cycle_counter_update(chip);
 	fg_cap_learning_update(chip);
+
+#ifdef CONFIG_MACH_XIAOMI_WAYNE
+	if (chip->charge_done && !chip->report_full) {
+		chip->report_full = true;
+	} else if (!chip->charge_done && chip->report_full) {
+		rc = fg_get_msoc_raw(chip, &msoc);
+		if (rc < 0)
+			pr_err("Error in getting msoc, rc=%d\n", rc);
+		if (msoc < FULL_SOC_REPORT_THR - 4)
+			chip->report_full = false;
+	}
+#endif
 
 	rc = fg_charge_full_update(chip);
 	if (rc < 0)
@@ -3850,6 +4009,11 @@ static int fg_psy_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CC_STEP_SEL:
 		pval->intval = chip->ttf.cc_step.sel;
 		break;
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+	case POWER_SUPPLY_PROP_FG_RESET_CLOCK:
+		pval->intval = 0;
+		break;
+#endif
 	default:
 		pr_err("unsupported property %d\n", psp);
 		rc = -EINVAL;
@@ -3861,6 +4025,102 @@ static int fg_psy_get_property(struct power_supply *psy,
 
 	return 0;
 }
+
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+#define BCL_RESET_RETRY_COUNT 4
+static int fg_bcl_reset(struct fg_chip *chip)
+{
+	int i, ret, rc = 0;
+	u8 val, peek_mux;
+	bool success = false;
+	pr_err("FG_BCL_RESET START\n");
+	/* Read initial value of peek mux1 */
+	rc = fg_read(chip, BATT_INFO_PEEK_MUX1(chip), &peek_mux, 1);
+	if (rc < 0) {
+		pr_err("Error in writing peek mux1, rc=%d\n", rc);
+		return rc;
+	}
+	pr_err("FG_BCL_RESET PEEK_MUX = %d\n",peek_mux);
+	val = 0x83;
+	rc = fg_write(chip, BATT_INFO_PEEK_MUX1(chip), &val, 1);
+	if (rc < 0) {
+		pr_err("Error in writing peek mux1, rc=%d\n", rc);
+		return rc;
+	}
+
+	mutex_lock(&chip->sram_rw_lock);
+	for (i = 0; i < BCL_RESET_RETRY_COUNT; i++) {
+		pr_err("FG_BCL_RESET RETRY\n");
+		rc = fg_dma_mem_req(chip, true);
+		if (rc < 0) {
+			pr_err("Error in locking memory, rc=%d\n", rc);
+			goto unlock;
+		}
+
+		rc = fg_read(chip, BATT_INFO_RDBACK(chip), &val, 1);
+		if (rc < 0) {
+			pr_err("Error in reading rdback, rc=%d\n", rc);
+			goto release_mem;
+		}
+		pr_err("FG_BCL_RESET VAL = %d\n",val);
+		if (val & PEEK_MUX1_BIT) {
+			pr_err("FG_BCL_RESET DEBUG\n");
+			rc = fg_masked_write(chip, BATT_SOC_RST_CTRL0(chip),
+						BCL_RESET_BIT, BCL_RESET_BIT);
+			if (rc < 0) {
+				pr_err("Error in writing RST_CTRL0, rc=%d\n",
+						rc);
+				goto release_mem;
+			}
+
+			rc = fg_dma_mem_req(chip, false);
+			if (rc < 0)
+				pr_err("Error in unlocking memory, rc=%d\n", rc);
+
+			/* Delay of 2ms */
+			usleep_range(2000, 3000);
+			ret = fg_masked_write(chip, BATT_SOC_RST_CTRL0(chip),
+						BCL_RESET_BIT, 0);
+			if (ret < 0)
+				pr_err("Error in writing RST_CTRL0, rc=%d\n",
+						rc);
+			if (!rc && !ret)
+				success = true;
+
+			goto unlock;
+		} else {
+			rc = fg_dma_mem_req(chip, false);
+			if (rc < 0) {
+				pr_err("Error in unlocking memory, rc=%d\n", rc);
+				return rc;
+			}
+			success = false;
+			pr_err_ratelimited("PEEK_MUX1 not set retrying...\n");
+			msleep(1000);
+		}
+	}
+
+release_mem:
+	rc = fg_dma_mem_req(chip, false);
+	if (rc < 0)
+		pr_err("Error in unlocking memory, rc=%d\n", rc);
+
+unlock:
+	ret = fg_write(chip, BATT_INFO_PEEK_MUX1(chip), &peek_mux, 1);
+	if (ret < 0) {
+		pr_err("Error in writing peek mux1, rc=%d\n", rc);
+		mutex_unlock(&chip->sram_rw_lock);
+		return ret;
+	}
+
+	mutex_unlock(&chip->sram_rw_lock);
+
+	if (!success)
+		return -EAGAIN;
+	else
+		return rc;
+}
+#endif
 
 static int fg_psy_set_property(struct power_supply *psy,
 				  enum power_supply_property psp,
@@ -3908,6 +4168,15 @@ static int fg_psy_set_property(struct power_supply *psy,
 			return -EINVAL;
 		}
 		break;
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+	case POWER_SUPPLY_PROP_FG_RESET_CLOCK:
+		rc = fg_bcl_reset(chip);
+		if (rc < 0) {
+			pr_err("Error in resetting BCL clock, rc=%d\n", rc);
+			return rc;
+		}
+		break;
+#endif
 	case POWER_SUPPLY_PROP_CHARGE_FULL:
 		if (chip->cl.active) {
 			pr_warn("Capacity learning active!\n");
@@ -3965,6 +4234,9 @@ static int fg_property_is_writeable(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CONSTANT_CHARGE_VOLTAGE:
 	case POWER_SUPPLY_PROP_CC_STEP:
 	case POWER_SUPPLY_PROP_CC_STEP_SEL:
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+	case POWER_SUPPLY_PROP_FG_RESET_CLOCK:
+#endif
 	case POWER_SUPPLY_PROP_CHARGE_FULL:
 	case POWER_SUPPLY_PROP_COLD_TEMP:
 	case POWER_SUPPLY_PROP_COOL_TEMP:
@@ -4047,6 +4319,9 @@ static enum power_supply_property fg_psy_props[] = {
 	POWER_SUPPLY_PROP_CONSTANT_CHARGE_VOLTAGE,
 	POWER_SUPPLY_PROP_CC_STEP,
 	POWER_SUPPLY_PROP_CC_STEP_SEL,
+#ifdef CONFIG_MACH_XIAOMI_TULIP
+	POWER_SUPPLY_PROP_FG_RESET_CLOCK,
+#endif
 };
 
 static const struct power_supply_desc fg_psy_desc = {
@@ -4148,6 +4423,9 @@ static int fg_hw_init(struct fg_chip *chip)
 	if (chip->dt.delta_soc_thr > 0 && chip->dt.delta_soc_thr < 100) {
 		fg_encode(chip->sp, FG_SRAM_DELTA_MSOC_THR,
 			chip->dt.delta_soc_thr, buf);
+#ifdef CONFIG_MACH_XIAOMI_WAYNE
+		buf[0] = 0x8;
+#endif
 		rc = fg_sram_write(chip,
 				chip->sp[FG_SRAM_DELTA_MSOC_THR].addr_word,
 				chip->sp[FG_SRAM_DELTA_MSOC_THR].addr_byte,
@@ -4334,6 +4612,14 @@ static int fg_hw_init(struct fg_chip *chip)
 			return rc;
 		}
 	}
+
+#ifdef CONFIG_MACH_LONGCHEER
+	buf[0] = 0x33;
+	buf[1] = 0x3;
+	rc = fg_sram_write(chip, 4, 0, buf, 2, FG_IMA_DEFAULT);
+	if (rc < 0)
+		pr_err("Error in configuring Sram, rc = %d\n", rc);
+#endif
 
 	return 0;
 }
@@ -4538,6 +4824,11 @@ static irqreturn_t fg_delta_msoc_irq_handler(int irq, void *data)
 {
 	struct fg_chip *chip = data;
 	int rc;
+#ifdef CONFIG_MACH_LONGCHEER
+	struct thermal_zone_device *quiet_them;
+	int msoc, volt_uv, batt_temp, ibatt_now,temp_qt ;
+	bool input_present;
+#endif
 
 	fg_dbg(chip, FG_IRQ, "irq %d triggered\n", irq);
 	fg_cycle_counter_update(chip);
@@ -4567,6 +4858,20 @@ static irqreturn_t fg_delta_msoc_irq_handler(int irq, void *data)
 
 	if (batt_psy_initialized(chip))
 		power_supply_changed(chip->batt_psy);
+
+#ifdef CONFIG_MACH_LONGCHEER
+	input_present = is_input_present(chip);
+	quiet_them = thermal_zone_get_zone_by_name("quiet_therm");
+	rc = fg_get_battery_voltage(chip, &volt_uv);
+	if (!rc)
+		rc = fg_get_prop_capacity(chip, &msoc);
+	if (!rc)
+		rc = fg_get_battery_temp(chip, &batt_temp);
+	if (quiet_them)
+		rc = thermal_zone_get_temp(quiet_them, &temp_qt);
+	if (!rc)
+		rc = fg_get_battery_current(chip, &ibatt_now);
+#endif
 
 	return IRQ_HANDLED;
 }
@@ -4990,7 +5295,11 @@ static int fg_parse_dt(struct fg_chip *chip)
 	if (rc < 0)
 		chip->dt.sys_term_curr_ma = DEFAULT_SYS_TERM_CURR_MA;
 	else
+#ifdef CONFIG_MACH_LONGCHEER
+		chip->dt.sys_term_curr_ma = -temp;
+#else
 		chip->dt.sys_term_curr_ma = temp;
+#endif
 
 	rc = of_property_read_u32(node, "qcom,fg-chg-term-base-current", &temp);
 	if (rc < 0)
