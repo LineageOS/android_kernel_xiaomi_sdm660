@@ -15,18 +15,9 @@
 #include "longcheer-sdm660-mdss.dtsi"
 #include "longcheer-sdm660-mtp.dtsi"
 #include "longcheer-sdm660-pinctrl.dtsi"
+#include "longcheer-sdm660-ramoops.dtsi"
 
 /* sdm660.dtsi common diff */
-/ {
-	pstore_reserve_mem: pstore_reserve_mem_region@0 {
-		linux,reserve-contiguous-region;
-		linux,reserve-region;
-		linux,remove-completely;
-		reg = <0x0 0xA0000000 0x0 0x00400000>;
-		label = "pstore_reserve_mem";
-	};
-};
-
 &soc {
 	/delete-node/ qcom,qbt1000;
 
