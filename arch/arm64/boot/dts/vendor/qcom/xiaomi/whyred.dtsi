@@ -12,4 +12,5 @@
 
 #include "longcheer/common/longcheer-sdm660-base.dtsi"
 #include "longcheer/common/longcheer-sdm636.dtsi"
+#include "xiaomi-sdm660-common.dtsi"
 #include "longcheer/whyred/whyred-base.dtsi"
