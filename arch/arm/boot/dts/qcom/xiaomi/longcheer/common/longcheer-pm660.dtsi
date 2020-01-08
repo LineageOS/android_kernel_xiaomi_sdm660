@@ -60,14 +60,6 @@
 };
 
 /* common diff with msm-pm660l.dtsi */
-&red_led {
-	qcom,ramp-step-ms = <128>;
-	qcom,idx-len = <26>;
-	qcom,duty-pcts =
-		[3C 3C 3B 3A 3B 37 35 33 31 2E 2A 27 23
-		1F 1B 17 13 0E 09 05 00 00 00 00 00 00];
-};
-
 &pm660l_wled {
 	/delete-property/ qcom,auto-calibration-enable;
 	qcom,fs-curr-ua = <20000>;
