@@ -273,14 +273,6 @@
 	status = "ok";
 };
 
-/* Red led was used for powersupply of White led */
-&red_led {
-	linux,name = "white";
-	qcom,duty-pcts =
-			[01 03 05 07 0a 0d 10 13 16 19 1c
-			1c 19 16 13 10 0d 0a 07 05 03 01];
-};
-
 &pm660_vadc {
 	chan@4d {
 		label = "cam_therm0";
