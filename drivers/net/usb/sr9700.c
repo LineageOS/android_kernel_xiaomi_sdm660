@@ -423,7 +423,7 @@ static const struct net_device_ops sr9700_android_netdev_ops = {
 	.ndo_change_mtu		= usbnet_change_mtu,
 	.ndo_validate_addr	= eth_validate_addr,
 	.ndo_do_ioctl 		= sr9700_android_ioctl,
-	.ndo_set_multicast_list = sr9700_android_set_multicast,
+	.ndo_set_rx_mode	= sr9700_android_set_multicast,
 	.ndo_set_mac_address	= sr9700_android_set_mac_address,
 };
 
