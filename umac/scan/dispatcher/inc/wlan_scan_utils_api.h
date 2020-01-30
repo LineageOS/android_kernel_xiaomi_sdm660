@@ -843,6 +843,23 @@ util_scan_entry_single_pmk(struct scan_cache_entry *scan_entry)
 }
 
 /**
+ * util_scan_entry_single_pmk()- function to read single pmk Vendor IE
+ * @scan_entry: scan entry
+ *
+ * API, function to read sae single pmk IE
+ *
+ * Return: true if single_pmk ie is present or false if ie is not present
+ */
+static inline bool
+util_scan_entry_single_pmk(struct scan_cache_entry *scan_entry)
+{
+	if (scan_entry->ie_list.single_pmk)
+		return true;
+
+	return false;
+}
+
+/**
  * util_scan_get_rsn_len()- function to read rsn IE length if present
  * @scan_entry: scan entry
  *
