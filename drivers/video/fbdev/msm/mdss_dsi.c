@@ -1,4 +1,5 @@
 /* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -4564,6 +4565,14 @@ static int mdss_dsi_parse_gpio_params(struct platform_device *ctrl_pdev,
 	if (!gpio_is_valid(ctrl_pdata->rst_gpio))
 		pr_err("%s:%d, reset gpio not specified\n",
 						__func__, __LINE__);
+
+#ifdef CONFIG_MACH_MI
+	ctrl_pdata->tp_rst_gpio = of_get_named_gpio(ctrl_pdev->dev.of_node,
+			 "qcom,platform-tp-reset-gpio", 0);
+	if (!gpio_is_valid(ctrl_pdata->tp_rst_gpio))
+		pr_err("%s:%d, tp reset gpio not specified\n",
+						__func__, __LINE__);
+#endif
 
 	ctrl_pdata->lcd_mode_sel_gpio = of_get_named_gpio(
 			ctrl_pdev->dev.of_node, "qcom,panel-mode-gpio", 0);
