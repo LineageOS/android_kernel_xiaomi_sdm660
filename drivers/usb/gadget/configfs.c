@@ -9,6 +9,9 @@
 #include "configfs.h"
 #include "u_f.h"
 #include "u_os_desc.h"
+#ifdef CONFIG_MACH_MI
+#include <linux/power_supply.h>
+#endif
 
 #ifdef CONFIG_USB_CONFIGFS_UEVENT
 #include <linux/platform_device.h>
@@ -1440,6 +1443,28 @@ err_comp_cleanup:
 	return ret;
 }
 
+#ifdef CONFIG_MACH_MI
+static int smblib_canncel_recheck(void)
+{
+	union power_supply_propval pval = {0};
+	struct power_supply     *usb_psy = NULL;
+
+	if (!usb_psy) {
+		usb_psy = power_supply_get_by_name("usb");
+		if (!usb_psy) {
+			pr_err("Could not get usb psy by canncel recheck\n");
+			return -ENODEV;
+		}
+	}
+
+	pval.intval = 0;
+	power_supply_set_property(usb_psy, POWER_SUPPLY_PROP_TYPE_RECHECK,
+			&pval);
+
+	return pval.intval;
+}
+#endif
+
 #ifdef CONFIG_USB_CONFIGFS_UEVENT
 static void android_work(struct work_struct *data)
 {
@@ -1470,6 +1495,9 @@ static void android_work(struct work_struct *data)
 		kobject_uevent_env(&gi->dev->kobj,
 					KOBJ_CHANGE, connected);
 		pr_info("%s: sent uevent %s\n", __func__, connected[0]);
+#ifdef CONFIG_MACH_MI
+		smblib_canncel_recheck();
+#endif
 		uevent_sent = true;
 	}
 

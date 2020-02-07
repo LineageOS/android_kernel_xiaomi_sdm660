@@ -510,7 +510,7 @@ static struct usb_interface_descriptor rndis_gsi_control_intf = {
 	.bNumEndpoints =	1,
 	.bInterfaceClass =	USB_CLASS_WIRELESS_CONTROLLER,
 	.bInterfaceSubClass =   0x01,
-	.bInterfaceProtocol =   0x03,
+	.bInterfaceProtocol =   0x03, /* RNDIS over Ethernet */
 	/* .iInterface = DYNAMIC */
 };
 
@@ -570,7 +570,7 @@ rndis_gsi_iad_descriptor = {
 	.bInterfaceCount =	2, /* control + data */
 	.bFunctionClass =	USB_CLASS_WIRELESS_CONTROLLER,
 	.bFunctionSubClass =	0x01,
-	.bFunctionProtocol =	0x03,
+	.bFunctionProtocol =	0x03, /* RNDIS over Ethernet */
 	/* .iFunction = DYNAMIC */
 };
 
