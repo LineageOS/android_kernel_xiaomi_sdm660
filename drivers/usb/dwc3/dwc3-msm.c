@@ -1,4 +1,5 @@
 /* Copyright (c) 2012-2019, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -55,7 +56,7 @@
 #include "debug.h"
 #include "xhci.h"
 
-#ifdef CONFIG_MACH_LONGCHEER
+#ifdef CONFIG_MACH_XIAOMI_SDM660
 #define SDP_CONNETION_CHECK_TIME 5000 /* in ms */
 #else
 #define SDP_CONNETION_CHECK_TIME 10000 /* in ms */
@@ -2738,7 +2739,7 @@ static void check_for_sdp_connection(struct work_struct *w)
 	struct dwc3_msm *mdwc =
 		container_of(w, struct dwc3_msm, sdp_check.work);
 	struct dwc3 *dwc = platform_get_drvdata(mdwc->dwc3);
-#ifdef CONFIG_MACH_LONGCHEER
+#ifdef CONFIG_MACH_XIAOMI_SDM660
 	union power_supply_propval pval = {0};
 	int ret;
 #endif
@@ -2757,7 +2758,7 @@ static void check_for_sdp_connection(struct work_struct *w)
 	if (dwc->gadget.state < USB_STATE_DEFAULT &&
 		dwc3_gadget_get_link_state(dwc) != DWC3_LINK_STATE_CMPLY) {
 		mdwc->vbus_active = 0;
-#ifdef CONFIG_MACH_LONGCHEER
+#ifdef CONFIG_MACH_XIAOMI_SDM660
 		if (!mdwc->usb_psy)
 			mdwc->usb_psy = power_supply_get_by_name("usb");
 		if (mdwc->usb_psy) {
@@ -3897,22 +3898,40 @@ int get_psy_type(struct dwc3_msm *mdwc)
 	return pval.intval;
 }
 
+#ifdef CONFIG_MACH_MI
+#define ENUMERATE_MA		500
+#endif
 static int dwc3_msm_gadget_vbus_draw(struct dwc3_msm *mdwc, unsigned mA)
 {
 	union power_supply_propval pval = {0};
 	int ret, psy_type;
 
 	psy_type = get_psy_type(mdwc);
+#ifdef CONFIG_MACH_MI
+	if ((psy_type == POWER_SUPPLY_TYPE_USB_FLOAT && mA != ENUMERATE_MA)
+#else
 	if (psy_type == POWER_SUPPLY_TYPE_USB_FLOAT
+#endif
 		|| (mdwc->check_for_float && mdwc->float_detected)) {
+#ifdef CONFIG_MACH_MI
+		pval.intval = -ETIMEDOUT;
+#else
 		if (!mA)
 			pval.intval = -ETIMEDOUT;
 		else
 			pval.intval = 1000 * mA;
+#endif
 		goto set_prop;
 	}
 
+#ifdef CONFIG_MACH_MI
+	if (mdwc->max_power == mA
+			|| (psy_type == POWER_SUPPLY_TYPE_USB_CDP)
+			|| ((psy_type != POWER_SUPPLY_TYPE_USB)
+				&& (mA != ENUMERATE_MA)))
+#else
 	if (mdwc->max_power == mA || psy_type != POWER_SUPPLY_TYPE_USB)
+#endif
 		return 0;
 
 	dev_info(mdwc->dev, "Avail curr from USB = %u\n", mA);
