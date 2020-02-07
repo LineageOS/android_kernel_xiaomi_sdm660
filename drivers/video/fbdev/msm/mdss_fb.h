@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Copyright (c) 2008-2018, 2020-2021, The Linux Foundation. All rights reserved. */
+/* Copyright (C) 2019 XiaoMi, Inc. */
 
 #ifndef MDSS_FB_H
 #define MDSS_FB_H
@@ -332,6 +333,10 @@ struct msm_fb_data_type {
 	struct task_struct *disp_thread;
 	atomic_t commits_pending;
 	atomic_t kickoff_pending;
+#ifdef CONFIG_MACH_MI
+	atomic_t resume_pending;
+	wait_queue_head_t resume_wait_q;
+#endif
 	wait_queue_head_t commit_wait_q;
 	wait_queue_head_t idle_wait_q;
 	wait_queue_head_t kickoff_wait_q;
