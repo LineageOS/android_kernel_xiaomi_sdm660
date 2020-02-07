@@ -1,4 +1,5 @@
 /* Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1311,6 +1312,8 @@ static void *def_msm_int_wcd_mbhc_cal(void)
 #define S(X, Y) ((WCD_MBHC_CAL_PLUG_TYPE_PTR(msm_int_wcd_cal)->X) = (Y))
 #ifdef CONFIG_MACH_LONGCHEER
 	S(v_hs_max, 1600);
+#elif defined (CONFIG_MACH_MI)
+	S(v_hs_max, 1700);
 #else
 	S(v_hs_max, 1500);
 #endif
@@ -1347,6 +1350,17 @@ static void *def_msm_int_wcd_mbhc_cal(void)
 	btn_high[3] = 500;
 	btn_low[4] = 500;
 	btn_high[4] = 500;
+#elif defined (CONFIG_MACH_MI)
+	btn_low[0] = 75;
+	btn_high[0] = 75;
+	btn_low[1] = 260;
+	btn_high[1] = 260;
+	btn_low[2] = 480;
+	btn_high[2] = 480;
+	btn_low[3] = 480;
+	btn_high[3] = 480;
+	btn_low[4] = 480;
+	btn_high[4] = 480;
 #else
 	btn_low[0] = 75;
 	btn_high[0] = 75;
@@ -1359,6 +1373,7 @@ static void *def_msm_int_wcd_mbhc_cal(void)
 	btn_low[4] = 500;
 	btn_high[4] = 500;
 #endif
+
 	return msm_int_wcd_cal;
 }
 
