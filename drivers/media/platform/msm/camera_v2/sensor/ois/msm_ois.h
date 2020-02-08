@@ -69,6 +69,11 @@ struct msm_ois_ctrl_t {
 	struct msm_pinctrl_info pinctrl_info;
 	uint8_t cam_pinctrl_status;
 	struct msm_ois_board_info *oboard_info;
+#ifdef CONFIG_MACH_XIAOMI_JASON
+	struct msm_cam_clk_info *clk_info;
+	struct clk **clk_ptr;
+	size_t clk_info_size;
+#endif
 };
 
 #endif

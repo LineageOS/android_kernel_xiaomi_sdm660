@@ -42,6 +42,15 @@ static const struct v4l2_subdev_internal_ops msm_sensor_init_internal_ops;
 
 static int msm_sensor_wait_for_probe_done(struct msm_sensor_init_t *s_init)
 {
+#ifdef CONFIG_MACH_MI
+	int rc = 0;
+	if (s_init->module_init_status == 1) {
+		CDBG("msm_cam_get_module_init_status -2\n");
+		return 0;
+	}
+	wait_event(s_init->state_wait,
+		(s_init->module_init_status == 1));
+#else
 	int rc;
 	int tm = 20000;
 
@@ -53,6 +62,7 @@ static int msm_sensor_wait_for_probe_done(struct msm_sensor_init_t *s_init)
 		(s_init->module_init_status == 1), msecs_to_jiffies(tm));
 	if (rc == 0)
 		pr_err("%s:%d wait timeout\n", __func__, __LINE__);
+#endif
 
 	return rc;
 }

@@ -50,7 +50,7 @@ struct msm_camera_sensor_slave_info32 {
 	enum i2c_freq_mode_t i2c_freq_mode;
 	enum msm_camera_i2c_reg_addr_type addr_type;
 	struct msm_sensor_id_info_t sensor_id_info;
-#if defined(CONFIG_MACH_LONGCHEER) && !defined(CONFIG_MACH_XIAOMI_WAYNE)
+#if defined(CONFIG_MACH_XIAOMI_SDM660) && !defined(CONFIG_MACH_XIAOMI_WAYNE)
 	struct msm_vendor_id_info_t vendor_id_info;
 	struct msm_vcm_id_info_t vcm_id_info;
 #endif
