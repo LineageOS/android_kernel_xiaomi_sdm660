@@ -156,7 +156,7 @@
 		fpc,gpio_irq    = <&tlmm 72 0x0>;
 		vdd_ana-supply  = <&fp_vdd_vreg>;
 		/* fpc,enable-on-boot; */
-		/* fpc,enable-wakeup; */
+		fpc,enable-wakeup;
 
 		pinctrl-names = "fpc1020_reset_reset",
 			"fpc1020_reset_active",
