@@ -15,7 +15,7 @@
 #define NETLINK_TEST 25
 #define MAX_MSGSIZE 32
 int stringlength(char *s);
-void sendnlmsg(char * message);
+void sendnlmsg(char *message);
 static int pid = -1;
 struct sock *nl_sk = NULL;
 
@@ -26,13 +26,11 @@ void sendnlmsg(char *message)
 	int len = NLMSG_SPACE(MAX_MSGSIZE);
 	int slen = 0;
 	int ret = 0;
-	if (!message || !nl_sk || !pid)
-	{
+	if (!message || !nl_sk || !pid) {
 		return;
 	}
 	skb_1 = alloc_skb(len, GFP_KERNEL);
-	if (!skb_1)
-	{
+	if (!skb_1) {
 		pr_err("alloc_skb error\n");
 		return;
 	}
@@ -47,7 +45,7 @@ void sendnlmsg(char *message)
 
 	ret = netlink_unicast(nl_sk, skb_1, pid, MSG_DONTWAIT);
 	if (!ret) {
-		pr_err("send msg from kernel to usespace failed ret 0x%x \n", ret);
+		pr_err("send msg from kernel to usespace failed ret 0x%x\n", ret);
 	}
 }
 
@@ -66,7 +64,6 @@ void nl_data_ready(struct sk_buff *__skb)
 
 		kfree_skb(skb);
 	}
-
 }
 
 
