@@ -1,7 +1,6 @@
 menu "Fingerprint Drivers"
 
 source "drivers/input/fingerprint/fpc1020/Kconfig"
-source "drivers/input/fingerprint/gf3208/Kconfig"
-source "drivers/input/fingerprint/gf3258/Kconfig"
+source "drivers/input/fingerprint/goodix/Kconfig"
 
 endmenu

@@ -75,7 +75,6 @@ void gf_cleanup(struct gf_dev	* gf_dev)
 int gf_power_on(struct gf_dev* gf_dev)
 {
 	int rc = 0;
-
 	msleep(10);
 	pr_info("---- power on ok ----\n");
 

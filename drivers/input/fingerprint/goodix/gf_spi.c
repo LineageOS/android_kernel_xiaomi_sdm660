@@ -502,11 +502,11 @@ static long gf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		break;
 	case GF_IOC_ENABLE_POWER:
 		pr_debug("%s GF_IOC_ENABLE_POWER\n", __func__);
-			gf_power_on(gf_dev);
+		gf_power_on(gf_dev);
 		break;
 	case GF_IOC_DISABLE_POWER:
 		pr_debug("%s GF_IOC_DISABLE_POWER\n", __func__);
-			gf_power_off(gf_dev);
+		gf_power_off(gf_dev);
 		break;
 	case GF_IOC_ENTER_SLEEP_MODE:
 		pr_debug("%s GF_IOC_ENTER_SLEEP_MODE\n", __func__);
@@ -748,6 +748,26 @@ static int gf_probe(struct platform_device *pdev)
 	gf_dev->fb_black = 0;
 	gf_dev->wait_finger_down = false;
 	INIT_WORK(&gf_dev->work, notification_work);
+
+#ifdef CONFIG_FINGERPRINT_GF3208
+	vreg = regulator_get(&gf_dev->spi->dev,"vcc_ana");
+	if (!vreg) {
+		dev_err(&gf_dev->spi->dev, "Unable to get vdd_ana\n");
+		goto error_hw;
+	}
+
+	ret = regulator_enable(vreg);
+	if (ret) {
+		dev_err(&gf_dev->spi->dev, "error enabling vdd_ana %d\n",ret);
+		regulator_put(vreg);
+		vreg = NULL;
+		goto error_hw;
+	}
+	pr_info("Macle Set voltage on vdd_ana for goodix fingerprint");
+
+	msleep(11);
+#endif
+
 	/* If we can allocate a minor number, hook up this device.
 	 * Reusing minors is fine so long as udev or mdev is working.
 	 */
@@ -776,23 +796,22 @@ static int gf_probe(struct platform_device *pdev)
 	}
 	mutex_unlock(&device_list_lock);
 
-  
-		/*input device subsystem */
-		gf_dev->input = input_allocate_device();
-		if (gf_dev->input == NULL) {
-			pr_err("%s, failed to allocate input device\n", __func__);
-			status = -ENOMEM;
-			goto error_dev;
-		}
-		for (i = 0; i < ARRAY_SIZE(maps); i++)
-			input_set_capability(gf_dev->input, maps[i].type, maps[i].code);
+	/*input device subsystem */
+	gf_dev->input = input_allocate_device();
+	if (gf_dev->input == NULL) {
+		pr_err("%s, failed to allocate input device\n", __func__);
+		status = -ENOMEM;
+		goto error_dev;
+	}
+	for (i = 0; i < ARRAY_SIZE(maps); i++)
+		input_set_capability(gf_dev->input, maps[i].type, maps[i].code);
 
-		gf_dev->input->name = GF_INPUT_NAME;
-		status = input_register_device(gf_dev->input);
-		if (status) {
-			pr_err("failed to register input device\n");
-			goto error_input;
-		}
+	gf_dev->input->name = GF_INPUT_NAME;
+	status = input_register_device(gf_dev->input);
+	if (status) {
+		pr_err("failed to register input device\n");
+		goto error_input;
+	}
 
 #ifdef AP_CONTROL_CLK
 	pr_info("Get the clk resource.\n");
@@ -808,7 +827,6 @@ static int gf_probe(struct platform_device *pdev)
 
 	gf_dev->notifier = goodix_noti_block;
 	fb_register_client(&gf_dev->notifier);
-
 
 	wake_lock_init(&fp_wakelock, WAKE_LOCK_SUSPEND, "fp_wakelock");
 
