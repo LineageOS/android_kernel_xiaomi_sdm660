@@ -1,3 +1,2 @@
 obj-y += fpc1020/
-obj-$(CONFIG_FINGERPRINT_GF3208) += gf3208/
-obj-$(CONFIG_FINGERPRINT_GF3258) += gf3258/
+obj-y += goodix/

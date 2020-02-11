@@ -1,0 +1,9 @@
+config FINGERPRINT_GF3208
+	tristate "goodix fingerprint gf3208"
+	help
+		say Y to enable gf3208 goodix
+
+config FINGERPRINT_GF3258
+	tristate "goodix fingerprint gf3258"
+	help
+		say Y to enable gf3258 goodix
