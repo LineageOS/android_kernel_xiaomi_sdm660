@@ -78,7 +78,7 @@ struct gf_ioc_chip_info {
 	unsigned char reserved[5];
 };
 
-#define GF_IOC_MAGIC    'g'
+#define GF_IOC_MAGIC    'g'     /*define magic number*/
 #define GF_IOC_INIT             _IOR(GF_IOC_MAGIC, 0, uint8_t)
 #define GF_IOC_EXIT             _IO(GF_IOC_MAGIC, 1)
 #define GF_IOC_RESET            _IO(GF_IOC_MAGIC, 2)
