@@ -132,6 +132,11 @@ static ssize_t power_supply_show_property(struct device *dev,
 		return sprintf(buf, "%s\n", health_text[value.intval]);
 	else if (off >= POWER_SUPPLY_PROP_MODEL_NAME)
 		return sprintf(buf, "%s\n", value.strval);
+#ifdef CONFIG_MACH_MI
+	else if (off == POWER_SUPPLY_PROP_TYPE_RECHECK)
+		return scnprintf(buf, PAGE_SIZE, "0x%x\n",
+				value.intval);
+#endif
 
 	if (off == POWER_SUPPLY_PROP_CHARGE_COUNTER_EXT)
 		return sprintf(buf, "%lld\n", value.int64val);
@@ -310,6 +315,11 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(sdp_current_max),
 #ifdef CONFIG_MACH_LONGCHEER
 	POWER_SUPPLY_ATTR(fg_reset_clock),
+#elif defined(CONFIG_MACH_MI)
+	POWER_SUPPLY_ATTR(type_recheck),
+	POWER_SUPPLY_ATTR(charger_type),
+#endif
+#ifdef CONFIG_MACH_XIAOMI_SDM660
 	POWER_SUPPLY_ATTR(rerun_apsd),
 #endif
 	POWER_SUPPLY_ATTR(fcc_stepper_enable),
