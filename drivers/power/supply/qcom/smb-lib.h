@@ -10,6 +10,10 @@
 #include <linux/regulator/driver.h>
 #include <linux/regulator/consumer.h>
 #include <linux/extcon-provider.h>
+#ifdef CONFIG_MACH_MI
+#include <linux/gpio.h>
+#include <linux/of_gpio.h>
+#endif
 #include "storm-watch.h"
 #include "battery.h"
 
@@ -73,10 +77,47 @@ enum print_reason {
 #ifdef CONFIG_MACH_LONGCHEER
 #define THERMAL_CONFIG_FB	1
 #endif
+#ifdef CONFIG_MACH_MI
+#define CHG_AWAKE_VOTER			"CHG_AWAKE_VOTER"
+#define MAIN_ICL_BEFORE_DUAL_CHARGE		"MAIN_ICL_BEFORE_DUAL_CHARGE"
+#define PL_HIGH_CAPACITY_VOTER			"PL_HIGH_CAPACITY_VOTER"
+#define CC_FLOAT_VOTER		"CC_FLOAT_VOTER"
+#define PL_JEITA_VOTER			"PL_JEITA_VOTER"
+#define JEITA_AWAKE_VOTER		"JEITA_AWAKE_VOTER"
+#define PL_LOW_ICL_VOTER		"PL_LOW_ICL_VOTER"
+#define UNSTANDARD_QC2_VOTER			"UNSTANDARD_QC2_VOTER"
+#endif
 #define VCONN_MAX_ATTEMPTS	3
 #define OTG_MAX_ATTEMPTS	3
 #define BOOST_BACK_STORM_COUNT	3
 #define WEAK_CHG_STORM_COUNT	8
+#ifdef CONFIG_MACH_MI
+#define CHG_MONITOR_WORK_DELAY_MS		30000
+#define CHG_MONITOR_START_DELAY_MS		15000
+#define CC_FLOAT_WORK_START_DELAY_MS	700
+/* High HVDCP voltage threshold 10V */
+#define HIGH_HVDCP_VOL_UV_THR		10000000
+
+/* boost charge ibat monitor work micros*/
+#define BOOST_MONITOR_WORK_DELAY_MS		20000
+#define IBAT_HIGH_FIRST_CHECK_COUNT_MAX		3
+#define IBAT_HIGH_DOUBLE_CHECK_COUNT_MAX	6
+#define LOW_CAPACITY_THR		10
+#define HIGH_OTG_ICL_UA		1250000
+#define MEDIUM_OTG_ICL_UA		1000000
+#define LOW_OTG_ICL_UA		750000
+#define TOO_HIGH_IBAT_THR_UA		3450000
+#define RECOVERY_IBAT_THR_UA		2400000
+/* pd icl pl_disable threshold */
+#define PD_ICL_LOW_THR_UA		1500000
+/* cutoff voltage threshold */
+#define CUTOFF_VOL_THR		3400000
+
+/* QC2.0 voltage threshold 7.8V */
+#define QC2_HVDCP_VOL_UV_THR		7800000
+#define CHECK_VBUS_WORK_DELAY_MS		10
+#define UNSTANDARD_HVDCP2_UA		1800000
+#endif
 
 enum smb_mode {
 	PARALLEL_MASTER = 0,
@@ -282,9 +323,15 @@ struct smb_charger {
 	struct smb_regulator	*vbus_vreg;
 	struct smb_regulator	*vconn_vreg;
 	struct regulator	*dpdm_reg;
+#ifdef CONFIG_MACH_MI
+	struct regulator	*usbvdd_reg;
+#endif
 
 	/* votables */
 	struct votable		*dc_suspend_votable;
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+	struct votable		*usb_suspend_votable;
+#endif
 	struct votable		*fcc_votable;
 	struct votable		*fv_votable;
 	struct votable		*usb_icl_votable;
@@ -318,6 +365,18 @@ struct smb_charger {
 	struct work_struct	legacy_detection_work;
 	struct delayed_work	uusb_otg_work;
 	struct delayed_work	bb_removal_work;
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+	struct delayed_work	update_current_work;
+	struct delayed_work	typec_disable_cmd_work;
+#endif
+#ifdef CONFIG_MACH_MI
+	struct delayed_work	reg_work;
+	struct delayed_work	monitor_charging_work;
+	struct delayed_work	cc_float_charge_work;
+	struct delayed_work	monitor_boost_charge_work;
+	struct delayed_work     charger_type_recheck;
+	struct delayed_work	check_vbus_work;
+#endif
 
 	/* cached status */
 	int			voltage_min_uv;
@@ -327,11 +386,21 @@ struct smb_charger {
 	int			boost_threshold_ua;
 	int			system_temp_level;
 	int			thermal_levels;
+#if defined(CONFIG_MACH_MI) && defined (CONFIG_FB)
+	int			*thermal_mitigation_dcp;
+	int			*thermal_mitigation_qc3;
+	int			*thermal_mitigation_qc2;
+	int			*thermal_mitigation_pd_base;
+#else
 	int			*thermal_mitigation;
+#endif
 	int			dcp_icl_ua;
 	int			fake_capacity;
 	int			fake_batt_status;
 	bool			step_chg_enabled;
+#ifdef CONFIG_MACH_LONGCHEER
+	int			charging_enabled;
+#endif
 	bool			sw_jeita_enabled;
 	bool			is_hdc;
 	bool			chg_done;
@@ -367,6 +436,16 @@ struct smb_charger {
 	struct work_struct	fb_notify_work;
 #endif
 #endif
+#ifdef CONFIG_MACH_MI
+	bool			boost_charge_support;
+	bool			otg_icl_setted;
+	bool			ibat_high_first_check;
+	bool			ibat_high_double_check;
+	bool			report_charging_when_jeita_change;
+	bool			need_soft_charge_done;
+	bool			report_usb_absent;
+	bool			legacy;
+#endif
 
 	/* workaround flag */
 	u32			wa_flags;
@@ -382,6 +461,17 @@ struct smb_charger {
 	bool			non_compliant_chg_detected;
 	bool			fake_usb_insertion;
 	bool			reddragon_ipc_wa;
+#ifdef CONFIG_MACH_MI
+	bool			unstandard_qc_detected;
+	bool			cc_float_detected;
+	bool			soft_charge_done;
+	bool			float_rerun_apsd;
+	int			soft_terminate_count;
+	int			boost_ibat_high_count;
+	bool			check_vbus_once;
+	bool			unstandard_hvdcp;
+	bool			ignore_recheck_flag;
+#endif
 
 	/* extcon for VBUS / ID notification to USB for uUSB */
 	struct extcon_dev	*extcon;
@@ -395,6 +485,16 @@ struct smb_charger {
 	int			pulse_cnt;
 
 	int			die_health;
+#ifdef CONFIG_MACH_MI
+	/* reverse boost feature gpios */
+	unsigned int		boost_en_gpio;
+	unsigned int		sw_usb_en_gpio;
+	bool		use_usbmid;
+	/* supprot 5v/2A */
+	bool		support_5v_2a;
+	int                     recheck_charger;
+	int                     precheck_charger_type;
+#endif
 };
 
 int smblib_read(struct smb_charger *chg, u16 addr, u8 *val);
@@ -434,6 +534,9 @@ irqreturn_t smblib_handle_chg_state_change(int irq, void *data);
 irqreturn_t smblib_handle_batt_temp_changed(int irq, void *data);
 irqreturn_t smblib_handle_batt_psy_changed(int irq, void *data);
 irqreturn_t smblib_handle_usb_psy_changed(int irq, void *data);
+#ifdef CONFIG_MACH_MI
+irqreturn_t smblib_handle_usbin_collapse(int irq, void *data);
+#endif
 irqreturn_t smblib_handle_usbin_uv(int irq, void *data);
 irqreturn_t smblib_handle_usb_plugin(int irq, void *data);
 irqreturn_t smblib_handle_usb_source_change(int irq, void *data);
@@ -461,11 +564,34 @@ int smblib_get_prop_batt_health(struct smb_charger *chg,
 int smblib_get_prop_system_temp_level(struct smb_charger *chg,
 				union power_supply_propval *val);
 int smblib_get_prop_system_temp_level_max(struct smb_charger *chg,
+                                union power_supply_propval *val);
+
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+int smblib_get_prop_batt_voltage_now(struct smb_charger *chg,
 				union power_supply_propval *val);
+int smblib_get_prop_batt_current_now(struct smb_charger *chg,
+				union power_supply_propval *val);
+int smblib_get_prop_batt_charge_full_design(struct smb_charger *chg,
+				     union power_supply_propval *val);
+#endif
 int smblib_get_prop_input_current_limited(struct smb_charger *chg,
 				union power_supply_propval *val);
+#ifdef CONFIG_MACH_MI
+int smblib_get_prop_batt_voltage_now(struct smb_charger *chg,
+				union power_supply_propval *val);
+int smblib_get_prop_batt_current_now(struct smb_charger *chg,
+				union power_supply_propval *val);
+int smblib_get_prop_batt_temp(struct smb_charger *chg,
+				union power_supply_propval *val);
+int smblib_get_prop_batt_charge_counter(struct smb_charger *chg,
+				union power_supply_propval *val);
+#endif
 int smblib_set_prop_input_suspend(struct smb_charger *chg,
 				const union power_supply_propval *val);
+#ifdef CONFIG_MACH_LONGCHEER
+int lct_set_prop_input_suspend(struct smb_charger *chg,
+				const union power_supply_propval *val);
+#endif
 int smblib_set_prop_batt_capacity(struct smb_charger *chg,
 				const union power_supply_propval *val);
 int smblib_set_prop_batt_status(struct smb_charger *chg,
@@ -546,6 +672,12 @@ int smblib_set_prop_ship_mode(struct smb_charger *chg,
 				const union power_supply_propval *val);
 int smblib_set_prop_charge_qnovo_enable(struct smb_charger *chg,
 				const union power_supply_propval *val);
+#ifdef CONFIG_MACH_MI
+int smblib_set_prop_type_recheck(struct smb_charger *chg,
+				 const union power_supply_propval *val);
+int smblib_get_prop_type_recheck(struct smb_charger *chg,
+				 union power_supply_propval *val);
+#endif
 void smblib_suspend_on_debug_battery(struct smb_charger *chg);
 int smblib_rerun_apsd_if_required(struct smb_charger *chg);
 int smblib_get_prop_fcc_delta(struct smb_charger *chg,
@@ -568,13 +700,21 @@ int smblib_stat_sw_override_cfg(struct smb_charger *chg, bool override);
 void smblib_usb_typec_change(struct smb_charger *chg);
 int smblib_toggle_stat(struct smb_charger *chg, int reset);
 int smblib_force_ufp(struct smb_charger *chg);
-#ifdef CONFIG_MACH_LONGCHEER
-int smblib_get_prop_battery_full_design(struct smb_charger *chg,
+#ifdef CONFIG_MACH_XIAOMI_SDM660
+int smblib_get_prop_batt_charge_full(struct smb_charger *chg,
 				union power_supply_propval *val);
 int smblib_set_prop_rerun_apsd(struct smb_charger *chg,
 				const union power_supply_propval *val);
 #endif
-
 int smblib_init(struct smb_charger *chg);
 int smblib_deinit(struct smb_charger *chg);
+#ifdef CONFIG_MACH_XIAOMI_CLOVER
+int smblib_get_prop_batt_resistance_id(struct smb_charger *chg,
+				     union power_supply_propval *val);
+int smblib_get_chg_otg_present(struct smb_charger *chg,union power_supply_propval *val);
+#endif
+#ifdef CONFIG_MACH_MI
+/* this function is used for rapid plug in/out charger to notify policy engine to update typec mode */
+extern void notify_typec_mode_changed_for_pd(void);
+#endif
 #endif /* __SMB2_CHARGER_H */

@@ -14,6 +14,23 @@
 #include <linux/pmic-voter.h>
 #include "step-chg-jeita.h"
 
+#undef dev_info
+#define dev_info(x, ...)
+#undef dev_dbg
+#define dev_dbg(x, ...)
+#undef dev_err
+#define dev_err(x, ...)
+#undef pr_info
+#define pr_info(x, ...)
+#undef pr_debug
+#define pr_debug(x, ...)
+#undef pr_error
+#define pr_error(x, ...)
+#undef printk
+#define printk(x, ...)
+#undef printk_deferred
+#define printk_deferred(x, ...)
+
 #define STEP_CHG_VOTER		"STEP_CHG_VOTER"
 #define JEITA_VOTER		"JEITA_VOTER"
 
@@ -410,7 +427,7 @@ static void get_config_work(struct work_struct *work)
 	return;
 
 reschedule:
-	schedule_delayed_work(&chip->get_config_work,
+	queue_delayed_work(system_power_efficient_wq, &chip->get_config_work,
 			msecs_to_jiffies(GET_CONFIG_DELAY_MS));
 
 }
@@ -640,7 +657,7 @@ static int handle_jeita(struct step_chg_info *chip)
 
 #ifdef CONFIG_MACH_XIAOMI_WAYNE
 	if (hwc_check_india) {
-		pr_err("lct video LctIsInVideo=%d, lct_therm_lvl_reserved=%d\n",
+		pr_debug("lct video LctIsInVideo=%d, lct_therm_lvl_reserved=%d\n",
 				LctIsInVideo, lct_therm_lvl_reserved.intval);
 		if (LctIsInVideo)
 			rc = power_supply_set_property(chip->batt_psy,
@@ -759,6 +776,10 @@ static int handle_jeita(struct step_chg_info *chip)
 			vote(chip->usb_icl_votable, JEITA_VOTER, false, 0);
 	}
 
+#ifdef CONFIG_MACH_MI
+	if (fv_uv > 0)
+#endif
+
 set_jeita_fv:
 	vote(chip->fv_votable, JEITA_VOTER, fv_uv ? true : false, fv_uv);
 
@@ -793,7 +814,7 @@ static int handle_battery_insertion(struct step_chg_info *chip)
 			 * Get config for the new inserted battery, delay
 			 * to make sure BMS has read out the batt_id.
 			 */
-			schedule_delayed_work(&chip->get_config_work,
+			queue_delayed_work(system_power_efficient_wq, &chip->get_config_work,
 				msecs_to_jiffies(WAIT_BATT_ID_READY_MS));
 		}
 	}
@@ -850,14 +871,14 @@ static int step_chg_notifier_call(struct notifier_block *nb,
 	if ((strcmp(psy->desc->name, "battery") == 0)
 			|| (strcmp(psy->desc->name, "usb") == 0)) {
 		__pm_stay_awake(chip->step_chg_ws);
-		schedule_delayed_work(&chip->status_change_work, 0);
+		queue_delayed_work(system_power_efficient_wq, &chip->status_change_work, 0);
 	}
 
 	if ((strcmp(psy->desc->name, "bms") == 0)) {
 		if (chip->bms_psy == NULL)
 			chip->bms_psy = psy;
 		if (!chip->config_is_read)
-			schedule_delayed_work(&chip->get_config_work, 0);
+			queue_delayed_work(system_power_efficient_wq, &chip->get_config_work, 0);
 	}
 
 	return NOTIFY_OK;
@@ -926,6 +947,9 @@ int qcom_step_chg_init(struct device *dev,
 #ifdef CONFIG_MACH_LONGCHEER
 	chip->jeita_fcc_config->param.rise_hys = 0;
 	chip->jeita_fcc_config->param.fall_hys = 0;
+#elif defined(CONFIG_MACH_MI)
+	chip->jeita_fcc_config->param.rise_hys = 5;
+	chip->jeita_fcc_config->param.fall_hys = 5;
 #else
 	chip->jeita_fcc_config->param.rise_hys = 10;
 	chip->jeita_fcc_config->param.fall_hys = 10;
@@ -935,6 +959,9 @@ int qcom_step_chg_init(struct device *dev,
 #ifdef CONFIG_MACH_LONGCHEER
 	chip->jeita_fv_config->param.rise_hys = 0;
 	chip->jeita_fv_config->param.fall_hys = 0;
+#elif defined(CONFIG_MACH_MI)
+	chip->jeita_fv_config->param.rise_hys = 5;
+	chip->jeita_fv_config->param.fall_hys = 5;
 #else
 	chip->jeita_fv_config->param.rise_hys = 10;
 	chip->jeita_fv_config->param.fall_hys = 10;
@@ -949,7 +976,7 @@ int qcom_step_chg_init(struct device *dev,
 		goto release_wakeup_source;
 	}
 
-	schedule_delayed_work(&chip->get_config_work,
+	queue_delayed_work(system_power_efficient_wq, &chip->get_config_work,
 			msecs_to_jiffies(GET_CONFIG_DELAY_MS));
 
 	the_chip = chip;

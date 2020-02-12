@@ -13,7 +13,11 @@
 
 #include <linux/pmic-voter.h>
 
+#ifdef CONFIG_MACH_MI
+#define NUM_MAX_CLIENTS		24
+#else
 #define NUM_MAX_CLIENTS		32
+#endif
 #define DEBUG_FORCE_CLIENT	"DEBUG_FORCE_CLIENT"
 
 static DEFINE_SPINLOCK(votable_list_slock);
@@ -473,6 +477,15 @@ int vote(struct votable *votable, const char *client_str, bool enabled, int val)
 	default:
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_MACH_MI
+	if (strcmp(votable->name, "FG_WS") != 0) {
+		pr_info("%s: current vote is now %d voted by %s,%d,previous voted %d\n",
+				votable->name, effective_result,
+				get_client_str(votable, effective_id),
+				effective_id, votable->effective_result);
+	}
+#endif
 
 	/*
 	 * Note that the callback is called with a NULL string and -EINVAL

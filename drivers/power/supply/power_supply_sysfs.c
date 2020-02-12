@@ -221,6 +221,11 @@ static ssize_t power_supply_show_property(struct device *dev,
 	case POWER_SUPPLY_PROP_MODEL_NAME ... POWER_SUPPLY_PROP_SERIAL_NUMBER:
 		ret = sprintf(buf, "%s\n", value.strval);
 		break;
+#ifdef CONFIG_MACH_MI
+	case POWER_SUPPLY_PROP_TYPE_RECHECK:
+		ret = scnprintf(buf, PAGE_SIZE, "0x%x\n", value.intval);
+		break;
+#endif
 	default:
 		ret = sprintf(buf, "%d\n", value.intval);
 	}
@@ -433,8 +438,12 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(pd_voltage_min),
 	POWER_SUPPLY_ATTR(sdp_current_max),
 	POWER_SUPPLY_ATTR(fg_reset_clock),
-#ifdef CONFIG_MACH_LONGCHEER
+#ifdef CONFIG_MACH_XIAOMI_SDM660
 	POWER_SUPPLY_ATTR(rerun_apsd),
+#endif
+#ifdef CONFIG_MACH_MI
+	POWER_SUPPLY_ATTR(type_recheck),
+	POWER_SUPPLY_ATTR(charger_type),
 #endif
 	POWER_SUPPLY_ATTR(connector_type),
 	POWER_SUPPLY_ATTR(parallel_batfet_mode),

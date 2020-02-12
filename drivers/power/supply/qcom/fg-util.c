@@ -715,8 +715,12 @@ static inline bool is_sec_access(struct fg_dev *fg, int addr)
 	if (fg->version != GEN3_FG)
 		return false;
 
+#ifdef CONFIG_MACH_XIAOMI_SDM660
 #if defined(CONFIG_MACH_XIAOMI_TULIP) || defined(CONFIG_MACH_XIAOMI_WAYNE)
 	return ((addr & 0x00FF) > 0xBA);
+#else
+	return ((addr & 0x00FF) > 0xD0);
+#endif
 #else
 	return ((addr & 0x00FF) > 0xB8);
 #endif
@@ -1703,7 +1707,7 @@ void fg_stay_awake(struct fg_dev *fg, int awake_reason)
 	spin_lock(&fg->awake_lock);
 
 	if (!fg->awake_status)
-		pm_stay_awake(fg->dev);
+		pm_wakeup_event(fg->dev, 500);
 
 	fg->awake_status |= awake_reason;
 
