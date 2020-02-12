@@ -1,4 +1,5 @@
 /* Copyright (c) 2017,2019 The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -43,6 +44,8 @@
 #define FCC_STEPPER_VOTER		"FCC_STEPPER_VOTER"
 #ifdef CONFIG_MACH_LONGCHEER
 #define PL_TEMP_VOTER			"PL_TEMP_VOTER"
+#elif defined(CONFIG_MACH_MI)
+#define PL_HIGH_CAPACITY_VOTER		"PL_HIGH_CAPACITY_VOTER"
 #endif
 
 struct pl_data {
@@ -92,6 +95,8 @@ enum print_reason {
 
 #ifdef CONFIG_MACH_LONGCHEER
 static int debug_mask = 0xff;
+#elif defined(CONFIG_MACH_MI)
+static int debug_mask = PR_PARALLEL;
 #else
 static int debug_mask;
 #endif
@@ -261,6 +266,13 @@ static ssize_t slave_pct_store(struct class *c, struct class_attribute *attr,
 	if (kstrtoul(ubuf, 10, &val))
 		return -EINVAL;
 
+#ifdef CONFIG_MACH_MI
+	if (chip->pl_mode == POWER_SUPPLY_PL_USBMID_USBMID)
+		chip->slave_pct = val;
+	else if (val >= 50 && val <= 100)
+		chip->slave_pct = 50;
+	else
+#endif
 	chip->slave_pct = val;
 	rerun_election(chip->fcc_votable);
 	rerun_election(chip->fv_votable);
@@ -953,6 +965,14 @@ static void pl_disable_forever_work(struct work_struct *work)
 	/* Disable Parallel charger forever */
 	vote(chip->pl_disable_votable, PL_HW_ABSENT_VOTER, true, 0);
 
+#ifdef CONFIG_MACH_MI
+	/*
+	 * if smb1350 is absent or broken, should limit usb icl to maxium 1.5A
+	 * for safety of pm660
+	 */
+	vote(chip->usb_icl_votable, PL_HW_ABSENT_VOTER, true, 1500000);
+#endif
+
 	/* Re-enable autonomous mode */
 	if (chip->hvdcp_hw_inov_dis_votable)
 		vote(chip->hvdcp_hw_inov_dis_votable, PL_VOTER, false, 0);
@@ -1155,9 +1175,16 @@ static bool is_parallel_available(struct pl_data *chip)
 	return true;
 }
 
+#ifdef CONFIG_MACH_MI
+#define HIGH_CAPACITY_THR		88
+#define TAPER_END_CAPACITY_THR		83
+#endif
 static void handle_main_charge_type(struct pl_data *chip)
 {
 	union power_supply_propval pval = {0, };
+#ifdef CONFIG_MACH_MI
+	union power_supply_propval capacity_pval = {0, };
+#endif
 	int rc;
 
 	rc = power_supply_get_property(chip->batt_psy,
@@ -1166,6 +1193,51 @@ static void handle_main_charge_type(struct pl_data *chip)
 		pr_err("Couldn't get batt charge type rc=%d\n", rc);
 		return;
 	}
+
+#ifdef CONFIG_MACH_MI
+	/*
+	 * If charge type failed to change to taper, pl_taper_work cannot
+	 * be launched anymore, so parallel charging cannot be disabled,
+	 * if battery capacity is high, do not allow parallel charging
+	 * to protect the battery avoiding battery over voltage if
+	 * pm660 charge type may failed to change from fast to taper.
+	 */
+	if (!get_effective_result_locked(chip->pl_disable_votable)) {
+		rc = power_supply_get_property(chip->batt_psy,
+			       POWER_SUPPLY_PROP_CAPACITY, &capacity_pval);
+		if (rc < 0) {
+			pr_err("Couldn't get batt capacity rc=%d\n", rc);
+			return;
+		}
+		if (capacity_pval.intval > HIGH_CAPACITY_THR)
+			vote(chip->pl_disable_votable, PL_HIGH_CAPACITY_VOTER, true, 0);
+	}
+
+	/*
+	 * TAPER_END_VOTER will be voted when high capacity or
+	 * battery is warm and vbat is over 4.1V, so when battery health
+	 * recovery from warm to normal, we should clear TAPER_END_VOTER
+	 * to allow parallel charging if it is voted.
+	 */
+	if (is_client_vote_enabled(chip->pl_disable_votable,
+						TAPER_END_VOTER)) {
+		rc = power_supply_get_property(chip->batt_psy,
+			       POWER_SUPPLY_PROP_CAPACITY, &capacity_pval);
+		if (rc < 0) {
+			pr_err("Couldn't get batt capacity rc=%d\n", rc);
+			return;
+		}
+		rc = power_supply_get_property(chip->batt_psy,
+			       POWER_SUPPLY_PROP_HEALTH, &pval);
+		if (rc < 0) {
+			pr_err("Couldn't get batt health rc=%d\n", rc);
+			return;
+		}
+		if ((capacity_pval.intval < TAPER_END_CAPACITY_THR)
+				&& (pval.intval != POWER_SUPPLY_HEALTH_WARM))
+			vote(chip->pl_disable_votable, TAPER_END_VOTER, false, 0);
+	}
+#endif
 
 	/* not fast/not taper state to disables parallel */
 	if ((pval.intval != POWER_SUPPLY_CHARGE_TYPE_FAST)
