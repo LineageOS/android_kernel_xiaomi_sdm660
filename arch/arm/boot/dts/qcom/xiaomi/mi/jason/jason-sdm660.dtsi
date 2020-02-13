@@ -170,8 +170,8 @@
 
 	fingerprint_goodix {
 		compatible = "goodix,fingerprint";
-		gooidx,gpio-reset = <&tlmm 55 0x0>;
-		goodix,gpio-irq = <&tlmm 72 0x0>;
+		fp-gpio-reset = <&tlmm 55 0x0>;
+		fp-gpio-irq = <&tlmm 72 0x0>;
 		status = "ok";
 	};
 
