@@ -87,6 +87,8 @@
 		pinctrl-0 = <&msm_gpio_20>;
 		pinctrl-1 = <&msm_gpio_20_output_high>;
 		pinctrl-2 = <&msm_gpio_72>;
+		fpc,enable-on-boot;
+		fpc,enable-wakeup;
 	};
 
 	ant_check {
