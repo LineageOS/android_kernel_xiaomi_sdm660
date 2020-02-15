@@ -27,6 +27,26 @@
 #define DEFAULT_MDP_TRANSFER_TIME 14000
 
 #define VSYNC_DELAY msecs_to_jiffies(17)
+
+#ifdef CONFIG_MACH_LONGCHEER
+bool tianma_jdi_flag=0;
+char g_lcd_id[128];
+struct mdss_dsi_ctrl_pdata *ctrl_pdata_whitepoint;
+EXPORT_SYMBOL(g_lcd_id);
+extern bool enable_gesture_mode;
+
+#ifdef CONFIG_MACH_XIAOMI_LAVENDER
+#define TP_RESET_GPIO 66
+extern bool synaptics_gesture_enable_flag;
+//#elif defined CONFIG_MACH_XIAOMI_TULIP
+//extern bool focal_gesture_mode;
+#elif defined CONFIG_MACH_XIAOMI_WHYRED
+extern bool synaptics_gesture_func_on;
+#endif
+
+bool ESD_TE_status = false;
+#endif
+
 #ifndef CONFIG_BACKLIGHT_QCOM_SPMI_WLED
 DEFINE_LED_TRIGGER(bl_led_trigger);
 #endif
@@ -195,6 +215,66 @@ int mdss_dsi_panel_cmd_read(struct mdss_dsi_ctrl_pdata *ctrl, char cmd0,
 
 	return mdss_dsi_cmdlist_put(ctrl, &cmdreq);
 }
+
+#ifdef CONFIG_MACH_LONGCHEER
+static char dcs_reg[2] = {0x00, 0x00}; /* DTYPE_DCS_READ */
+static struct dsi_cmd_desc dcs_read_reg = {
+	{DTYPE_DCS_READ, 1, 0, 1, 5, sizeof(dcs_reg)},
+	dcs_reg
+};
+
+int mdss_dsi_read_reg(struct mdss_dsi_ctrl_pdata *ctrl, char cmd0, int *val0, int *val1)
+{
+	struct dcs_cmd_req cmdreq;
+	struct mdss_panel_info *pinfo;
+	char rbuf[8];
+	int len = sizeof(rbuf);
+	printk("guorui:%s,reg 0x%x\n", __func__, cmd0);
+	if(ctrl == NULL)
+		ctrl = ctrl_pdata_whitepoint;
+	pinfo = &(ctrl->panel_data.panel_info);
+	if (pinfo->dcs_cmd_by_left) {
+		if (ctrl->ndx != DSI_CTRL_LEFT)
+			return -EINVAL;
+	}
+
+	dcs_reg[0] = cmd0;
+	memset(&cmdreq, 0, sizeof(cmdreq));
+	cmdreq.cmds = &dcs_read_reg;
+	cmdreq.cmds_cnt = 1;
+	cmdreq.flags = CMD_REQ_RX | CMD_REQ_COMMIT | CMD_REQ_HS_MODE;
+	cmdreq.rlen = len;
+	cmdreq.rbuf = rbuf;
+	cmdreq.cb = NULL; /* call back */
+	/*
+	 * blocked here, until call back called
+	 */
+
+
+	mdss_dsi_cmdlist_put(ctrl, &cmdreq);
+	*val0 = rbuf[0];
+#if defined CONFIG_MACH_XIAOMI_LAVENDER || defined CONFIG_MACH_XIAOMI_TULIP
+	/* policy for e7t tianma nt36672a D0:x D2:y */
+	if (strstr(g_lcd_id,"tianma") != NULL)
+		*val1 = rbuf[2];
+	else {
+		/* policy for f7a ebbg nt36672a D0:x D1:y */
+		if(0 != rbuf[1])
+			*val1 = rbuf[1];
+		else
+			*val1 = rbuf[2];
+	}
+#else
+	/* policy for nt36672 */
+	if(0 != rbuf[1])
+		*val1 = rbuf[1];
+	else
+		*val1 = rbuf[2];
+#endif
+	printk("guorui:%x %x %x %x %x %x %x %x\n",rbuf[0],rbuf[1],rbuf[2],rbuf[3],rbuf[4],rbuf[5],rbuf[6],rbuf[7]);
+	return 0;
+}
+#endif
 
 static void mdss_dsi_panel_apply_settings(struct mdss_dsi_ctrl_pdata *ctrl,
 			struct dsi_panel_cmds *pcmds)
@@ -488,6 +568,16 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 				}
 			}
 
+#ifdef CONFIG_MACH_LONGCHEER
+			usleep_range(12 * 1000, 12 * 1000);
+#ifdef CONFIG_MACH_XIAOMI_LAVENDER
+			if(!enable_gesture_mode && !synaptics_gesture_enable_flag) {
+				if (gpio_direction_output(TP_RESET_GPIO, 1)) {
+					pr_err("%s: unable to set dir for touch reset gpio\n", __func__);
+				}
+			}
+#endif
+#endif
 			if (pdata->panel_info.rst_seq_len) {
 				rc = gpio_direction_output(ctrl_pdata->rst_gpio,
 					pdata->panel_info.rst_seq[0]);
@@ -560,7 +650,30 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 			gpio_set_value((ctrl_pdata->disp_en_gpio), 0);
 			gpio_free(ctrl_pdata->disp_en_gpio);
 		}
+
+#ifdef CONFIG_MACH_XIAOMI_LAVENDER
+		if(enable_gesture_mode || synaptics_gesture_enable_flag) {
+			printk(KERN_ERR "[lcd][tp][gesture] keep lcd_reset and tp_reset gpio to high.\n");
+			goto keep_lcd_and_tp_reset;
+		}
+		if (gpio_direction_output(TP_RESET_GPIO, 0)) {
+			pr_err("%s: unable to set dir for touch reset gpio\n", __func__);
+		}
 		gpio_set_value((ctrl_pdata->rst_gpio), 0);
+keep_lcd_and_tp_reset:
+#elif defined(CONFIG_MACH_XIAOMI_TULIP)
+		printk(KERN_ERR "[lcd][tp][gesture] keep lcd_reset and tp_reset gpio to high.\n");
+#elif defined(CONFIG_MACH_XIAOMI_WAYNE)
+		if(enable_gesture_mode)
+			printk("gesture mode keep reset gpio to high.\n");
+#elif defined(CONFIG_MACH_XIAOMI_WHYRED)
+		if(enable_gesture_mode || synaptics_gesture_func_on)
+			printk("gesture mode keep reset gpio to high.\n");
+		else
+			gpio_set_value((ctrl_pdata->rst_gpio), 0);
+#else
+		gpio_set_value((ctrl_pdata->rst_gpio), 0);
+#endif
 		gpio_free(ctrl_pdata->rst_gpio);
 		if (gpio_is_valid(ctrl_pdata->lcd_mode_sel_gpio)) {
 			gpio_set_value(ctrl_pdata->lcd_mode_sel_gpio, 0);
@@ -1222,6 +1335,12 @@ static int mdss_dsi_panel_off(struct mdss_panel_data *pdata)
 		if (ctrl->ndx != DSI_CTRL_LEFT)
 			goto end;
 	}
+
+#ifdef CONFIG_MACH_LONGCHEER
+	if (ESD_TE_status)
+		printk("%s: esd check skip lcd suspend \n", __func__);
+	else
+#endif
 
 	if (ctrl->off_cmds.cmd_cnt)
 		mdss_dsi_panel_cmds_send(ctrl, &ctrl->off_cmds, CMD_REQ_COMMIT);
@@ -2028,6 +2147,10 @@ static int mdss_dsi_gen_read_status(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 	if (!mdss_dsi_cmp_panel_reg_v2(ctrl_pdata)) {
 		pr_err("%s: Read back value from panel is incorrect\n",
 							__func__);
+#ifdef CONFIG_MACH_LONGCHEER
+	if ((strstr(g_lcd_id,"nt36672") != NULL)||(strstr(g_lcd_id,"nt36672a") != NULL)||(strstr(g_lcd_id,"td4320") != NULL))
+		ESD_TE_status = true;
+#endif
 		return -EINVAL;
 	} else {
 		return 1;
@@ -3270,6 +3393,70 @@ error:
 	return -EINVAL;
 }
 
+#ifdef CONFIG_MACH_LONGCHEER
+static ssize_t msm_fb_lcd_name(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	ssize_t ret = 0;
+	sprintf(buf, "%s\n", g_lcd_id);
+	ret = strlen(buf) + 1;
+	return ret;
+}
+
+static DEVICE_ATTR(lcd_name,0664,msm_fb_lcd_name,NULL);
+static struct kobject *msm_lcd_name;
+static int msm_lcd_name_create_sysfs(void)
+{
+	int ret;
+	msm_lcd_name=kobject_create_and_add("android_lcd",NULL);
+	if (msm_lcd_name == NULL) {
+		pr_info("msm_lcd_name_create_sysfs_ failed\n");
+		ret=-ENOMEM;
+		return ret;
+	}
+	ret=sysfs_create_file(msm_lcd_name,&dev_attr_lcd_name.attr);
+	if(ret){
+		pr_info("%s failed \n",__func__);
+		kobject_del(msm_lcd_name);
+	}
+	return 0;
+}
+
+
+static ssize_t mdss_fb_get_whitepoint(struct device *dev,
+				struct device_attribute *attr, char *buf)
+{
+	struct mdss_dsi_ctrl_pdata *ctrl = NULL;
+	int val0 =0;
+	int val1 = 0;
+	ssize_t ret = 0;
+
+	mdss_dsi_read_reg(ctrl,0xa1,&val0,&val1);
+	ret = snprintf(buf, PAGE_SIZE, "val0=%d,val1=%d\n",val0,val1);
+
+	return ret;
+}
+
+static DEVICE_ATTR(whitepoint, 0644, mdss_fb_get_whitepoint,NULL );
+static struct kobject *msm_whitepoint;
+static int msm_whitepoint_create_sysfs(void)
+{
+	int ret;
+	msm_whitepoint=kobject_create_and_add("android_whitepoint",NULL);
+	if (msm_whitepoint == NULL) {
+		pr_info("msm_whitepoint_create_sysfs_ failed\n");
+		ret=-ENOMEM;
+		return ret;
+	}
+	ret=sysfs_create_file(msm_whitepoint,&dev_attr_whitepoint.attr);
+	if (ret) {
+		pr_info("%s failed \n",__func__);
+		kobject_del(msm_whitepoint);
+	}
+	return 0;
+}
+#endif
+
 int mdss_dsi_panel_init(struct device_node *node,
 	struct mdss_dsi_ctrl_pdata *ctrl_pdata,
 	int ndx)
@@ -3298,6 +3485,14 @@ int mdss_dsi_panel_init(struct device_node *node,
 		pr_info("%s: Panel Name = %s\n", __func__, panel_name);
 		strlcpy(&pinfo->panel_name[0], panel_name, MDSS_MAX_PANEL_LEN);
 	}
+#ifdef CONFIG_MACH_LONGCHEER
+	if (strstr(panel_name,"tianma") == NULL)
+		tianma_jdi_flag = 1;
+	else
+                tianma_jdi_flag = 0;
+	/*add for device name node */
+	strcpy(g_lcd_id,panel_name);
+#endif
 	rc = mdss_panel_parse_dt(node, ctrl_pdata);
 	if (rc) {
 		pr_err("%s:%d panel dt parse failed\n", __func__, __LINE__);
@@ -3330,5 +3525,10 @@ int mdss_dsi_panel_init(struct device_node *node,
 			mdss_dsi_panel_apply_display_setting;
 	ctrl_pdata->switch_mode = mdss_dsi_panel_switch_mode;
 
+#ifdef CONFIG_MACH_LONGCHEER
+	ctrl_pdata_whitepoint = ctrl_pdata;
+	msm_lcd_name_create_sysfs();
+	msm_whitepoint_create_sysfs();
+#endif
 	return 0;
 }

@@ -120,11 +120,14 @@ bool mdss_prim_panel_is_dead(void);
 void mdss_panel_reset_skip_enable(bool enable);
 void mdss_dsi_ulps_enable(bool enable);
 void mdss_dsi_ulps_suspend_enable(bool enable);
-int mdss_prim_panel_fb_unblank(int timeout);
 void mdss_fb_prim_panel_recover(void);
 
 int mdss_prim_panel_fb_unblank(int timeout);
 void mdss_fb_prim_panel_recover(void);
+#endif
+
+#ifdef CONFIG_MACH_XIAOMI_SDM660
+int mdss_prim_panel_fb_unblank(int timeout);
 #endif
 
 #endif /* __MDSS_IO_UTIL_H__ */
