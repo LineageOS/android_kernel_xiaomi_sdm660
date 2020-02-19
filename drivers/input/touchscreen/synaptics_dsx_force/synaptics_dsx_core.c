@@ -57,6 +57,9 @@
 #include <linux/uaccess.h>
 #endif
 #include <linux/mdss_io_util.h>
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+#include <linux/input/tp_common.h>
+#endif
 
 #define INPUT_PHYS_NAME "synaptics_dsx/touch_input"
 #define STYLUS_PHYS_NAME "synaptics_dsx/stylus"
@@ -787,6 +790,34 @@ static struct device_attribute attrs[] = {
 			synaptics_rmi4_pocketmode_on_store),
 };
 
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+static struct device *input_dev = NULL;
+
+#define TS_ENABLE_FOPS(orig, dist)                                             \
+	static ssize_t dist##_show(struct kobject *kobj,                       \
+				   struct kobj_attribute *attr, char *buf)     \
+	{                                                                      \
+		if (!input_dev)                                                \
+			return -EIO;                                           \
+		return synaptics_rmi4_##orig##_show(input_dev, NULL, buf);     \
+	}                                                                      \
+	static ssize_t dist##_store(struct kobject *kobj,                      \
+				    struct kobj_attribute *attr,               \
+				    const char *buf, size_t count)             \
+	{                                                                      \
+		if (!input_dev)                                                \
+			return -EIO;                                           \
+		return synaptics_rmi4_##orig##_store(input_dev, NULL, buf,     \
+						     count);                   \
+	}                                                                      \
+	static struct tp_common_ops dist##_ops = { .show = dist##_show,        \
+						   .store = dist##_store }
+
+TS_ENABLE_FOPS(0dbutton, capacitive_keys);
+TS_ENABLE_FOPS(wake_gesture, double_tap);
+TS_ENABLE_FOPS(reversed_keys, reversed_keys);
+#endif
+
 #if defined(CONFIG_SECURE_TOUCH)
 static DEVICE_ATTR(secure_touch_enable, (S_IRUGO | S_IWUSR | S_IWGRP), synaptics_secure_touch_enable_show, synaptics_secure_touch_enable_store);
 static DEVICE_ATTR(secure_touch, S_IRUGO , synaptics_secure_touch_show, NULL);
@@ -1149,6 +1180,9 @@ static ssize_t synaptics_rmi4_0dbutton_store(struct device *dev,
 	}
 
 	rmi4_data->button_0d_enabled = input;
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+	capacitive_keys_enabled = input;
+#endif
 
 	return count;
 }
@@ -3290,6 +3324,9 @@ static int synaptics_rmi4_f1a_init(struct synaptics_rmi4_data *rmi4_data,
 		goto error_exit;
 
 	rmi4_data->button_0d_enabled = 1;
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+	capacitive_keys_enabled = true;
+#endif
 
 	return 0;
 
@@ -5099,6 +5136,31 @@ static int synaptics_rmi4_probe(struct platform_device *pdev)
 				__func__);
 		goto err_set_input_dev;
 	}
+
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+	input_dev = &rmi4_data->input_dev->dev;
+
+	retval = tp_common_set_capacitive_keys_ops(&capacitive_keys_ops);
+	if (retval < 0) {
+		dev_err(&pdev->dev,
+				"%s: Failed to create reversed_keys node err=%d\n",
+				__func__, retval);
+	}
+
+	retval = tp_common_set_double_tap_ops(&double_tap_ops);
+	if (retval < 0) {
+		dev_err(&pdev->dev,
+				"%s: Failed to create double_tap node err=%d\n",
+				__func__, retval);
+	}
+
+	retval = tp_common_set_reversed_keys_ops(&reversed_keys_ops);
+	if (retval < 0) {
+		dev_err(&pdev->dev,
+				"%s: Failed to create reversed_keys node err=%d\n",
+				__func__, retval);
+	}
+#endif
 
 	synaptics_rmi4_query_chip_id(rmi4_data);
 
