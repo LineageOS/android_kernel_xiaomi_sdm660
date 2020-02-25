@@ -387,6 +387,10 @@ struct qpnp_hap {
 	u8				act_type;
 	u8				wave_shape;
 	u8				wave_samp[QPNP_HAP_WAV_SAMP_LEN];
+#ifdef CONFIG_MACH_LONGCHEER
+	u8				wave_samp_two[QPNP_HAP_WAV_SAMP_LEN];
+	u8				wave_samp_three[QPNP_HAP_WAV_SAMP_LEN];
+#endif
 	u8				shadow_wave_samp[QPNP_HAP_WAV_SAMP_LEN];
 	u8				brake_pat[QPNP_HAP_BRAKE_PAT_LEN];
 	u8				sc_count;
@@ -1054,6 +1058,24 @@ static int qpnp_hap_parse_buffer_dt(struct qpnp_hap *hap)
 	} else {
 		memcpy(hap->wave_samp, prop->value, QPNP_HAP_WAV_SAMP_LEN);
 	}
+
+#ifdef CONFIG_MACH_LONGCHEER
+	prop = of_find_property(pdev->dev.of_node,
+		"qcom,wave-samples-two", &temp);
+	if (!prop || temp != QPNP_HAP_WAV_SAMP_LEN) {
+		for (i = 0; i < QPNP_HAP_WAV_SAMP_LEN; i++)
+			hap->wave_samp_two[i] = QPNP_HAP_WAV_SAMP_MAX;
+	} else
+		memcpy(hap->wave_samp_two, prop->value, QPNP_HAP_WAV_SAMP_LEN);
+
+	prop = of_find_property(pdev->dev.of_node,
+		"qcom,wave-samples-three", &temp);
+	if (!prop || temp != QPNP_HAP_WAV_SAMP_LEN) {
+		for (i = 0; i < QPNP_HAP_WAV_SAMP_LEN; i++)
+			hap->wave_samp_three[i] = QPNP_HAP_WAV_SAMP_MAX;
+	} else
+		memcpy(hap->wave_samp_three, prop->value, QPNP_HAP_WAV_SAMP_LEN);
+#endif
 
 	return 0;
 }
@@ -2275,7 +2297,11 @@ static void qpnp_timed_enable_worker(struct work_struct *work)
 	struct qpnp_hap *hap = container_of(work, struct qpnp_hap,
 					 td_work);
 	bool state;
+#ifdef CONFIG_MACH_LONGCHEER
+	int vmax_mv;
+#else
 	ktime_t rem;
+#endif
 	int rc;
 	int time_ms;
 
@@ -2290,6 +2316,13 @@ static void qpnp_timed_enable_worker(struct work_struct *work)
 
 	mutex_lock(&hap->lock);
 
+#ifdef CONFIG_MACH_LONGCHEER
+	if (time_ms == 0) {
+		/* disable haptics */
+		hrtimer_cancel(&hap->hap_timer);
+		hap->state = 0;
+		schedule_work(&hap->work);
+#else
 	if (hap->state == state) {
 		if (state) {
 			rem = hrtimer_get_remaining(&hap->hap_timer);
@@ -2304,10 +2337,57 @@ static void qpnp_timed_enable_worker(struct work_struct *work)
 						HRTIMER_MODE_REL);
 			}
 		}
+#endif
 		mutex_unlock(&hap->lock);
 		return;
 	}
 
+#ifdef CONFIG_MACH_LONGCHEER
+	if (time_ms < 10)
+		time_ms = 10;
+
+	if ((time_ms >= 30) || (time_ms != 11) || (time_ms != 15) || (time_ms != 20)) {
+		vmax_mv = 2204;
+		qpnp_hap_vmax_config(hap, vmax_mv, false);
+		hap->play_mode = QPNP_HAP_DIRECT;
+	} else {
+		hap->play_mode = QPNP_HAP_BUFFER;
+		qpnp_hap_parse_buffer_dt(hap);
+			if (time_ms == 20)
+				qpnp_hap_buffer_config(hap, hap->wave_samp_three, true);
+			else if (time_ms == 15)
+				qpnp_hap_buffer_config(hap, hap->wave_samp_two, true);
+			else if (time_ms == 11)
+				qpnp_hap_buffer_config(hap, hap->wave_samp, true);
+
+		vmax_mv = 2204;
+		qpnp_hap_vmax_config(hap, vmax_mv, false);
+
+		hap->play_mode = QPNP_HAP_BUFFER;
+		hap->wave_shape = QPNP_HAP_WAV_SQUARE;
+	}
+	qpnp_hap_mod_enable(hap, false);
+	qpnp_hap_play_mode_config(hap);
+	if (is_sw_lra_auto_resonance_control(hap))
+		hrtimer_cancel(&hap->auto_res_err_poll_timer);
+
+	hrtimer_cancel(&hap->hap_timer);
+
+	if (hap->auto_mode) {
+		rc = qpnp_hap_auto_mode_config(hap, time_ms);
+		if (rc < 0) {
+			mutex_unlock(&hap->lock);
+			return;
+		}
+	}
+
+	time_ms = (time_ms > hap->timeout_ms ? hap->timeout_ms : time_ms);
+	hap->play_time_ms = time_ms;
+	hap->state = 1;
+	hrtimer_start(&hap->hap_timer,
+		ktime_set(time_ms / 1000, (time_ms % 1000) * 1000000),
+		HRTIMER_MODE_REL);
+#else
 	hap->state = state;
 	if (!hap->state) {
 		hrtimer_cancel(&hap->hap_timer);
@@ -2332,6 +2412,7 @@ static void qpnp_timed_enable_worker(struct work_struct *work)
 				(time_ms % 1000) * 1000000),
 				HRTIMER_MODE_REL);
 	}
+#endif
 
 	mutex_unlock(&hap->lock);
 	schedule_work(&hap->work);
