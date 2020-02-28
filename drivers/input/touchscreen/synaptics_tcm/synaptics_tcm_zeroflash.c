@@ -35,10 +35,6 @@
 #include <linux/firmware.h>
 #include "synaptics_tcm_core.h"
 
-/* add check F7A LCM by wanghan start */
-extern bool lct_syna_verify_flag;
-/* add check F7A LCM by wanghan end */
-
 #define FW_IMAGE_NAME "synaptics/hdl_firmware.img"
 
 #define BOOT_CONFIG_ID "BOOT_CONFIG"
@@ -1037,10 +1033,6 @@ static int __init zeroflash_module_init(void)
 {
 	int retval;
 	LOG_ENTRY();
-	/* add check F7A LCM by wanghan start */
-	if(!lct_syna_verify_flag)
-		return -ENODEV;
-	/* add check F7A LCM by wanghan end */
 	LOGV("__init zeroflash module\n");
 	retval = syna_tcm_add_module(&zeroflash_module, true);
 	if(retval) {

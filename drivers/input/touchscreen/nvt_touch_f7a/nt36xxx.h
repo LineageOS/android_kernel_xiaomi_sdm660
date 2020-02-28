@@ -28,8 +28,6 @@
 
 #include "nt36xxx_mem_map.h"
 
-#include "../lct_tp_info.h"
-
 #define NVT_DEBUG 1
 
 
