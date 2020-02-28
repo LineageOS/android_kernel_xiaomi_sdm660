@@ -67,10 +67,6 @@
 #include <linux/ioctl.h>
 #include <linux/vmalloc.h>
 #include "focaltech_common.h"
-#if FTS_READ_TP_FW
-#include "../lct_tp_fm_info.h"
-#include "../lct_ctp_upgrade.h"
-#endif
 
 /*****************************************************************************
 * Private constant and macro definitions using #define

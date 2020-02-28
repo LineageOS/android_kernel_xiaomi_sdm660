@@ -35,7 +35,6 @@
 #include "synaptics_tcm_core.h"
 
 /* add check F7A LCM by wanghan start */
-extern bool lct_syna_verify_flag;
 extern bool synaptics_gesture_enable_flag;
 /* add check F7A LCM by wanghan end */
 
@@ -1317,10 +1316,6 @@ static int __init touch_module_init(void)
 {
 	int retval;
 	LOG_ENTRY();
-	/* add check F7A LCM by wanghan start */
-	if(!lct_syna_verify_flag)
-		return -ENODEV;
-	/* add check F7A LCM by wanghan end */
 	LOGV("__init touch module\n");
 	retval =  syna_tcm_add_module(&touch_module, true);
 	if(retval) {

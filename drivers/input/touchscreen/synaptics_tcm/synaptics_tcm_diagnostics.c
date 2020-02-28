@@ -32,10 +32,6 @@
 
 #include "synaptics_tcm_core.h"
 
-/* add check F7A LCM by wanghan start */
-extern bool lct_syna_verify_flag;
-/* add check F7A LCM by wanghan end */
-
 #define SYSFS_DIR_NAME "diagnostics"
 
 enum pingpong_state {
@@ -580,10 +576,6 @@ static int __init diag_module_init(void)
 {
 	int retval;
 	LOG_ENTRY();
-	/* add check F7A LCM by wanghan start */
-	if(!lct_syna_verify_flag)
-		return -ENODEV;
-	/* add check F7A LCM by wanghan end */
 	LOGV("__init diagnostics module\n");
 	retval = syna_tcm_add_module(&diag_module, true);
 	if(retval) {

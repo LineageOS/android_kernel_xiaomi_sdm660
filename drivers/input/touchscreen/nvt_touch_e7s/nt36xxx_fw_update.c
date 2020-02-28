@@ -833,7 +833,6 @@ return:
 int32_t Update_Firmware(void)
 {
 	int32_t ret = 0;
-	char update_version[64];
 
 	ret = Init_BootLoader();
 	if (ret) {
@@ -869,9 +868,6 @@ int32_t Update_Firmware(void)
 	nvt_check_fw_reset_state(RESET_STATE_INIT);
 
 	nvt_get_fw_info();
-	memset(update_version, 0, sizeof(update_version));
-	sprintf(update_version, "[FW]0x%02x,[IC]nvt36672", ts->fw_ver);
-	update_tp_fm_info(update_version);
 	return ret;
 }
 
