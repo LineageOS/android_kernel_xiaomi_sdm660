@@ -410,11 +410,6 @@ int32_t nvt_get_fw_info(void)
 	uint8_t buf[64] = {0};
 	uint32_t retry_count = 0;
 	int32_t ret = 0;
-/* add tp-fw information by yangjiangzhu  2018/3/12 start */
-#if	NVT_READ_TP_FW
-	char fw_version[64];
-#endif
-/* add tp-fw information by yangjiangzhu  2018/3/12 end */
 
 info_retry:
 
@@ -457,23 +452,10 @@ info_retry:
 	} else {
 		ret = 0;
 	}
-/* add tp-fw and vendor information by yangjiangzhu  2018/3/19 start */
-#if	NVT_READ_TP_FW
-		memset(fw_version, 0, sizeof(fw_version));
-		if (strstr(g_lcd_id,"shenchao nt36672a fhdplus video mode dsi panel") != NULL) {
-				sprintf(fw_version, "[FW]0x%02x,[IC]nvt36672_a", ts->fw_ver);
-				init_tp_fm_info(0, fw_version, "shenchao");
-			}
-			else {
-					sprintf(fw_version, "[FW]0x%02x,[IC]nvt36672_a", ts->fw_ver);
-					init_tp_fm_info(0, fw_version, "tianma");
-				 }
-#endif
-/* add tp-fw and vendor information by yangjiangzhu  2018/3/19 end */
-printk("yjz nvt_get_fw_info 1 \n");
+	printk("yjz nvt_get_fw_info 1 \n");
 
 	nvt_read_pid();
-	
+
 	return ret;
 }
 

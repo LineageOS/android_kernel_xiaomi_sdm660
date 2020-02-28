@@ -42,8 +42,6 @@
 #include <linux/platform_device.h>
 #include <linux/input/synaptics_dsx.h>
 #include "synaptics_dsx_core.h"
-#include "../lct_tp_fm_info.h"
-#include "../lct_ctp_upgrade.h"
 #include <linux/proc_fs.h>
 
 #define FW_IHEX_NAME "synaptics/tianma_td4310_miui_e7s.bin"
@@ -4510,7 +4508,6 @@ static int fwu_start_reflash(void)
 	const struct firmware *fw_entry = NULL;
 	struct synaptics_rmi4_data *rmi4_data = fwu->rmi4_data;
 	unsigned char config_ver[20]={0};
-	char fw_version[64];
 
 	if (rmi4_data->sensor_sleep) {
 		dev_err(rmi4_data->pdev->dev.parent,
@@ -4739,13 +4736,8 @@ exit:
 			config_ver,
 			1);
 	printk("config_ver info =%02x\n",config_ver[0]);
-	memset(fw_version, 0, sizeof(fw_version));
-	sprintf(fw_version, "[FW]0x%02x,[IC]td4310", config_ver[0]);
 	if ((tp_lockdown_info[0] == '4')&&(tp_lockdown_info[1]=='1')) {
-		init_tp_fm_info(0, fw_version, "shenchao");
 		tp_flag = 1;
-	}else{
-		init_tp_fm_info(0, fw_version, "tianma");
 	}
 
 	return retval;

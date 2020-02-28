@@ -40,7 +40,6 @@
 #if NVT_TOUCH_ESD_PROTECT
 #include <linux/jiffies.h>
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
-extern bool tianma_jdi_flag;
 #if NVT_TOUCH_ESD_PROTECT
 static struct delayed_work nvt_esd_check_work;
 static struct workqueue_struct *nvt_esd_check_wq;
@@ -1236,7 +1235,6 @@ static int32_t nvt_ts_probe(struct i2c_client *client, const struct i2c_device_i
 #if ((TOUCH_KEY_NUM > 0) || WAKEUP_GESTURE)
 	int32_t retry = 0;
 #endif
-	char fw_version[64];
 
 	NVT_LOG("start\n");
 
@@ -1442,15 +1440,6 @@ static int32_t nvt_ts_probe(struct i2c_client *client, const struct i2c_device_i
 		goto err_init_NVT_ts;
 	}
 #endif
-	if (tianma_jdi_flag == 0) {
-		memset(fw_version, 0, sizeof(fw_version));
-		sprintf(fw_version, "[FW]0x%02x,[IC]nvt36672", ts->fw_ver);
-		init_tp_fm_info(0, fw_version, "tianma");
-	} else {
-		memset(fw_version, 0, sizeof(fw_version));
-		sprintf(fw_version, "[FW]0x%02x,[IC]nvt36672", ts->fw_ver);
-		init_tp_fm_info(0, fw_version, "jdi");
-	}
 #if defined(CONFIG_FB)
 	ts->fb_notif.notifier_call = fb_notifier_callback;
 	ret = fb_register_client(&ts->fb_notif);
