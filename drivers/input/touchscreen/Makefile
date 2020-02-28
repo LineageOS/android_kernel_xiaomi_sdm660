@@ -124,12 +124,3 @@ obj-$(CONFIG_TOUCHSCREEN_NVT_F7A) 	+= nvt_touch_f7a/
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_DSX_E7S)	+= synaptics_dsx_e7s/
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_TCM_D2T) += synaptics_tcm_d2t/
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_TCM_F7A) += synaptics_tcm_f7a/
-
-# Longcheer Common
-obj-$(CONFIG_MACH_LONGCHEER)	+= lct_tp_fm_info.o
-obj-$(CONFIG_MACH_LONGCHEER)	+= lct_ctp_selftest.o
-obj-$(CONFIG_MACH_LONGCHEER)	+= lct_ctp_upgrade.o
-obj-$(CONFIG_MACH_LONGCHEER)	+= lct_if_ctp_upgrade.o
-
-# Whyred
-obj-$(CONFIG_MACH_XIAOMI_WHYRED)	+= lct_tp_gesture.o

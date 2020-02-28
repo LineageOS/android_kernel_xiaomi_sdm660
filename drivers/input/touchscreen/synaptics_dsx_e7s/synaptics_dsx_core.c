@@ -45,7 +45,6 @@
 #ifdef KERNEL_ABOVE_2_6_38
 #include <linux/input/mt.h>
 #endif
-#include "../lct_tp_gesture.h"
 
 #define INPUT_PHYS_NAME "synaptics_dsx/touch_input"
 #define STYLUS_PHYS_NAME "synaptics_dsx/stylus"
@@ -4255,27 +4254,6 @@ exit:
 }
 EXPORT_SYMBOL(synaptics_rmi4_new_function);
 
-static int lct_tp_gesture_node_callback(bool flag)
-{
-	unsigned int input;
-	if (rmi4_data->suspend) {
-		pr_err("ERROR: TP is suspend!\n");
-		return -1;
-	}
-	if(flag) {
-		synaptics_gesture_func_on = true;
-		input = 1;
-		pr_err("enable gesture mode\n");
-	} else {
-		synaptics_gesture_func_on = false;
-		input = 0;
-		pr_err("disable gesture mode\n");
-	}
-	if (rmi4_data->f11_wakeup_gesture || rmi4_data->f12_wakeup_gesture)
-		rmi4_data->enable_wakeup_gesture = input;
-	return 0;
-}
-
 static int synaptics_rmi4_probe(struct platform_device *pdev)
 {
 	int retval;
@@ -4423,11 +4401,6 @@ static int synaptics_rmi4_probe(struct platform_device *pdev)
 				goto err_virtual_buttons;
 			}
 		}
-	}
-
-	retval = init_lct_tp_gesture(lct_tp_gesture_node_callback);
-	if (retval < 0) {
-		dev_err(&pdev->dev, "Failed to add /proc/tp_gesture node!\n");
 	}
 
 	for (attr_count = 0; attr_count < ARRAY_SIZE(attrs); attr_count++) {

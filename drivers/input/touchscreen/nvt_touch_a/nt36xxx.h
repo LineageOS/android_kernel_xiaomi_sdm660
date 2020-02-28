@@ -27,12 +27,7 @@
 #endif
 
 #include "nt36xxx_mem_map.h"
-#define NVT_READ_TP_FW 		1   /* add tp-fw information by yangjiangzhu  2018/3/12 */
 
-#if	NVT_READ_TP_FW
-#include "../lct_tp_fm_info.h"
-#include "../lct_ctp_upgrade.h"
-#endif
 #define NVT_DEBUG 0
 
 
