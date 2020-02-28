@@ -1301,12 +1301,6 @@ static int fts_ts_probe(struct i2c_client *client, const struct i2c_device_id *i
     int ret = 0;
     struct fts_ts_platform_data *pdata;
     struct fts_ts_data *ts_data;
-/* add tp-fw information by yangjiangzhu  2018/3/12 start */	
-#if FTS_READ_TP_FW
-	char fw_version[64];
-	u8 regvalue = 0;
-#endif
-/* add tp-fw information by yangjiangzhu  2018/3/12 end */
 
     FTS_FUNC_ENTER();
     if (!i2c_check_functionality(client->adapter, I2C_FUNC_I2C)) {
@@ -1482,15 +1476,6 @@ if (ret) {
 	}
 #endif
 /* add tp lockdown information by yangjiangzhu  2018/5/21 end */	
-
-/* add tp-fw information by yangjiangzhu  2018/3/12 start */	
-#if FTS_READ_TP_FW
-	fts_i2c_read_reg(client,FTS_REG_FW_VER,&regvalue);
-	memset(fw_version, 0, sizeof(fw_version));
-	sprintf(fw_version, "[FW]0x%02x,[IC]ft8719", regvalue);
-	init_tp_fm_info(0, fw_version, "boe");
-#endif
-/* add tp-fw information by yangjiangzhu  2018/3/12 end */	
 
     FTS_FUNC_EXIT();
     return 0;

@@ -34,14 +34,6 @@
 #include <linux/firmware.h>
 #include "synaptics_tcm_core.h"
 
-/* add tp vendor information by wanghan add */
-#include "../lct_tp_info.h"
-/* add tp vendor information by wanghan end */
-
-/* add check F7A LCM by wanghan start */
-extern bool lct_syna_verify_flag;
-/* add check F7A LCM by wanghan end */
-
 #define STARTUP_REFLASH
 
 #define FORCE_REFLASH false
@@ -1942,27 +1934,6 @@ reflash_update(app_firmware)
 
 #define SYNA_TP_INFO_SIZE       128
 
-static int lct_syna_tp_info_update(struct syna_tcm_hcd *tcm_hcd)
-{
-	char tp_info_buf[SYNA_TP_INFO_SIZE];
-	unsigned char *image_config_id;
-	struct app_config_header *header;
-	const unsigned char *app_config_data;
-
-	LOG_ENTRY();
-	app_config_data = reflash_hcd->image_info.app_config.data;
-	header = (struct app_config_header *)app_config_data;
-	image_config_id = header->customer_config_id;
-	memset(tp_info_buf, 0, sizeof(tp_info_buf));
-	sprintf(tp_info_buf, "[Vendor]boe,[FW]0x%c%c,[IC]td4320\n",
-			image_config_id[14],
-			image_config_id[15]);
-	update_lct_tp_info(tp_info_buf, NULL);
-	LOG_DONE();
-	return 0;
-}
-/* add tp vendor information by wanghan end */
-
 static int reflash_do_reflash(void)
 {
 	int retval;
@@ -2025,12 +1996,6 @@ static int reflash_do_reflash(void)
 
 	LOGN(tcm_hcd->pdev->dev.parent,
 			"End of reflash\n");
-	/* add tp vendor information by wanghan add */
-	if (update_area != NONE) {
-		lct_syna_tp_info_update(tcm_hcd);
-		LOGV("Update /proc/tp_info\n");
-	}
-	/* add tp vendor information by wanghan end */
 
 	retval = 0;
 
@@ -2046,134 +2011,12 @@ exit:
 	return retval;
 }
 
-/* add tp vendor information by wanghan add */
-static int lct_syna_tp_lockdown_info_update(char *buf, struct syna_tcm_hcd *tcm_hcd)
-{
-	int retval;
-
-	LOG_ENTRY();
-
-	mutex_lock(&tcm_hcd->extif_mutex);
-	mutex_lock(&reflash_hcd->reflash_mutex);
-
-	retval = reflash_read_data(CUSTOM_OTP, true, NULL);
-	if (retval < 0) {
-		LOGE(tcm_hcd->pdev->dev.parent,
-				"Failed to read lockdown data\n");
-		goto exit;
-	}
-	sprintf(buf, "%02x%02x%02x%02x%02x%02x%02x\n",
-			(uint8_t)(reflash_hcd->read.buf[0]),
-			(uint8_t)(reflash_hcd->read.buf[1]),
-			(uint8_t)(reflash_hcd->read.buf[2]),
-			(uint8_t)(reflash_hcd->read.buf[3]),
-			(uint8_t)(reflash_hcd->read.buf[4]),
-			(uint8_t)(reflash_hcd->read.buf[5]),
-			(uint8_t)(reflash_hcd->read.buf[6]));
-	LOGV("get lockdown info : %s\n", buf);
-
-exit:
-	mutex_unlock(&reflash_hcd->reflash_mutex);
-	mutex_unlock(&tcm_hcd->extif_mutex);
-	LOG_DONE();
-	return 0;
-}
-
-
-#define LCT_SYNA_TP_LOCKDOWN_CALLBACK_RUN_ONLY_ONCE 1
-
-int lct_syna_tp_callback(const char *cmd)
-{
-#if LCT_SYNA_TP_LOCKDOWN_CALLBACK_RUN_ONLY_ONCE
-	static bool run_only_once_flag = false;
-#endif
-	int retval;
-	char tp_lockdown_info_buf[SYNA_TP_INFO_SIZE];
-	struct syna_tcm_hcd *tcm_hcd = reflash_hcd->tcm_hcd;
-
-	LOG_ENTRY();
-
-#if LCT_SYNA_TP_LOCKDOWN_CALLBACK_RUN_ONLY_ONCE
-	if (run_only_once_flag) return 0;
-#endif
-	if(strcmp(cmd, TP_CALLBACK_CMD_LOCKDOWN))
-		return -1;
-	memset(tp_lockdown_info_buf, 0, sizeof(tp_lockdown_info_buf));
-	retval = lct_syna_tp_lockdown_info_update(tp_lockdown_info_buf, tcm_hcd);
-	if (retval < 0) {
-		LOGE(tcm_hcd->pdev->dev.parent, "failed to get tp lockdown info!\n");
-		return retval;
-	}
-	update_lct_tp_info(NULL, tp_lockdown_info_buf);
-#if LCT_SYNA_TP_LOCKDOWN_CALLBACK_RUN_ONLY_ONCE
-	run_only_once_flag = true;
-#endif
-
-	LOG_DONE();
-	return 0;
-}
-
-static int lct_syna_tp_node_init(struct syna_tcm_hcd *tcm_hcd)
-{
-	int retval;
-	char tp_info_buf[SYNA_TP_INFO_SIZE];
-
-	LOG_ENTRY();
-
-	memset(tp_info_buf, 0, sizeof(tp_info_buf));
-	sprintf(tp_info_buf, "[Vendor]boe,[FW]0x%c%c,[IC]td4320\n",
-			tcm_hcd->app_info.customer_config_id[14],
-			tcm_hcd->app_info.customer_config_id[15]);
-	retval = init_lct_tp_info(tp_info_buf, NULL);
-	if (retval < 0) {
-		LOGE(tcm_hcd->pdev->dev.parent, "init_lct_tp_info is failed!\n");
-		return -1;
-	}
-	retval = lct_syna_tp_callback(TP_CALLBACK_CMD_LOCKDOWN);
-	if (retval) {
-		LOGV("ERROR : lct_syna_tp_callback failed!\n");
-	}
-	set_lct_tp_info_callback(lct_syna_tp_callback);
-	LOG_DONE();
-	return 0;
-}
-/* add tp vendor information by wanghan end */
-
 #ifdef STARTUP_REFLASH
 static void reflash_startup_work(struct work_struct *work)
 {
 	int retval;
-
-
-
 	struct syna_tcm_hcd *tcm_hcd = reflash_hcd->tcm_hcd;
-
 	LOG_ENTRY();
-	/* add tp vendor information by wanghan add */
-	retval = lct_syna_tp_node_init(tcm_hcd);
-	if (retval < 0){
-		LOGE(tcm_hcd->pdev->dev.parent,
-				"Failed to initializing tp_info & tp_lockdown_info node\n");
-	}
-	/* add tp vendor information by wanghan end */
-
-#ifdef CONFIG_KERNEL_CUSTOM_FACTORY
-	LOGV("Close the TP FW upgrade feature in longcheer factory version\n");
-	return;
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 	pm_stay_awake(&tcm_hcd->pdev->dev);
 
@@ -2397,10 +2240,6 @@ static int __init reflash_module_init(void)
 {
 	int retval;
 	LOG_ENTRY();
-	/* add check F7A LCM by wanghan start */
-	if(!lct_syna_verify_flag)
-		return -ENODEV;
-	/* add check F7A LCM by wanghan end */
 	LOGV("__init reflash module\n");
 	retval = syna_tcm_add_module(&reflash_module, true);
 	if (retval < 0)
