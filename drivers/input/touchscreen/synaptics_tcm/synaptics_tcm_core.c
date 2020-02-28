@@ -35,16 +35,8 @@
 #include <linux/interrupt.h>
 #include "synaptics_tcm_core.h"
 
-#ifdef CONFIG_KERNEL_CUSTOM_FACTORY
-#include "../lct_tp_work.h"
-#endif
-#include "../lct_tp_gesture.h"
-#include "../lct_tp_grip_area.h"
-
 /* add check F7A LCM by wanghan start */
 extern char g_lcd_id[128];
-bool lct_syna_verify_flag = true;
-EXPORT_SYMBOL(lct_syna_verify_flag);
 bool synaptics_gesture_enable_flag = false;
 bool gesture_delay = false;
 EXPORT_SYMBOL(synaptics_gesture_enable_flag);
@@ -3148,12 +3140,6 @@ static int syna_tcm_fb_notifier_cb(struct notifier_block *nb,
 		transition = evdata->data;
 		if (action == FB_EARLY_EVENT_BLANK) {
 			if(*transition == FB_BLANK_POWERDOWN) {
-#ifdef CONFIG_KERNEL_CUSTOM_FACTORY
-				if (!get_lct_tp_work_status()) {
-					tcm_hcd->in_suspend=true;
-					return 0;
-				}
-#endif
 				LOGV("touch early_suspend\n");
 				flush_work(&g_resume_work);
 				mutex_lock(&tcm_hcd->pm_mutex);
@@ -3165,12 +3151,6 @@ static int syna_tcm_fb_notifier_cb(struct notifier_block *nb,
 			}
 		} else if (action == FB_EVENT_BLANK) {
 			if (*transition == FB_BLANK_POWERDOWN) {
-#ifdef CONFIG_KERNEL_CUSTOM_FACTORY
-				if (!get_lct_tp_work_status()) {
-					tcm_hcd->in_suspend=true;
-					return 0;
-				}
-#endif
 				LOGV("touch suspend\n");
 				mutex_lock(&tcm_hcd->pm_mutex);
 				retval = syna_tcm_suspend(&tcm_hcd->pdev->dev);
@@ -3178,12 +3158,6 @@ static int syna_tcm_fb_notifier_cb(struct notifier_block *nb,
 				mutex_unlock(&tcm_hcd->pm_mutex);
 			} else if (*transition == FB_BLANK_UNBLANK) {
 				LOGV("touch resume\n");
-#ifdef CONFIG_KERNEL_CUSTOM_FACTORY
-				if (!get_lct_tp_work_status()) {
-					tcm_hcd->in_suspend=false;
-					return 0;
-				}
-#endif
 				schedule_work(&g_resume_work);
 			}
 		}
@@ -3232,126 +3206,6 @@ static void do_syna_resume_work(struct work_struct *work)
 	mutex_unlock(&tcm_hcd->pm_mutex);
 	LOG_DONE();
 	return;
-}
-/* add resume work by wanghan end */
-
-#ifdef CONFIG_KERNEL_CUSTOM_FACTORY
-static int lct_tp_work_node_callback(bool flag)
-{
-	int retval = 0;
-	struct syna_tcm_hcd *tcm_hcd = g_tcm_hcd;
-
-	LOG_ENTRY();
-	if (synaptics_gesture_enable_flag) {
-		LOGV("ERROR: synaptics_gesture=%d!\n", synaptics_gesture_enable_flag);
-		return -1;
-	}
-	if (tcm_hcd->in_suspend) return 0;
-	mutex_lock(&tcm_hcd->pm_mutex);
-	if (flag) {
-		tcm_hcd->in_suspend = true;
-		retval = tcm_hcd->reset(tcm_hcd, false, true);
-		if (retval < 0) LOGE(tcm_hcd->pdev->dev.parent, "Failed to do reset\n");
-		retval = syna_tcm_resume(&(tcm_hcd->pdev->dev));
-		if (retval < 0) LOGV("syna_tcm_resume Failed! retval = %d\n", retval);
-	} else {
-		flush_work(&g_resume_work);
-		retval = syna_tcm_early_suspend(&tcm_hcd->pdev->dev);
-		if (retval < 0) LOGV("syna_tcm_early_suspend Failed! retval = %d\n", retval);
-		retval = syna_tcm_suspend(&tcm_hcd->pdev->dev);
-		if (retval < 0) LOGV("syna_tcm_suspend Failed! retval = %d\n", retval);
-	}
-	tcm_hcd->in_suspend = false;
-	mutex_unlock(&tcm_hcd->pm_mutex);
-
-	LOG_DONE();
-	return retval;
-}
-#endif
-
-static int lct_tp_gesture_node_callback(bool flag)
-{
-	int retval = 0;
-	struct syna_tcm_hcd *tcm_hcd = g_tcm_hcd;
-
-	LOG_ENTRY();
-	if (tcm_hcd->in_suspend) {
-		LOGV("ERROR: TP is suspend!\n");
-		return -1;
-	}
-	if(flag) {
-		synaptics_gesture_enable_flag  = true;
-		LOGV("enable gesture mode\n");
-	} else {
-		synaptics_gesture_enable_flag = false;
-		LOGV("disable gesture mode\n");
-	}
-	LOG_DONE();
-	return retval;
-}
-
-static int lct_tp_get_screen_angle_callback(void)
-{
-	int retval = -EIO;
-	unsigned short grip_mode_var = 0;
-	struct syna_tcm_hcd *tcm_hcd = g_tcm_hcd;
-
-	if (tcm_hcd->in_suspend || tcm_hcd->upgrading) {
-		LOGV("tp is suspended or upgrading, no need to set!\n");
-		return retval;
-	}
-
-	retval = tcm_hcd->get_dynamic_config(tcm_hcd,
-			DC_Enable_Landscape_Grip_Mode,
-			&grip_mode_var);
-	if (retval < 0) {
-		LOGE(tcm_hcd->pdev->dev.parent,
-				"Failed to get dynamic config enable landscape grip mode\n");
-		goto exit;
-	}
-
-	LOGV("grip_mode_var = %d\n", grip_mode_var);
-	if (grip_mode_var == 2)
-		retval = 270;
-	else if (grip_mode_var == 3)
-		retval = 90;
-	else
-		retval = 0;
-
-exit:
-	return retval;
-}
-
-static int lct_tp_set_screen_angle_callback(unsigned int angle)
-{
-	int retval = -EIO;
-	unsigned short grip_mode_var = 0;
-	struct syna_tcm_hcd *tcm_hcd = g_tcm_hcd;
-
-	if (tcm_hcd->in_suspend || tcm_hcd->upgrading) {
-		LOGV("tp is suspended or upgrading, no need to set!\n");
-		return retval;
-	}
-
-	if (angle == 90) {
-		grip_mode_var = 2;
-	} else if (angle == 270) {
-		grip_mode_var = 3;
-	}
-	retval = tcm_hcd->set_dynamic_config(tcm_hcd,
-			DC_Enable_Landscape_Grip_Mode,
-			grip_mode_var);
-	if (retval < 0) {
-		LOGE(tcm_hcd->pdev->dev.parent,
-				"Failed to set dynamic config enable landscape grip mode\n");
-		goto exit;
-	}
-	LOGV("set dynamic config 'grip_mode_var = %d' okay!\n", grip_mode_var);
-
-	retval = 0;
-
-exit:
-	return retval;
 }
 
 static int syna_tcm_probe(struct platform_device *pdev)
@@ -3471,23 +3325,6 @@ static int syna_tcm_probe(struct platform_device *pdev)
 		LOGE(tcm_hcd->pdev->dev.parent,
 				"Failed to configure GPIO's\n");
 		goto err_config_gpio;
-	}
-
-#ifdef CONFIG_KERNEL_CUSTOM_FACTORY
-	retval = init_lct_tp_work(lct_tp_work_node_callback);
-	if (retval < 0) {
-		LOGE(tcm_hcd->pdev->dev.parent, "Failed to add /proc/tp_work node!\n");
-	}
-#endif
-
-	retval = init_lct_tp_gesture(lct_tp_gesture_node_callback);
-	if (retval < 0) {
-		LOGE(tcm_hcd->pdev->dev.parent, "Failed to add /proc/tp_gesture node!\n");
-	}
-
-	retval = init_lct_tp_grip_area(lct_tp_set_screen_angle_callback, lct_tp_get_screen_angle_callback);
-	if (retval < 0) {
-		LOGE(tcm_hcd->pdev->dev.parent, "Failed to add /proc/tp_gesture node!\n");
 	}
 
 	LOGV("create sysfs directory\n");
@@ -3698,10 +3535,6 @@ err_alloc_mem:
 
 	kfree(tcm_hcd);
 
-	/* add check F7A LCM by wanghan start */
-	lct_syna_verify_flag = false;
-	/* add check F7A LCM by wanghan end */
-
 	LOG_DONE();
 	return retval;
 }
@@ -3825,63 +3658,6 @@ static struct platform_driver syna_tcm_driver = {
 	.remove = syna_tcm_remove,
 };
 
-/* add check F7A_LCM_ID by wanghan start */
-static int lct_syna_set_gpio(int gpio, bool config)
-{
-	int retval;
-	char label[16];
-
-	LOG_ENTRY();
-	if (config) {
-		retval = snprintf(label, 16, "f7a_gpio_%d\n", gpio);
-		if (retval < 0) return retval;
-		retval = gpio_request(gpio, label);
-		if (retval < 0) return retval;
-		retval = gpio_direction_input(gpio);
-		if (retval < 0) return retval;
-	} else {
-		gpio_free(gpio);
-	}
-
-	LOG_DONE();
-	return 0;
-}
-
-int lct_syna_check_lcd(void)
-{
-	int retval;
-	int lcm_id0, lcm_id1;
-	retval = lct_syna_set_gpio(F7A_LCM_ID0, true);
-	if (retval < 0) {
-		LOGV("Failed to configure LCM_ID0 GPIO\n");
-		goto err_lcm_id0;
-	}
-	retval = lct_syna_set_gpio(F7A_LCM_ID1, true);
-	if (retval < 0) {
-		LOGV("Failed to configure LCM_ID1 GPIO\n");
-		goto err_lcm_id1;
-	}
-
-	lcm_id0 = gpio_get_value(F7A_LCM_ID0);
-	lcm_id1 = gpio_get_value(F7A_LCM_ID1);
-	LOGV("F7A_LCM_ID0 = %d, F7A_LCM_ID1 = %d\n", lcm_id0, lcm_id1);
-	if ( (lcm_id0 != F7A_LCM_ID0_STATE) || (lcm_id1 != F7A_LCM_ID1_STATE) ) {
-		retval = -ENODEV;
-		goto err_lcm;
-	}
-	LOGV("F7A LCM_ID is right!");
-	retval = 0;
-
-err_lcm:
-	lct_syna_set_gpio(F7A_LCM_ID1, false);
-err_lcm_id1:
-	lct_syna_set_gpio(F7A_LCM_ID0, false);
-err_lcm_id0:
-	return retval;
-}
-/* add check F7A_LCM_ID by wanghan end */
-
-
 #define DOES_NOT_SUPPORT_SHUTDOWN_CHARGING
 
 #ifdef DOES_NOT_SUPPORT_SHUTDOWN_CHARGING
@@ -3900,12 +3676,6 @@ static int __init syna_tcm_module_init(void)
 		goto err;
 	}
 #endif
-
-	retval = lct_syna_check_lcd();
-	if(retval < 0){
-		LOGV("Verify BOE LCM ID Failed, not BOE TP!\n");
-		goto err;
-	}
 
 	if (IS_ERR_OR_NULL(g_lcd_id)){
 		LOGV("g_lcd_id is ERROR!\n");
@@ -3931,7 +3701,6 @@ static int __init syna_tcm_module_init(void)
 	return retval;
 
 err:
-	lct_syna_verify_flag = false;
 	retval = -ENODEV;
 	return retval;
 }

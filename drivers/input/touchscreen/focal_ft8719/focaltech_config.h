@@ -162,11 +162,6 @@
 #define FTS_TP_LOCKDOWN_INFO                    1
 
 /*
-* Read TP FW information
-*/
-#define FTS_READ_TP_FW                       1    /* add tp-fw information by yangjiangzhu  2018/3/12 */	
-
-/*
  * Pinctrl enable
  * default: disable
  */

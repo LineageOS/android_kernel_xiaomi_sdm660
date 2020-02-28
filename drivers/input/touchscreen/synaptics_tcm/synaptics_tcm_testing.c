@@ -34,19 +34,8 @@
 #include "synaptics_tcm_core.h"
 #include "synaptics_tcm_testing.h"
 /* add syna tp selftest by wanghan 2018-8-21 start*/
-#include "../lct_tp_selftest.h"
 #include <asm/uaccess.h>
 /* add syna tp selftest by wanghan 2018-8-21 end*/
-
-/* add check F7A LCM by wanghan start */
-extern bool lct_syna_verify_flag;
-static int32_t lct_syna_save_rawdata_to_csv(unsigned char *buf, uint8_t x_ch, uint8_t y_ch, const char *file_path, uint32_t offset);
-#define LCT_TP_SYNA_COL          18
-#define LCT_TP_SYNA_ROW          36
-#define LCT_TP_SYNA_DYR_SCV      "/data/synaptics_test/synaptics_dynamic_range.csv"
-#define LCT_TP_SYNA_NOISE_SCV    "/data/synaptics_test/synaptics_noise.csv"
-#define LCT_TP_SYNA_PT11_SCV     "/data/synaptics_test/synaptics_pt11.csv"
-/* add check F7A LCM by wanghan end */
 
 #define SYSFS_DIR_NAME "testing"
 
@@ -914,9 +903,6 @@ static int testing_dynamic_range(void)
 		printk("\n");
 	}
 	LOGV("--------------------------------------------\n");
-	if (lct_syna_save_rawdata_to_csv(buf, LCT_TP_SYNA_COL, LCT_TP_SYNA_ROW, LCT_TP_SYNA_DYR_SCV, 0) < 0) {
-		LOGV("Save '%s' Failed!\n", LCT_TP_SYNA_DYR_SCV);
-	}
 
 	UNLOCK_BUFFER(testing_hcd->resp);
 
@@ -1134,9 +1120,6 @@ static int testing_noise(void)
 		printk("\n");
 	}
 	LOGV("--------------------------------------------\n");
-	if (lct_syna_save_rawdata_to_csv(buf, LCT_TP_SYNA_COL, LCT_TP_SYNA_ROW, LCT_TP_SYNA_NOISE_SCV, 0) < 0) {
-		LOGV("Save '%s' Failed!\n", LCT_TP_SYNA_DYR_SCV);
-	}
 
 	UNLOCK_BUFFER(testing_hcd->resp);
 
@@ -1410,9 +1393,6 @@ static int testing_pt11(void)
 		printk("\n");
 	}
 	LOGV("--------------------------------------------\n");
-	if (lct_syna_save_rawdata_to_csv(buf, LCT_TP_SYNA_COL, LCT_TP_SYNA_ROW, LCT_TP_SYNA_PT11_SCV, 0) < 0) {
-		LOGV("Save '%s' Failed!\n", LCT_TP_SYNA_DYR_SCV);
-	}
 
 	UNLOCK_BUFFER(testing_hcd->resp);
 
@@ -1906,150 +1886,12 @@ static void testing_report(void)
 	return;
 }
 
-/* add syna tp selftest by wanghan 2018-8-21 start*/
-int lct_syna_tp_selftest(unsigned char cmd)
-{
-	int retval;
-	bool drt_result, pt11_result;
-	struct syna_tcm_hcd *tcm_hcd = testing_hcd->tcm_hcd;
-
-
-	drt_result = true;
-	pt11_result = true;
-
-
-	mutex_lock(&tcm_hcd->extif_mutex);
-	retval = testing_dynamic_range();
-	mutex_unlock(&tcm_hcd->extif_mutex);
-	if (retval < 0) {
-		LOGE(tcm_hcd->pdev->dev.parent, "Failed to do testing_dynamic_range test\n");
-		return -1;
-	}
-	if(!(testing_hcd->result)) {
-		LOGE(tcm_hcd->pdev->dev.parent, "Dynamic Range Selftest Failed\n");
-		drt_result = false;
-	}
-
-
-	LOGV("Delay 1000ms\n");
-	msleep(1000);
-
-
-	mutex_lock(&tcm_hcd->extif_mutex);
-	retval = testing_pt11();
-	mutex_unlock(&tcm_hcd->extif_mutex);
-	if (retval < 0) {
-		LOGE(tcm_hcd->pdev->dev.parent, "Failed to do testing_pt11 test\n");
-		return -1;
-	}
-	if(!(testing_hcd->result)) {
-		LOGE(tcm_hcd->pdev->dev.parent, "PT11 Selftest Failed\n");
-		pt11_result = false;
-	}
-
-	if (cmd == TP_SELFTEST_CMD_LONGCHEER_MMI)
-		goto Longcheer_mmi;
-	else if (cmd == TP_SELFTEST_CMD_XIAOMI_I2C)
-		goto xiaomi_i2c;
-	else if (cmd == TP_SELFTEST_CMD_XIAOMI_OPEN)
-		goto xiaomi_open;
-	else if (cmd == TP_SELFTEST_CMD_XIAOMI_SHORT)
-		goto xiaomi_short;
-	else
-		return 0;
-
-Longcheer_mmi:
-xiaomi_i2c:
-	if (drt_result && pt11_result) {
-		LOGV("tp selftest Passed\n");
-		return 2;
-	} else {
-		LOGV("tp selftest Failed\n");
-		return 1;
-	}
-xiaomi_open:
-xiaomi_short:
-	if (pt11_result) {
-		LOGV("PT11 Test Passed\n");
-		return 2;
-	} else {
-		LOGV("PT11 Test Failed\n");
-		return 1;
-	}
-}
-
-static int32_t lct_syna_save_rawdata_to_csv(unsigned char *buf, uint8_t x_ch, uint8_t y_ch, const char *file_path, uint32_t offset)
-{
-	int retval, data;
-	loff_t pos = 0;
-	char *fbufp = NULL;
-	mm_segment_t org_fs;
-	struct file *fp = NULL;
-	uint32_t output_len = 0;
-	int32_t x = 0, y = 0, iArrayIndex = 0;
-
-	LOG_ENTRY();
-	fbufp = (char *)kzalloc(1024*8, GFP_KERNEL);
-	if (!fbufp) {
-		LOGV("kzalloc for fbufp failed!\n");
-		return -ENOMEM;
-	}
-
-	for (y = 0; y < y_ch; y++) {
-		for (x = 0; x < x_ch; x++) {
-			iArrayIndex = y * x_ch + x;
-			data = (short)le2_to_uint(&buf[iArrayIndex * 2]);
-			sprintf(fbufp + iArrayIndex * 7 + y * 2, "%5d, ", data);
-		}
-		sprintf(fbufp + (iArrayIndex + 1) * 7 + y * 2, "\r\n");
-	}
-
-	org_fs = get_fs();
-	set_fs(KERNEL_DS);
-	fp = filp_open(file_path, O_RDWR | O_CREAT, 0666);
-	if (IS_ERR_OR_NULL(fp)) {
-		LOGV("open %s failed, fp = %p\n", file_path, fp);
-		retval = -1;
-		goto err_open_fail;
-	}
-
-	output_len = y_ch * x_ch * 7 + y_ch * 2;
-
-	pos = offset;
-	retval = vfs_write(fp, (char __user *)fbufp, output_len, &pos);
-	if (retval <= 0) {
-		LOGV("write %s failed, retval = %d\n", file_path, retval);
-		retval = -1;
-		goto err_vfs_write_fail;
-	}
-
-	retval = 0;
-
-err_vfs_write_fail:
-	if (fp) {
-		filp_close(fp, NULL);
-		fp = NULL;
-	}
-err_open_fail:
-	set_fs(org_fs);
-	if (fbufp) {
-		kfree(fbufp);
-		fbufp = NULL;
-	}
-	LOG_DONE();
-	return retval;
-}
-/* add syna tp selftest by wanghan 2018-8-21 end*/
-
 static int testing_init(struct syna_tcm_hcd *tcm_hcd)
 {
 	int retval;
 	int idx;
 
 	LOG_ENTRY();
-	/* add syna tp selftest by wanghan 2018-8-21 start*/
-	lct_tp_selftest_init(lct_syna_tp_selftest);
-	/* add syna tp selftest by wanghan 2018-8-21 end*/
 	testing_hcd = kzalloc(sizeof(*testing_hcd), GFP_KERNEL);
 	if (!testing_hcd) {
 		LOGE(tcm_hcd->pdev->dev.parent,
@@ -2191,10 +2033,6 @@ static int __init testing_module_init(void)
 {
 	int retval;
 	LOG_ENTRY();
-	/* add check F7A LCM by wanghan start */
-	if(!lct_syna_verify_flag)
-		return -ENODEV;
-	/* add check F7A LCM by wanghan end */
 	LOGV("__init testing module\n");
 	retval = syna_tcm_add_module(&testing_module, true);
 	if(retval) {
