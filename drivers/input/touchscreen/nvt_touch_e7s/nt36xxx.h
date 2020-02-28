@@ -22,8 +22,6 @@
 #include <linux/i2c.h>
 #include <linux/input.h>
 #include <linux/regulator/consumer.h>
-#include "../lct_tp_fm_info.h"
-#include "../lct_ctp_upgrade.h"
 #ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
 #endif
