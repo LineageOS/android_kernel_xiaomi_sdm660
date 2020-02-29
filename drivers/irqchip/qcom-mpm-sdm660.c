@@ -15,5 +15,6 @@ const struct mpm_pin mpm_sdm660_gic_chip_data[] = {
 	{82, 380}, /* qusb2phy_intr for Dp for secondary PHY */
 	{87, 358}, /* ee0_apps_hlos_spmi_periph_irq */
 	{91, 519}, /* lpass_pmu_tmr_timeout_irq_cx */
+	{0xff, 59},
 	{-1},
 };
