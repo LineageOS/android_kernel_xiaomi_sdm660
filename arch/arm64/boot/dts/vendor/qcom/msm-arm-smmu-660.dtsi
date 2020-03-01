@@ -11,7 +11,6 @@
 		#iommu-cells = <1>;
 		qcom,skip-init;
 		qcom,use-3-lvl-tables;
-		qcom,regulator-names = "vdd";
 		#global-interrupts = <2>;
 		interrupts = <GIC_SPI 229 IRQ_TYPE_LEVEL_HIGH>,
 			     <GIC_SPI 231 IRQ_TYPE_LEVEL_HIGH>,
