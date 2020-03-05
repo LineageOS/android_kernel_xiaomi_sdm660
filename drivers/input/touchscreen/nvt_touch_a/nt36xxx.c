@@ -39,6 +39,7 @@
 #if NVT_TOUCH_ESD_PROTECT
 #include <linux/jiffies.h>
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
+
 /* add tp vendor information by yangjiangzhu  2018/3/19 start */
 extern char g_lcd_id[128];  
 /* add tp vendor information by yangjiangzhu  2018/3/19 end */
@@ -1516,6 +1517,7 @@ static int32_t nvt_ts_suspend(struct device *dev)
 	nvt_esd_check_enable(false);
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
 
+#if WAKEUP_GESTURE
 	if (enable_gesture_mode) {
 
 	buf[0] = EVENT_MAP_HOST_CMD;
@@ -1532,13 +1534,16 @@ static int32_t nvt_ts_suspend(struct device *dev)
 
 	NVT_LOG("Enabled touch wakeup gesture\n");
 	} else {
+#endif
 	disable_irq(ts->client->irq);
 
 
 	buf[0] = EVENT_MAP_HOST_CMD;
 	buf[1] = 0x11;
 	CTP_I2C_WRITE(ts->client, I2C_FW_Address, buf, 2);
+#if WAKEUP_GESTURE
 	}
+#endif
 
 	/* release all touches */
 #if MT_PROTOCOL_B
@@ -1558,7 +1563,9 @@ static int32_t nvt_ts_suspend(struct device *dev)
 	msleep(50);
 
 	mutex_unlock(&ts->lock);
+#if WAKEUP_GESTURE
 	suspend_state = true;
+#endif
 
 	NVT_LOG("end\n");
 
@@ -1590,6 +1597,7 @@ static int32_t nvt_ts_resume(struct device *dev)
 	nvt_bootloader_reset();
 	nvt_check_fw_reset_state(RESET_STATE_REK);
 
+#if WAKEUP_GESTURE
 if (delay_gesture) {
 	enable_gesture_mode = !enable_gesture_mode;
 }
@@ -1601,6 +1609,9 @@ if (!enable_gesture_mode) {
 if (delay_gesture) {
 	enable_gesture_mode = !enable_gesture_mode;
 }
+#else
+enable_irq(ts->client->irq);
+#endif
 
 #if NVT_TOUCH_ESD_PROTECT
 	queue_delayed_work(nvt_esd_check_wq, &nvt_esd_check_work,
@@ -1610,8 +1621,10 @@ if (delay_gesture) {
 	bTouchIsAwake = 1;
 
 	mutex_unlock(&ts->lock);
+#if WAKEUP_GESTURE
 	suspend_state = false;
 	delay_gesture = false;
+#endif
 
 	NVT_LOG("end\n");
 
