@@ -198,6 +198,9 @@ struct msm_camera_sensor_board_info {
 #ifdef CONFIG_MACH_LONGCHEER
 	struct msm_vendor_id_info_t *vendor_id_info;
 	struct msm_vcm_id_info_t *vcm_id_info;
+#ifdef CONFIG_MACH_XIAOMI_LAVENDER
+	struct msm_lens_id_info_t *lens_id_info;
+#endif
 #endif
 	struct msm_camera_csi_lane_params *csi_lane_params;
 	struct msm_camera_sensor_strobe_flash_data *strobe_flash_data;
