@@ -26,10 +26,6 @@
 #include "mdss_debug.h"
 #include "mdss_livedisplay.h"
 
-#ifdef CONFIG_MACH_XIAOMI_CLOVER
-#include <linux/hardware_info.h>
-#endif
-
 #define DT_CMD_HDR 6
 #define DEFAULT_MDP_TRANSFER_TIME 14000
 
@@ -3721,10 +3717,6 @@ int mdss_dsi_panel_init(struct device_node *node,
 	} else {
 		pr_info("%s: Panel Name = %s\n", __func__, panel_name);
 		strlcpy(&pinfo->panel_name[0], panel_name, MDSS_MAX_PANEL_LEN);
-
-#ifdef CONFIG_MACH_XIAOMI_CLOVER
-		get_hardware_info_data(HWID_LCM, &pinfo->panel_name[0]);
-#endif
 	}
 #ifdef CONFIG_MACH_LONGCHEER
 	if (strstr(panel_name,"tianma") == NULL)
