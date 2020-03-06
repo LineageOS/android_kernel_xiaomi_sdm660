@@ -333,6 +333,17 @@ struct msm_vcm_id_info_t {
 };
 #endif
 
+#ifdef CONFIG_MACH_XIAOMI_LAVENDER
+struct msm_lens_id_info_t {
+	unsigned short eeprom_slave_addr;
+	unsigned short lens_id_addr;
+	enum msm_camera_i2c_reg_addr_type addr_type;
+	unsigned short lens_id;
+	enum msm_camera_i2c_data_type data_type;
+	enum msm_cci_i2c_master_t cci_i2c_master;
+};
+#endif
+
 struct msm_camera_sensor_slave_info {
 	char sensor_name[32];
 	char eeprom_name[32];
@@ -347,6 +358,9 @@ struct msm_camera_sensor_slave_info {
 #ifdef CONFIG_MACH_LONGCHEER
 	struct msm_vendor_id_info_t vendor_id_info;
 	struct msm_vcm_id_info_t vcm_id_info;
+#endif
+#ifdef CONFIG_MACH_XIAOMI_LAVENDER
+	struct msm_lens_id_info_t lens_id_info;
 #endif
 	struct msm_sensor_power_setting_array power_setting_array;
 	unsigned char  is_init_params_valid;
