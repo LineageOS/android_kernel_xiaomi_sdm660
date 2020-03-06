@@ -38,6 +38,9 @@
 #include "synaptics_tcm_core.h"
 #include <linux/uaccess.h>
 #include <linux/debugfs.h>
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+#include <linux/input/tp_common.h>
+#endif
 /*#define RESET_ON_RESUME*/
 #define RESET_ON_RESUME_DELAY_MS 20
 
@@ -414,6 +417,37 @@ exit:
 
 	return retval;
 }
+
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+extern void change_double_tap_status(int enabled);
+
+static ssize_t double_tap_show(struct kobject *kobj,
+				struct kobj_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", tcm_hcd->gesture_enabled);
+}
+
+static ssize_t double_tap_store(struct kobject *kobj,
+				struct kobj_attribute *attr, const char *buf,
+				size_t count)
+{
+	int rc, val;
+
+	rc = kstrtoint(buf, 10, &val);
+	if (rc)
+		return -EINVAL;
+
+	tcm_hcd->gesture_enabled = !!val;
+	change_double_tap_status(tcm_hcd->gesture_enabled);
+
+	return count;
+}
+
+static struct tp_common_ops double_tap_ops = {
+	.show = double_tap_show,
+	.store = double_tap_store
+};
+#endif
 
 static ssize_t syna_tcm_sysfs_reset_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t count)
@@ -3534,6 +3568,15 @@ static int syna_tcm_probe(struct platform_device *pdev)
 				"Failed to configure GPIO's\n");
 		goto err_config_gpio;
 	}
+
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+	retval = tp_common_set_double_tap_ops(&double_tap_ops);
+	if (retval < 0) {
+		dev_err(&pdev->dev,
+				"%s: Failed to create double_tap node err=%d\n",
+				__func__, retval);
+	}
+#endif
 
 	sysfs_dir = kobject_create_and_add(PLATFORM_DRIVER_NAME,
 			&pdev->dev.kobj);
