@@ -151,6 +151,18 @@ static void syna_tcm_switch_mode_work(struct work_struct *work);
 
 static struct touch_hcd *touch_hcd;
 
+#ifdef CONFIG_TOUCHSCREEN_COMMON
+void change_double_tap_status(int enabled) {
+	struct touch_data *touch_data;
+
+	touch_data = &touch_hcd->touch_data;
+
+	touch_data->gesture_double_tap = enabled;
+
+	return;
+}
+#endif
+
 /**
  * touch_free_objects() - Free all touch objects
  *
