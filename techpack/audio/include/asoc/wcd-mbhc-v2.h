@@ -652,7 +652,7 @@ int wcd_mbhc_get_button_mask(struct wcd_mbhc *mbhc);
 void wcd_mbhc_report_plug(struct wcd_mbhc *mbhc, int insertion,
 			enum snd_jack_types jack_type);
 
-#if defined(CONFIG_MACH_LONGCHEER)
+#if defined(CONFIG_MACH_XIAOMI_SDM660)
 /*Add for selfie stick not work  tangshouxing 9/6*/
 void wcd_enable_mbhc_supply(struct wcd_mbhc *mbhc,
 			enum wcd_mbhc_plug_type plug_type);

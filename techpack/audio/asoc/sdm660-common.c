@@ -18,6 +18,9 @@
 #include <asoc/msm-cdc-pinctrl.h>
 #include "codecs/sdm660_cdc/msm-analog-cdc.h"
 #include "codecs/wsa881x.h"
+#ifdef CONFIG_SND_SOC_USB_HEADSET
+#include "codecs/usb-headset.h"
+#endif
 
 #define __CHIPSET__ "SDM660 "
 #define MSM_DAILINK_NAME(name) (__CHIPSET__#name)
@@ -237,7 +240,7 @@ static struct wcd_mbhc_config mbhc_cfg = {
 	.swap_gnd_mic = NULL,
 	.hs_ext_micbias = true,
 	.key_code[0] = KEY_MEDIA,
-#ifndef CONFIG_MACH_LONGCHEER
+#ifndef CONFIG_MACH_XIAOMI_SDM660
 #ifdef CONFIG_MACH_XIAOMI_CLOVER
         .key_code[1] = BTN_1,
         .key_code[2] = BTN_2,
@@ -5535,6 +5538,10 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	if (pdata->snd_card_val != INT_SND_CARD)
 		msm_ext_register_audio_notifier(pdev);
 
+#ifdef CONFIG_SND_SOC_USB_HEADSET
+	usbhs_init(pdev);
+#endif
+
 	return 0;
 err:
 	if (pdata->us_euro_gpio > 0) {
@@ -5585,6 +5592,10 @@ static int msm_asoc_machine_remove(struct platform_device *pdev)
 		audio_notifier_deregister("sdm660");
 		msm_ext_cdc_deinit(pdata);
 	}
+
+#ifdef CONFIG_SND_SOC_USB_HEADSET
+	usbhs_deinit();
+#endif
 
 	snd_soc_unregister_card(card);
 	return 0;

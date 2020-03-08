@@ -1205,6 +1205,8 @@ static void *def_msm_int_wcd_mbhc_cal(void)
 #define S(X, Y) ((WCD_MBHC_CAL_PLUG_TYPE_PTR(msm_int_wcd_cal)->X) = (Y))
 #if defined(CONFIG_MACH_LONGCHEER) || defined(CONFIG_MACH_XIAOMI_CLOVER)
 	S(v_hs_max, 1600);
+#elif defined(CONFIG_MACH_MI)
+	S(v_hs_max, 1700);
 #else
 	S(v_hs_max, 1500);
 #endif
@@ -1241,6 +1243,17 @@ static void *def_msm_int_wcd_mbhc_cal(void)
 	btn_high[3] = 500;
 	btn_low[4] = 500;
 	btn_high[4] = 500;
+#elif defined(CONFIG_MACH_MI)
+	btn_low[0] = 75;
+	btn_high[0] = 75;
+	btn_low[1] = 260;
+	btn_high[1] = 260;
+	btn_low[2] = 480;
+	btn_high[2] = 480;
+	btn_low[3] = 480;
+	btn_high[3] = 480;
+	btn_low[4] = 480;
+	btn_high[4] = 480;
 #elif defined(CONFIG_MACH_XIAOMI_CLOVER)
 	btn_low[0] = 75;
 	btn_high[0] = 75;

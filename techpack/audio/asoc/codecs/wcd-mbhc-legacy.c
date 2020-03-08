@@ -230,7 +230,7 @@ static bool wcd_is_special_headset(struct wcd_mbhc *mbhc)
 					__func__);
 			break;
 		}
-#ifdef CONFIG_MACH_LONGCHEER
+#ifdef CONFIG_MACH_XIAOMI_SDM660
 		/*Add for selfie stick not work  tangshouxing 9/6*/
 		if (mbhc->impedance_detect) {
 			mbhc->mbhc_cb->compute_impedance(mbhc,
@@ -767,7 +767,7 @@ enable_supply:
 #endif
 	if (mbhc->mbhc_cb->mbhc_micbias_control)
 		wcd_mbhc_update_fsm_source(mbhc, plug_type);
-#if defined(CONFIG_MACH_XIAOMI_WHYRED) || defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_XIAOMI_TULIP)
+#if defined(CONFIG_MACH_XIAOMI_WHYRED) || defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_XIAOMI_TULIP) || defined(CONFIG_MACH_MI)
 	else{
 		/*Add for selfie stick not work  tangshouxing 9/6*/
 		if (mbhc->impedance_detect) {
