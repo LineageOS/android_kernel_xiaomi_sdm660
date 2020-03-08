@@ -839,7 +839,7 @@ static int fg_get_msoc_raw(struct fg_chip *chip, int *val)
 
 #define FULL_CAPACITY	100
 #define FULL_SOC_RAW	255
-#if defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_MI)
+#if defined(CONFIG_MACH_XIAOMI_LAVENDER) || defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_MI)
 #define FULL_SOC_REPORT_THR 250
 #endif
 static int fg_get_msoc(struct fg_chip *chip, int *msoc)
@@ -858,7 +858,7 @@ static int fg_get_msoc(struct fg_chip *chip, int *msoc)
 	 */
 	if (*msoc == FULL_SOC_RAW)
 		*msoc = 100;
-#if defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_MI)
+#if defined(CONFIG_MACH_XIAOMI_LAVENDER) || defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_MI)
 	/*
 	 * if raw msoc is >= 250 (now actual msoc is 98%), we report 1
 	 * more percent to optimze recharge soc to 100% to improve user
@@ -2960,7 +2960,7 @@ static void status_change_work(struct work_struct *work)
 			struct fg_chip, status_change_work);
 	union power_supply_propval prop = {0, };
 	int rc, batt_temp;
-#if defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_MI)
+#if defined(CONFIG_MACH_XIAOMI_LAVENDER) || defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_MI)
 	int msoc = 0;
 #endif
 
@@ -2992,7 +2992,7 @@ static void status_change_work(struct work_struct *work)
 		goto out;
 	}
 
-#if defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_MI)
+#if defined(CONFIG_MACH_XIAOMI_LAVENDER) || defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_MI)
 	chip->charge_done = prop.intval;
 	if (chip->charge_done && !chip->report_full) {
 		chip->report_full = true;

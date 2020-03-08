@@ -486,7 +486,7 @@ struct fg_chip {
 	bool			use_ima_single_mode;
 	bool			qnovo_enable;
 	bool			suspended;
-#if defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_MI)
+#if defined(CONFIG_MACH_XIAOMI_LAVENDER) || defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_MI)
 	bool			report_full;
 #endif
 #ifdef CONFIG_MACH_MI
