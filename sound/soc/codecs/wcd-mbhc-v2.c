@@ -1,4 +1,5 @@
 /* Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -67,11 +68,15 @@
 struct switch_dev sdev;
 #endif
 static int det_extn_cable_en;
-#if defined(CONFIG_MACH_XIAOMI_WHYRED) || defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_XIAOMI_TULIP)
+#ifdef CONFIG_MACH_XIAOMI_SDM660
+#ifdef CONFIG_MACH_MI
+extern bool hs_record_active;
+#endif
 /*Add for selfie stick not work  tangshouxing 9/6*/
 static void wcd_enable_mbhc_supply(struct wcd_mbhc *mbhc,
 			enum wcd_mbhc_plug_type plug_type);
 #endif
+
 module_param(det_extn_cable_en, int,
 		S_IRUGO | S_IWUSR | S_IWGRP);
 MODULE_PARM_DESC(det_extn_cable_en, "enable/disable extn cable detect");
@@ -355,7 +360,11 @@ out_micb_en:
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_PULLUP);
 		else
 			/* enable current source and disable mb, pullup*/
+#ifdef CONFIG_MACH_MI
+			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_MB);
+#else
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_CS);
+#endif
 
 		/* configure cap settings properly when micbias is disabled */
 		if (mbhc->mbhc_cb->set_cap_mode)
@@ -375,7 +384,11 @@ out_micb_en:
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_MB);
 		else
 			/* Disable micbias, pullup & enable cs */
+#ifdef CONFIG_MACH_MI
+			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_MB);
+#else
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_CS);
+#endif
 		mutex_unlock(&mbhc->hphl_pa_lock);
 		clear_bit(WCD_MBHC_ANC0_OFF_ACK, &mbhc->hph_anc_state);
 		break;
@@ -393,7 +406,11 @@ out_micb_en:
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_MB);
 		else
 			/* Disable micbias, pullup & enable cs */
+#ifdef CONFIG_MACH_MI
+			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_MB);
+#else
 			wcd_enable_curr_micbias(mbhc, WCD_MBHC_EN_CS);
+#endif
 		mutex_unlock(&mbhc->hphr_pa_lock);
 		clear_bit(WCD_MBHC_ANC1_OFF_ACK, &mbhc->hph_anc_state);
 		break;
@@ -766,6 +783,7 @@ static void wcd_mbhc_report_plug(struct wcd_mbhc *mbhc, int insertion,
 			(!is_pa_on)) {
 				mbhc->mbhc_cb->compute_impedance(mbhc,
 						&mbhc->zl, &mbhc->zr);
+#ifndef CONFIG_MACH_MI
 			if ((mbhc->zl > mbhc->mbhc_cfg->linein_th &&
 				mbhc->zl < MAX_IMPED) &&
 				(mbhc->zr > mbhc->mbhc_cfg->linein_th &&
@@ -788,6 +806,25 @@ static void wcd_mbhc_report_plug(struct wcd_mbhc *mbhc, int insertion,
 				pr_debug("%s: Marking jack type as SND_JACK_LINEOUT\n",
 				__func__);
 			}
+#else
+			if ((jack_type == SND_JACK_UNSUPPORTED) &&
+				   mbhc->zl > 20000 &&
+				   mbhc->zr > 20000) {
+				mbhc->current_plug = MBHC_PLUG_TYPE_HEADSET;
+				mbhc->jiffies_atreport = jiffies;
+				jack_type = SND_JACK_HEADSET;
+				if (mbhc->hph_status) {
+					mbhc->hph_status &= ~(SND_JACK_LINEOUT |
+							SND_JACK_HEADPHONE |
+							SND_JACK_ANC_HEADPHONE |
+							SND_JACK_UNSUPPORTED);
+					wcd_mbhc_jack_report(mbhc,
+							&mbhc->headset_jack,
+							mbhc->hph_status,
+							WCD_MBHC_JACK_MASK);
+				}
+			}
+#endif
 		}
 
 		mbhc->hph_status |= jack_type;
@@ -916,7 +953,7 @@ static void wcd_mbhc_find_plug_and_report(struct wcd_mbhc *mbhc,
 						SND_JACK_HEADPHONE);
 			if (mbhc->current_plug == MBHC_PLUG_TYPE_HEADSET)
 				wcd_mbhc_report_plug(mbhc, 0, SND_JACK_HEADSET);
-#if defined(CONFIG_MACH_XIAOMI_WHYRED) || defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_XIAOMI_TULIP)
+#ifdef CONFIG_MACH_XIAOMI_SDM660
 			/*
 			 * calculate impedance detection
 			 * If Zl and Zr > 20k then it is special accessory
@@ -1131,7 +1168,7 @@ static bool wcd_is_special_headset(struct wcd_mbhc *mbhc)
 					__func__);
 			break;
 		}
-#ifdef CONFIG_MACH_LONGCHEER
+#ifdef CONFIG_MACH_XIAOMI_SDM660
 		/*Add for selfie stick not work  tangshouxing 9/6*/
 		if (mbhc->impedance_detect) {
 			mbhc->mbhc_cb->compute_impedance(mbhc,
@@ -1139,12 +1176,13 @@ static bool wcd_is_special_headset(struct wcd_mbhc *mbhc)
 			if ((mbhc->zl > 20000) && (mbhc->zr > 20000)) {
 				pr_debug("%s: Selfie stick detected\n",__func__);
 				break;
-
+#ifdef CONFIG_MACH_LONGCHEER
 			} else if ((mbhc->zl < 64) && (mbhc->zr > 20000)) {
 				ret = true;
 				mbhc->micbias_enable = true;
 				pr_debug("%s: Maybe special headset detected\n",__func__);
 				break;
+#endif
 			}
 		}
 #endif
@@ -1229,7 +1267,7 @@ static void wcd_enable_mbhc_supply(struct wcd_mbhc *mbhc,
 							WCD_MBHC_EN_PULLUP);
 			else
 				wcd_enable_curr_micbias(mbhc,
-#ifdef CONFIG_MACH_LONGCHEER
+#ifdef CONFIG_MACH_XIAOMI_SDM660
 							WCD_MBHC_EN_MB); /*change to vol source tsx 9/13*/
 #else
 							WCD_MBHC_EN_CS);
@@ -1603,10 +1641,14 @@ enable_supply:
 #endif
 	if (mbhc->mbhc_cb->mbhc_micbias_control)
 		wcd_mbhc_update_fsm_source(mbhc, plug_type);
-#if defined(CONFIG_MACH_XIAOMI_WHYRED) || defined(CONFIG_MACH_XIAOMI_WAYNE) || defined(CONFIG_MACH_XIAOMI_TULIP)
+#ifdef CONFIG_MACH_XIAOMI_SDM660
 	else{
 		/*Add for selfie stick not work  tangshouxing 9/6*/
-		if (mbhc->impedance_detect) {
+		if (mbhc->impedance_detect
+#ifdef CONFIG_MACH_MI
+			&& !hs_record_active
+#endif
+		) {
 			mbhc->mbhc_cb->compute_impedance(mbhc,
 			&mbhc->zl, &mbhc->zr);
 				if ((mbhc->zl > 20000) && (mbhc->zr > 20000)) {
@@ -1721,6 +1763,14 @@ static void wcd_mbhc_swch_irq_handler(struct wcd_mbhc *mbhc)
 	WCD_MBHC_RSC_LOCK(mbhc);
 
 	mbhc->in_swch_irq_handler = true;
+
+#ifdef CONFIG_MACH_MI
+	/*QCOM FSM can not close corretly,when make a call.
+	  Disable FSM when the mbhc irq is detected */
+	/* Disable HW FSM */
+	WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_FSM_EN, 0);
+	WCD_MBHC_REG_UPDATE_BITS(WCD_MBHC_BTN_ISRC_CTL, 0);
+#endif
 
 	/* cancel pending button press */
 	if (wcd_cancel_btn_work(mbhc))

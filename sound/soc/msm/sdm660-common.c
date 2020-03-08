@@ -1,4 +1,5 @@
 /* Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2019 XiaoMi, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -21,6 +22,9 @@
 #include "sdm660-external.h"
 #include "../codecs/sdm660_cdc/msm-analog-cdc.h"
 #include "../codecs/wsa881x.h"
+#ifdef CONFIG_SND_SOC_USB_HEADSET
+#include "../codecs/usb-headset.h"
+#endif
 
 #define __CHIPSET__ "SDM660 "
 #define MSM_DAILINK_NAME(name) (__CHIPSET__#name)
@@ -203,7 +207,7 @@ static struct wcd_mbhc_config mbhc_cfg = {
 	.swap_gnd_mic = NULL,
 	.hs_ext_micbias = true,
 	.key_code[0] = KEY_MEDIA,
-#ifndef CONFIG_MACH_LONGCHEER
+#ifndef CONFIG_MACH_XIAOMI_SDM660
 	.key_code[1] = KEY_VOICECOMMAND,
 	.key_code[2] = KEY_VOLUMEUP,
 	.key_code[3] = KEY_VOLUMEDOWN,
@@ -3302,6 +3306,10 @@ static int msm_asoc_machine_probe(struct platform_device *pdev)
 	if (pdata->snd_card_val != INT_SND_CARD)
 		msm_ext_register_audio_notifier(pdev);
 
+#ifdef CONFIG_SND_SOC_USB_HEADSET
+	usbhs_init(pdev);
+#endif
+
 	return 0;
 err:
 	if (pdata->us_euro_gpio > 0) {
@@ -3337,6 +3345,9 @@ static int msm_asoc_machine_remove(struct platform_device *pdev)
 	else
 		msm_ext_cdc_deinit(pdata);
 	msm_free_auxdev_mem(pdev);
+#ifdef CONFIG_SND_SOC_USB_HEADSET
+	usbhs_deinit();
+#endif
 
 	gpio_free(pdata->us_euro_gpio);
 	gpio_free(pdata->hph_en1_gpio);
