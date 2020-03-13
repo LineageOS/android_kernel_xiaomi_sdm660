@@ -1669,6 +1669,11 @@ static void lim_process_addba_req(struct mac_context *mac_ctx, uint8_t *rx_pkt_i
 		pe_warn("warning: unpack addba Req(0x%08x, %d bytes)",
 			status, frame_len);
 	}
+	pe_debug("token %d tid %d timeout %d buff_size %d ssn %d",
+		 addba_req->DialogToken.token, addba_req->addba_param_set.tid,
+		 addba_req->ba_timeout.timeout,
+		 addba_req->addba_param_set.buff_size,
+		 addba_req->ba_start_seq_ctrl.ssn);
 
 	peer = cdp_peer_get_ref_by_addr(soc, pdev, mac_hdr->sa, &peer_id,
 					PEER_DEBUG_ID_WMA_ADDBA_REQ);
@@ -1690,7 +1695,8 @@ static void lim_process_addba_req(struct mac_context *mac_ctx, uint8_t *rx_pkt_i
 			addba_req->addba_param_set.tid,
 			session,
 			addba_req->addba_extn_element.present,
-			addba_req->addba_param_set.amsdu_supp);
+			addba_req->addba_param_set.amsdu_supp,
+			mac_hdr->fc.wep);
 		if (qdf_status != QDF_STATUS_SUCCESS) {
 			pe_err("Failed to send addba response frame");
 			cdp_addba_resp_tx_completion(soc, peer,
