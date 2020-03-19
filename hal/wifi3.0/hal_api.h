@@ -370,7 +370,7 @@ static inline void hal_write_address_32_mb(struct hal_soc *hal_soc,
 		hal_write32_mb(hal_soc, offset, value);
 }
 
-#if defined(FEATURE_HAL_DELAYED_WRITE)
+#if defined(FEATURE_HAL_DELAYED_REG_WRITE)
 static inline void hal_srng_write_address_32_mb(struct hal_soc *hal_soc,
 						struct hal_srng *srng,
 						void __iomem *addr,
