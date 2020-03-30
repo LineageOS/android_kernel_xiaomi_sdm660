@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2020 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -39,6 +39,7 @@
 #include "hif.h"
 #include "multibus.h"
 #include "hif_unit_test_suspend_i.h"
+#include "qdf_cpuhp.h"
 
 #define HIF_MIN_SLEEP_INACTIVITY_TIME_MS     50
 #define HIF_SLEEP_INACTIVITY_TIMER_PERIOD_MS 60
@@ -208,6 +209,10 @@ struct hif_softc {
 
 #ifdef IPA_OFFLOAD
 	qdf_shared_mem_t *ipa_ce_ring;
+#endif
+#ifdef HIF_CPU_PERF_AFFINE_MASK
+	/* The CPU hotplug event registration handle */
+	struct qdf_cpuhp_handler *cpuhp_event_handle;
 #endif
 };
 

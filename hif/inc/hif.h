@@ -38,6 +38,7 @@ extern "C" {
 #ifdef IPA_OFFLOAD
 #include <linux/ipa.h>
 #endif
+#include "qdf_dev.h"
 #define ENABLE_MBOX_DUMMY_SPACE_FEATURE 1
 
 typedef void __iomem *A_target_id_t;
@@ -127,13 +128,9 @@ struct CE_state;
 #endif
 
 #ifndef NAPI_YIELD_BUDGET_BASED
-#ifdef HIF_CONFIG_SLUB_DEBUG_ON
-#define QCA_NAPI_DEF_SCALE_BIN_SHIFT 3
-#else
 #ifndef QCA_NAPI_DEF_SCALE_BIN_SHIFT
 #define QCA_NAPI_DEF_SCALE_BIN_SHIFT   4
 #endif
-#endif /* SLUB_DEBUG_ON */
 #else  /* NAPI_YIELD_BUDGET_BASED */
 #define QCA_NAPI_DEF_SCALE_BIN_SHIFT 2
 #endif /* NAPI_YIELD_BUDGET_BASED */
@@ -1331,4 +1328,24 @@ uint8_t *hif_log_dump_ce(struct hif_softc *scn, uint8_t *buf_cur,
 			 uint8_t *buf_init, uint32_t buf_sz,
 			 uint32_t ce, uint32_t skb_sz);
 #endif /* OL_ATH_SMART_LOGGING */
+
+#ifdef HIF_CPU_PERF_AFFINE_MASK
+/**
+ * hif_config_irq_set_perf_affinity_hint() - API to set affinity
+ * @hif_ctx: hif opaque handle
+ *
+ * This function is used to move the WLAN IRQs to perf cores in
+ * case of defconfig builds.
+ *
+ * Return:  None
+ */
+void hif_config_irq_set_perf_affinity_hint(
+	struct hif_opaque_softc *hif_ctx);
+
+#else
+static inline void hif_config_irq_set_perf_affinity_hint(
+	struct hif_opaque_softc *hif_ctx)
+{
+}
+#endif
 #endif /* _HIF_H_ */
