@@ -90,8 +90,20 @@
 			__last_ticks = __ticks;\
 		} \
 	} while (0)
+
+#define __QDF_TRACE_HEX_DUMP_RATE_LIMITED(params...)\
+	do {\
+		static ulong __last_ticks;\
+		ulong __ticks = jiffies;\
+		if (time_after(__ticks,\
+			       __last_ticks + HZ / QDF_MAX_LOGS_PER_SEC)) {\
+			QDF_TRACE_HEX_DUMP(params);\
+			__last_ticks = __ticks;\
+		} \
+	} while (0)
 #else
 #define __QDF_TRACE_RATE_LIMITED(arg ...)
+#define __QDF_TRACE_HEX_DUMP_RATE_LIMITED(arg ...)
 #endif
 
 #define __QDF_TRACE_NO_FL(log_level, module_id, format, args...) \
@@ -106,6 +118,9 @@
 #define __QDF_TRACE_RL_NO_FL(log_level, module_id, format, args...) \
 	__QDF_TRACE_RATE_LIMITED(module_id, log_level, format, ## args)
 
+#define __QDF_TRACE_HEX_DUMP_RL(log_level, module_id, args...) \
+	__QDF_TRACE_HEX_DUMP_RATE_LIMITED(module_id, log_level, ## args)
+
 static inline void __qdf_trace_noop(QDF_MODULE_ID module, char *format, ...) { }
 static inline void __qdf_trace_dummy(QDF_MODULE_ID module,
 				     QDF_TRACE_LEVEL level,
@@ -117,7 +132,6 @@ static inline void __qdf_trace_hexdump_dummy(QDF_MODULE_ID module,
 					     QDF_TRACE_LEVEL level,
 					     void *data, int buf_len) { }
 
-
 #ifdef WLAN_LOG_FATAL
 #define QDF_TRACE_FATAL(params...) \
 	__QDF_TRACE_FL(QDF_TRACE_LEVEL_FATAL, ## params)
@@ -127,11 +141,14 @@ static inline void __qdf_trace_hexdump_dummy(QDF_MODULE_ID module,
 	__QDF_TRACE_RL(QDF_TRACE_LEVEL_FATAL, ## params)
 #define QDF_TRACE_FATAL_RL_NO_FL(params...) \
 	__QDF_TRACE_RL_NO_FL(QDF_TRACE_LEVEL_FATAL, ## params)
+#define QDF_TRACE_HEX_DUMP_FATAL_RL(params...) \
+	__QDF_TRACE_HEX_DUMP_RL(QDF_TRACE_LEVEL_FATAL, ## params)
 #else
 #define QDF_TRACE_FATAL(params...) __qdf_trace_noop(params)
 #define QDF_TRACE_FATAL_NO_FL(params...) __qdf_trace_noop(params)
 #define QDF_TRACE_FATAL_RL(params...) __qdf_trace_noop(params)
 #define QDF_TRACE_FATAL_RL_NO_FL(params...) __qdf_trace_noop(params)
+#define QDF_TRACE_HEX_DUMP_FATAL_RL(params...) __qdf_trace_noop(params)
 #endif
 
 #ifdef WLAN_LOG_ERROR
@@ -143,11 +160,14 @@ static inline void __qdf_trace_hexdump_dummy(QDF_MODULE_ID module,
 	__QDF_TRACE_RL(QDF_TRACE_LEVEL_ERROR, ## params)
 #define QDF_TRACE_ERROR_RL_NO_FL(params...) \
 	__QDF_TRACE_RL_NO_FL(QDF_TRACE_LEVEL_ERROR, ## params)
+#define QDF_TRACE_HEX_DUMP_ERROR_RL(params...) \
+	__QDF_TRACE_HEX_DUMP_RL(QDF_TRACE_LEVEL_ERROR, ## params)
 #else
 #define QDF_TRACE_ERROR(params...) __qdf_trace_noop(params)
 #define QDF_TRACE_ERROR_NO_FL(params...) __qdf_trace_noop(params)
 #define QDF_TRACE_ERROR_RL(params...) __qdf_trace_noop(params)
 #define QDF_TRACE_ERROR_RL_NO_FL(params...) __qdf_trace_noop(params)
+#define QDF_TRACE_HEX_DUMP_ERROR_RL(params...) __qdf_trace_noop(params)
 #endif
 
 #ifdef WLAN_LOG_WARN
@@ -159,11 +179,14 @@ static inline void __qdf_trace_hexdump_dummy(QDF_MODULE_ID module,
 	__QDF_TRACE_RL(QDF_TRACE_LEVEL_WARN, ## params)
 #define QDF_TRACE_WARN_RL_NO_FL(params...) \
 	__QDF_TRACE_RL_NO_FL(QDF_TRACE_LEVEL_WARN, ## params)
+#define QDF_TRACE_HEX_DUMP_WARN_RL(params...) \
+	__QDF_TRACE_HEX_DUMP_RL(QDF_TRACE_LEVEL_WARN, ## params)
 #else
 #define QDF_TRACE_WARN(params...) __qdf_trace_noop(params)
 #define QDF_TRACE_WARN_NO_FL(params...) __qdf_trace_noop(params)
 #define QDF_TRACE_WARN_RL(params...) __qdf_trace_noop(params)
 #define QDF_TRACE_WARN_RL_NO_FL(params...) __qdf_trace_noop(params)
+#define QDF_TRACE_HEX_DUMP_WARN_RL(params...) __qdf_trace_noop(params)
 #endif
 
 #ifdef WLAN_LOG_INFO
@@ -175,11 +198,14 @@ static inline void __qdf_trace_hexdump_dummy(QDF_MODULE_ID module,
 	__QDF_TRACE_RL(QDF_TRACE_LEVEL_INFO, ## params)
 #define QDF_TRACE_INFO_RL_NO_FL(params...) \
 	__QDF_TRACE_RL_NO_FL(QDF_TRACE_LEVEL_INFO, ## params)
+#define QDF_TRACE_HEX_DUMP_INFO_RL(params...) \
+	__QDF_TRACE_HEX_DUMP_RL(QDF_TRACE_LEVEL_INFO, ## params)
 #else
 #define QDF_TRACE_INFO(params...) __qdf_trace_noop(params)
 #define QDF_TRACE_INFO_NO_FL(params...) __qdf_trace_noop(params)
 #define QDF_TRACE_INFO_RL(params...) __qdf_trace_noop(params)
 #define QDF_TRACE_INFO_RL_NO_FL(params...) __qdf_trace_noop(params)
+#define QDF_TRACE_HEX_DUMP_INFO_RL(params...) __qdf_trace_noop(params)
 #endif
 
 #ifdef WLAN_LOG_DEBUG
@@ -191,11 +217,14 @@ static inline void __qdf_trace_hexdump_dummy(QDF_MODULE_ID module,
 	__QDF_TRACE_RL(QDF_TRACE_LEVEL_DEBUG, ## params)
 #define QDF_TRACE_DEBUG_RL_NO_FL(params...) \
 	__QDF_TRACE_RL_NO_FL(QDF_TRACE_LEVEL_DEBUG, ## params)
+#define QDF_TRACE_HEX_DUMP_DEBUG_RL(params...) \
+	__QDF_TRACE_HEX_DUMP_RL(QDF_TRACE_LEVEL_DEBUG, ## params)
 #else
 #define QDF_TRACE_DEBUG(params...) __qdf_trace_noop(params)
 #define QDF_TRACE_DEBUG_NO_FL(params...) __qdf_trace_noop(params)
 #define QDF_TRACE_DEBUG_RL(params...) __qdf_trace_noop(params)
 #define QDF_TRACE_DEBUG_RL_NO_FL(params...) __qdf_trace_noop(params)
+#define QDF_TRACE_HEX_DUMP_DEBUG_RL(params...) __qdf_trace_noop(params)
 #endif
 
 #ifdef WLAN_LOG_ENTER
