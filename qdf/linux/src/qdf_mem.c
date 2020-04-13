@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020 The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -34,6 +34,7 @@
 #include <linux/debugfs.h>
 #include <linux/seq_file.h>
 #include <linux/string.h>
+#include <qdf_list.h>
 
 #if defined(CONFIG_CNSS)
 #include <net/cnss.h>
@@ -50,7 +51,6 @@
 
 #ifdef MEMORY_DEBUG
 #include "qdf_debug_domain.h"
-#include <qdf_list.h>
 
 static qdf_list_t qdf_mem_domains[QDF_DEBUG_DOMAIN_COUNT];
 static qdf_spinlock_t qdf_mem_list_lock;
@@ -249,6 +249,40 @@ u_int8_t prealloc_disabled = 1;
 qdf_declare_param(prealloc_disabled, byte);
 qdf_export_symbol(prealloc_disabled);
 
+/**
+ * struct __qdf_mem_info - memory statistics
+ * @func: the function which allocated memory
+ * @line: the line at which allocation happened
+ * @size: the size of allocation
+ * @caller: Address of the caller function
+ * @count: how many allocations of same type
+ * @time: timestamp at which allocation happened
+ */
+struct __qdf_mem_info {
+	char func[QDF_MEM_FUNC_NAME_SIZE];
+	uint32_t line;
+	uint32_t size;
+	void *caller;
+	uint32_t count;
+	uint64_t time;
+};
+
+static struct __qdf_mem_stat {
+	qdf_atomic_t kmalloc;
+	qdf_atomic_t dma;
+	qdf_atomic_t skb;
+} qdf_mem_stat;
+
+void qdf_mem_skb_inc(qdf_size_t size)
+{
+	qdf_atomic_add(size, &qdf_mem_stat.skb);
+}
+
+void qdf_mem_skb_dec(qdf_size_t size)
+{
+	qdf_atomic_sub(size, &qdf_mem_stat.skb);
+}
+
 #if defined WLAN_DEBUGFS
 
 /* Debugfs root directory for qdf_mem */
@@ -260,25 +294,10 @@ static struct dentry *qdf_mem_debugfs_root;
  * @dma:	total dma allocations
  * @skb:	total skb allocations
  */
-static struct __qdf_mem_stat {
-	qdf_atomic_t kmalloc;
-	qdf_atomic_t dma;
-	qdf_atomic_t skb;
-} qdf_mem_stat;
 
 void qdf_mem_kmalloc_inc(qdf_size_t size)
 {
 	qdf_atomic_add(size, &qdf_mem_stat.kmalloc);
-}
-
-static void qdf_mem_dma_inc(qdf_size_t size)
-{
-	qdf_atomic_add(size, &qdf_mem_stat.dma);
-}
-
-void qdf_mem_skb_inc(qdf_size_t size)
-{
-	qdf_atomic_add(size, &qdf_mem_stat.skb);
 }
 
 void qdf_mem_kmalloc_dec(qdf_size_t size)
@@ -286,15 +305,16 @@ void qdf_mem_kmalloc_dec(qdf_size_t size)
 	qdf_atomic_sub(size, &qdf_mem_stat.kmalloc);
 }
 
+static void qdf_mem_dma_inc(qdf_size_t size)
+{
+	qdf_atomic_add(size, &qdf_mem_stat.dma);
+}
+
 static inline void qdf_mem_dma_dec(qdf_size_t size)
 {
 	qdf_atomic_sub(size, &qdf_mem_stat.dma);
 }
 
-void qdf_mem_skb_dec(qdf_size_t size)
-{
-	qdf_atomic_sub(size, &qdf_mem_stat.skb);
-}
 
 #ifdef MEMORY_DEBUG
 static int qdf_err_printer(void *priv, const char *fmt, ...)
@@ -320,24 +340,6 @@ static int seq_printf_printer(void *priv, const char *fmt, ...)
 
 	return 0;
 }
-
-/**
- * struct __qdf_mem_info - memory statistics
- * @func: the function which allocated memory
- * @line: the line at which allocation happened
- * @size: the size of allocation
- * @caller: Address of the caller function
- * @count: how many allocations of same type
- * @time: timestamp at which allocation happened
- */
-struct __qdf_mem_info {
-	char func[QDF_MEM_FUNC_NAME_SIZE];
-	uint32_t line;
-	uint32_t size;
-	void *caller;
-	uint32_t count;
-	uint64_t time;
-};
 
 /*
  * The table depth defines the de-duplication proximity scope.
@@ -644,6 +646,10 @@ static QDF_STATUS qdf_mem_debugfs_init(void)
 
 static inline void qdf_mem_dma_inc(qdf_size_t size) {}
 static inline void qdf_mem_dma_dec(qdf_size_t size) {}
+static
+inline void qdf_mem_domain_print(qdf_list_t *domain,
+				 qdf_abstract_print print,
+				 void *print_priv) {}
 
 static QDF_STATUS qdf_mem_debugfs_init(void)
 {
