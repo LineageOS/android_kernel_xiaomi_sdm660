@@ -38,10 +38,12 @@ struct msm_camera_sensor_slave_info32 {
 	enum msm_camera_i2c_reg_addr_type addr_type;
 	struct msm_sensor_id_info_t sensor_id_info;
 #ifdef CONFIG_MACH_LONGCHEER
+#ifndef CONFIG_MACH_XIAOMI_WAYNE
 	struct msm_vendor_id_info_t vendor_id_info;
 	struct msm_vcm_id_info_t vcm_id_info;
 #ifdef CONFIG_MACH_XIAOMI_LAVENDER
 	struct msm_lens_id_info_t lens_id_info;
+#endif
 #endif
 #endif
 	struct msm_sensor_power_setting_array32 power_setting_array;
@@ -49,6 +51,10 @@ struct msm_camera_sensor_slave_info32 {
 	struct msm_sensor_init_params sensor_init_params;
 	enum msm_sensor_output_format_t output_format;
 	uint8_t bypass_video_node_creation;
+#ifdef CONFIG_MACH_XIAOMI_WAYNE
+	struct msm_vendor_id_info_t vendor_id_info;
+	struct msm_vcm_id_info_t vcm_id_info;
+#endif
 };
 
 struct msm_camera_csid_lut_params32 {
