@@ -55,6 +55,14 @@ config QPNP_HAPTIC
 	  module provides haptic feedback for user actions such as a long press
 	  on the touch screen.  It uses the Android timed-output framework.
 
+config MI_HAPTICS
+	tristate "Haptic support for Xiaomi Haptics"
+	depends on QPNP_HAPTIC
+	default n
+	help
+	  This option enables device driver support for the haptic peripheral
+	  found on Xiaomi MiCode Releases.
+
 config QPNP_PBS
 	tristate "PBS trigger support for QPNP PMIC"
 	depends on SPMI
