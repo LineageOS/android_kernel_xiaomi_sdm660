@@ -943,8 +943,8 @@ dp_rx_null_q_desc_handle(struct dp_soc *soc, qdf_nbuf_t nbuf,
 	else
 		qdf_nbuf_pull_head(nbuf, (l2_hdr_offset + RX_PKT_TLVS_LEN));
 
-	if (hal_rx_msdu_end_sa_is_valid_get(soc->hal_soc, rx_tlv_hdr)) {
-		sa_idx = hal_rx_msdu_end_sa_idx_get(soc->hal_soc, rx_tlv_hdr);
+	if (hal_rx_msdu_end_sa_is_valid_get(rx_tlv_hdr)) {
+		sa_idx = hal_rx_msdu_end_sa_idx_get(rx_tlv_hdr);
 
 		if ((sa_idx < 0) ||
 		    (sa_idx >= wlan_cfg_get_max_ast_idx(soc->wlan_cfg_ctx))) {
