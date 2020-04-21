@@ -2580,28 +2580,26 @@ dp_rx_nbuf_prepare(struct dp_soc *soc, struct dp_pdev *pdev)
 
 #ifdef DP_RX_SPECIAL_FRAME_NEED
 bool dp_rx_deliver_special_frame(struct dp_soc *soc, struct dp_peer *peer,
-				 qdf_nbuf_t nbuf, uint32_t frame_mask)
+				 qdf_nbuf_t nbuf, uint32_t frame_mask,
+				 uint8_t *rx_tlv_hdr)
 {
 	uint32_t l2_hdr_offset = 0;
 	uint16_t msdu_len = 0;
-	uint32_t pkt_len = 0;
-	uint8_t *rx_tlv_hdr;
+	uint32_t skip_len;
 
-	if (qdf_unlikely(qdf_nbuf_is_frag(nbuf)))
-		return false;
-
-	rx_tlv_hdr = qdf_nbuf_data(nbuf);
 	l2_hdr_offset =
 		hal_rx_msdu_end_l3_hdr_padding_get(rx_tlv_hdr);
 
-	msdu_len = QDF_NBUF_CB_RX_PKT_LEN(nbuf);
-	pkt_len = msdu_len + l2_hdr_offset + RX_PKT_TLVS_LEN;
-	QDF_NBUF_CB_RX_NUM_ELEMENTS_IN_LIST(nbuf) = 1;
+	if (qdf_unlikely(qdf_nbuf_is_frag(nbuf))) {
+		skip_len = l2_hdr_offset;
+	} else {
+		msdu_len = QDF_NBUF_CB_RX_PKT_LEN(nbuf);
+		skip_len = l2_hdr_offset + RX_PKT_TLVS_LEN;
+		qdf_nbuf_set_pktlen(nbuf, msdu_len + skip_len);
+	}
 
-	qdf_nbuf_set_pktlen(nbuf, pkt_len);
-	qdf_nbuf_pull_head(nbuf,
-			   RX_PKT_TLVS_LEN +
-			   l2_hdr_offset);
+	QDF_NBUF_CB_RX_NUM_ELEMENTS_IN_LIST(nbuf) = 1;
+	qdf_nbuf_pull_head(nbuf, skip_len);
 
 	if (dp_rx_is_special_frame(nbuf, frame_mask)) {
 		dp_rx_deliver_to_stack(soc, peer->vdev, peer,
