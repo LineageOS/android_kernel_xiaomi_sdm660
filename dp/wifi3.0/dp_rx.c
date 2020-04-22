@@ -2276,7 +2276,7 @@ QDF_STATUS dp_rx_vdev_detach(struct dp_vdev *vdev)
 
 	if (vdev->osif_rx_flush) {
 		ret = vdev->osif_rx_flush(vdev->osif_vdev, vdev->vdev_id);
-		if (!ret) {
+		if (!QDF_IS_STATUS_SUCCESS(ret)) {
 			dp_err("Failed to flush rx pkts for vdev %d\n",
 			       vdev->vdev_id);
 			return ret;
