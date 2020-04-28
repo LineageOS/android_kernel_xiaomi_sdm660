@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2c2a2f99_5fc5ee40",
+        "filename": "include/media/msm_cam_sensor.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 10258
+      },
+      "writtenOn": "2020-04-28T08:22:05Z",
+      "side": 1,
+      "message": "replace with independent device flags to simplify?",
+      "range": {
+        "startLine": 40,
+        "startChar": 0,
+        "endLine": 41,
+        "endChar": 32
+      },
+      "revId": "ca02fa15273504230b48ad3b1e79981475af575a",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c7307f97_1760df24",
+        "filename": "include/uapi/media/msm_camsensor_sdk.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 10258
+      },
+      "writtenOn": "2020-04-28T08:22:05Z",
+      "side": 1,
+      "message": "ditto",
+      "range": {
+        "startLine": 352,
+        "startChar": 0,
+        "endLine": 353,
+        "endChar": 32
+      },
+      "revId": "ca02fa15273504230b48ad3b1e79981475af575a",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
