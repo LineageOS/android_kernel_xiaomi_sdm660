@@ -115,6 +115,8 @@ static irqreturn_t fpc1020_irq_handler(int irq, void *handle);
 static int fpc1020_request_named_gpio(struct fpc1020_data *fpc1020,
 	const char *label, int *gpio);
 
+static struct kernfs_node *soc_symlink = NULL;
+
 static int vreg_setup(struct fpc1020_data *fpc1020, const char *name,
 	bool enable)
 {
@@ -809,6 +811,9 @@ static int fpc1020_probe(struct platform_device *pdev)
 	struct device *dev = &pdev->dev;
 	int rc = 0;
 	size_t i;
+	struct device *platform_dev;
+	struct kobject *soc_kobj;
+	struct kernfs_node *devices_node, *soc_node;
 	struct device_node *np = dev->of_node;
 	struct fpc1020_data *fpc1020 = devm_kzalloc(dev, sizeof(*fpc1020),
 			GFP_KERNEL);
@@ -902,6 +907,28 @@ static int fpc1020_probe(struct platform_device *pdev)
 		(void)device_prepare(fpc1020, true);
 	}
 
+	if (!dev->parent || !dev->parent->parent) {
+		dev_warn(dev, "Parent platform device not found\n");
+		goto exit;
+	}
+
+	platform_dev = dev->parent->parent;
+	if (strcmp(kobject_name(&platform_dev->kobj), "platform")) {
+		dev_warn(dev, "Parent platform device name not matched: %s\n",
+			 kobject_name(&platform_dev->kobj));
+		goto exit;
+	}
+
+	devices_node = platform_dev->kobj.sd->parent;
+	soc_kobj = &dev->parent->kobj;
+	soc_node = soc_kobj->sd;
+	kernfs_get(soc_node);
+	soc_symlink = kernfs_create_link(devices_node, kobject_name(soc_kobj), soc_node);
+	kernfs_put(soc_node);
+
+	if (IS_ERR(soc_symlink))
+		dev_warn(dev, "Unable to create soc symlink\n");
+
 	dev_info(dev, "%s: ok\n", __func__);
 	fpc1020->fb_black = false;
 	fpc1020->wait_finger_down = false;
@@ -917,6 +944,8 @@ static int fpc1020_remove(struct platform_device *pdev)
 {
 	struct fpc1020_data *fpc1020 = platform_get_drvdata(pdev);
 
+	if (!IS_ERR(soc_symlink))
+		kernfs_remove_by_name(soc_symlink->parent, soc_symlink->name);
 	fb_unregister_client(&fpc1020->fb_notifier);
 	sysfs_remove_group(&pdev->dev.kobj, &attribute_group);
 	mutex_destroy(&fpc1020->lock);
