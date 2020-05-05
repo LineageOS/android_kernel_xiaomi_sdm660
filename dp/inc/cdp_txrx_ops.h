@@ -1264,12 +1264,15 @@ struct cdp_ipa_ops {
  * @bus_suspend:
  * @bus_resume:
  * @process_wow_ack_rsp: handler for wow ack response
+ * @process_target_suspend_req: handler for target suspend request
  */
 struct cdp_bus_ops {
 	QDF_STATUS (*bus_suspend)(struct cdp_pdev *opaque_pdev);
 	QDF_STATUS (*bus_resume)(struct cdp_pdev *opaque_pdev);
 	void (*process_wow_ack_rsp)(struct cdp_soc_t *soc_hdl,
 				    struct cdp_pdev *opaque_pdev);
+	void (*process_target_suspend_req)(struct cdp_soc_t *soc_hdl,
+					   struct cdp_pdev *opaque_pdev);
 };
 
 /**
