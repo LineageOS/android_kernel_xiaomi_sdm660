@@ -1800,7 +1800,7 @@ PLD_OBJS +=     $(PLD_SRC_DIR)/pld_pcie.o
 endif
 ifeq ($(CONFIG_SNOC_FW_SIM),y)
 PLD_OBJS +=     $(PLD_SRC_DIR)/pld_snoc_fw_sim.o
-else ifeq ($(CONFIG_ICNSS),y)
+else ifeq (y,$(findstring y, $(CONFIG_ICNSS) $(CONFIG_ICNSS_MODULE)))
 PLD_OBJS +=     $(PLD_SRC_DIR)/pld_snoc.o
 endif
 
@@ -2148,7 +2148,7 @@ cppflags-y += -DFEATURE_RUNTIME_PM
 endif
 endif
 
-ifeq ($(CONFIG_ICNSS), y)
+ifeq (y,$(findstring y, $(CONFIG_ICNSS) $(CONFIG_ICNSS_MODULE)))
 ifeq ($(CONFIG_SNOC_FW_SIM), y)
 cppflags-y += -DCONFIG_PLD_SNOC_FW_SIM
 else

@@ -24,7 +24,7 @@
 #include <linux/pm.h>
 #include <osapi_linux.h>
 
-#ifdef CONFIG_CNSS_UTILS
+#if IS_ENABLED(CONFIG_CNSS_UTILS)
 #include <net/cnss_utils.h>
 #endif
 
@@ -416,7 +416,7 @@ void pld_is_pci_link_down(struct device *dev);
 int pld_shadow_control(struct device *dev, bool enable);
 void pld_schedule_recovery_work(struct device *dev,
 				enum pld_recovery_reason reason);
-#ifdef CONFIG_CNSS_UTILS
+#if IS_ENABLED(CONFIG_CNSS_UTILS)
 /**
  * pld_set_wlan_unsafe_channel() - Set unsafe channel
  * @dev: device
