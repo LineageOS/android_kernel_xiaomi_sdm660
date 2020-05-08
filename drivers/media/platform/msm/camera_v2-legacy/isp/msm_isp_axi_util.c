@@ -3672,6 +3672,9 @@ static int msm_isp_request_frame(struct vfe_device *vfe_dev,
 		) {
 		pr_debug("%s:%d invalid time to request frame %d try drop_reconfig\n",
 			__func__, __LINE__, frame_id);
+#ifdef CONFIG_MACH_XIAOMI_JASON
+		goto error;
+#else
 		vfe_dev->isp_page->drop_reconfig = 1;
 		return 0;
 	} else if ((vfe_dev->axi_data.src_info[frame_src].active) &&
@@ -3686,6 +3689,7 @@ static int msm_isp_request_frame(struct vfe_device *vfe_dev,
 			vfe_dev->axi_data.src_info[VFE_PIX_0].frame_id,
 			vfe_dev->axi_data.src_info[VFE_PIX_0].active);
 		return 0;
+#endif
 	} else if ((vfe_dev->axi_data.src_info[frame_src].active && (frame_id !=
 		vfe_dev->axi_data.src_info[frame_src].frame_id + vfe_dev->
 		axi_data.src_info[frame_src].sof_counter_step)) ||
@@ -3717,7 +3721,18 @@ static int msm_isp_request_frame(struct vfe_device *vfe_dev,
 			__func__, __LINE__, vfe_dev->pdev->id, frame_id,
 			stream_info->activated_framedrop_period,
 			stream_info->stream_id);
+#ifdef CONFIG_MACH_XIAOMI_JASON
+		rc = msm_isp_return_empty_buffer(vfe_dev, stream_info,
+			user_stream_id, frame_id, buf_index, frame_src);
+		if (rc < 0)
+			pr_err("%s:%d failed: return_empty_buffer src %d\n",
+				__func__, __LINE__, frame_src);
+		stream_info->current_framedrop_period =
+			MSM_VFE_STREAM_STOP_PERIOD;
+		msm_isp_cfg_framedrop_reg(stream_info);
+#else
 		vfe_dev->isp_page->drop_reconfig = 1;
+#endif
 		return 0;
 	}
 
