@@ -1182,12 +1182,15 @@ struct wlan_mlme_product_details_cfg {
 	char manufacture_product_version[WLAN_CFG_MFR_PRODUCT_VERSION_LEN + 1];
 };
 
+#define MLME_GET_DFS_CHAN_WEIGHT(np_chan_weight) (np_chan_weight & 0x000000FF)
+
 /*
  * struct wlan_mlme_acs - All acs related cfg items
  * @is_acs_with_more_param - to enable acs with more param
  * @auto_channel_select_weight - to set acs channel weight
  * @is_vendor_acs_support - enable application based channel selection
  * @is_acs_support_for_dfs_ltecoex - enable channel for dfs and lte coex
+ * @np_chan_weightage: Weightage to be given to non preferred channels.
  * @is_external_acs_policy - control external policy
  * @force_sap_start: Force SAP start when no channel is found suitable
  */
@@ -1196,6 +1199,7 @@ struct wlan_mlme_acs {
 	uint32_t auto_channel_select_weight;
 	bool is_vendor_acs_support;
 	bool is_acs_support_for_dfs_ltecoex;
+	uint32_t np_chan_weightage;
 	bool is_external_acs_policy;
 	bool force_sap_start;
 };

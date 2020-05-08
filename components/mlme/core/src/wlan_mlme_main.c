@@ -1311,6 +1311,7 @@ static void mlme_init_acs_cfg(struct wlan_objmgr_psoc *psoc,
 		cfg_get(psoc, CFG_ACS_WITH_MORE_PARAM);
 	acs->force_sap_start =
 		cfg_get(psoc, CFG_ACS_FORCE_START_SAP);
+	acs->np_chan_weightage = cfg_get(psoc, CFG_ACS_NP_CHAN_WEIGHT);
 	acs->auto_channel_select_weight =
 		cfg_get(psoc, CFG_AUTO_CHANNEL_SELECT_WEIGHT);
 	acs->is_vendor_acs_support =

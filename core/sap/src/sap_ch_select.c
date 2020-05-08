@@ -1377,6 +1377,8 @@ static void sap_compute_spect_weight(tSapChSelSpectInfo *pSpectInfoParams,
 		pSpectInfoParams->numSpectChans;
 	qdf_list_node_t *cur_lst = NULL, *next_lst = NULL;
 	struct scan_cache_node *cur_node = NULL;
+	uint32_t normalized_weight;
+	uint8_t normalize_factor;
 
 	bcn_struct = qdf_mem_malloc(sizeof(tSirProbeRespBeacon));
 	if (!bcn_struct)
@@ -1555,6 +1557,20 @@ static void sap_compute_spect_weight(tSapChSelSpectInfo *pSpectInfoParams,
 			pSpectCh->bssCount = SOFTAP_MIN_COUNT;
 		}
 
+		if (wlan_reg_is_dfs_ch(mac->pdev,
+		    pSpectCh->chNum)) {
+			normalize_factor =
+				MLME_GET_DFS_CHAN_WEIGHT(
+				mac->mlme_cfg->acs.np_chan_weightage);
+			normalized_weight =
+				((SAP_ACS_WEIGHT_MAX - pSpectCh->weight) *
+				(100 - normalize_factor)) / 100;
+			sap_debug("DFS ch %d old weight %d new weight %d",
+				  pSpectCh->chNum, pSpectCh->weight,
+				  pSpectCh->weight + normalized_weight);
+			pSpectCh->weight += normalized_weight;
+
+		}
 		if (pSpectCh->weight > SAP_ACS_WEIGHT_MAX)
 			pSpectCh->weight = SAP_ACS_WEIGHT_MAX;
 		pSpectCh->weight_copy = pSpectCh->weight;

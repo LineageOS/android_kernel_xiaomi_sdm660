@@ -3383,6 +3383,13 @@ static QDF_STATUS sap_get_channel_list(struct sap_context *sap_ctx,
 						WLAN_REG_CH_NUM(loop_count)))
 			continue;
 
+		if (wlan_reg_is_dfs_ch(mac_ctx->pdev,
+		    WLAN_REG_CH_NUM(loop_count)) &&
+		    !MLME_GET_DFS_CHAN_WEIGHT(
+		    mac_ctx->mlme_cfg->acs.np_chan_weightage)) {
+			sap_debug("DFS ch with np weight 0, skipping");
+			continue;
+		}
 #ifdef FEATURE_WLAN_AP_AP_ACS_OPTIMIZE
 		uint8_t ch;
 
