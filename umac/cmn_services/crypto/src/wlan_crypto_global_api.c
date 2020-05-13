@@ -313,11 +313,18 @@ int32_t wlan_crypto_get_peer_param(struct wlan_objmgr_peer *peer,
 qdf_export_symbol(wlan_crypto_get_peer_param);
 
 static
+QDF_STATUS wlan_crypto_del_pmksa(struct wlan_crypto_params *crypto_params,
+				 struct wlan_crypto_pmksa *pmksa);
+
+static
 QDF_STATUS wlan_crypto_set_pmksa(struct wlan_crypto_params *crypto_params,
 				 struct wlan_crypto_pmksa *pmksa)
 {
 	uint8_t i, first_available_slot = 0;
 	bool slot_found = false;
+
+	/* Delete the old entry and then Add new entry */
+	wlan_crypto_del_pmksa(crypto_params, pmksa);
 
 	/* find the empty slot or slot with same bssid */
 	for (i = 0; i < WLAN_CRYPTO_MAX_PMKID; i++) {
@@ -330,10 +337,9 @@ QDF_STATUS wlan_crypto_set_pmksa(struct wlan_crypto_params *crypto_params,
 		}
 		if (qdf_is_macaddr_equal(&pmksa->bssid,
 					 &crypto_params->pmksa[i]->bssid)) {
-			/* free the current pmksa and use this slot */
-			qdf_mem_zero(crypto_params->pmksa[i],
-				     sizeof(struct wlan_crypto_pmksa));
-			qdf_mem_free(crypto_params->pmksa[i]);
+			/* current pmksa is already freed in del_pmksa,
+			 * so just use this slot
+			 */
 			crypto_params->pmksa[i] = pmksa;
 			return QDF_STATUS_SUCCESS;
 		}
@@ -353,6 +359,8 @@ QDF_STATUS wlan_crypto_del_pmksa(struct wlan_crypto_params *crypto_params,
 				 struct wlan_crypto_pmksa *pmksa)
 {
 	uint8_t i;
+	bool match_found = false;
+	u8 del_pmk[MAX_PMK_LEN] = {0};
 
 	/* find slot with same bssid */
 	for (i = 0; i < WLAN_CRYPTO_MAX_PMKID; i++) {
@@ -360,13 +368,32 @@ QDF_STATUS wlan_crypto_del_pmksa(struct wlan_crypto_params *crypto_params,
 			continue;
 		if (qdf_is_macaddr_equal(&pmksa->bssid,
 					 &crypto_params->pmksa[i]->bssid)) {
-			qdf_mem_zero(crypto_params->pmksa[i],
-				     sizeof(struct wlan_crypto_pmksa));
-			qdf_mem_free(crypto_params->pmksa[i]);
-			crypto_params->pmksa[i] = NULL;
+			match_found = true;
+		}
+
+		if (match_found) {
+			qdf_mem_copy(del_pmk, crypto_params->pmksa[i]->pmk,
+				     crypto_params->pmksa[i]->pmk_len);
+			for (i = 0; i < WLAN_CRYPTO_MAX_PMKID; i++) {
+				if (!crypto_params->pmksa[i])
+					continue;
+				if (crypto_params->pmksa[i]->pmk_len &&
+				    (!qdf_mem_cmp(crypto_params->pmksa[i]->pmk,
+				    del_pmk,
+				    crypto_params->pmksa[i]->pmk_len))) {
+					qdf_mem_zero(crypto_params->pmksa[i],
+						     sizeof(
+						     struct wlan_crypto_pmksa));
+					qdf_mem_free(crypto_params->pmksa[i]);
+					crypto_params->pmksa[i] = NULL;
+				}
+			}
 			return QDF_STATUS_SUCCESS;
 		}
 	}
+
+	if (i == WLAN_CRYPTO_MAX_PMKID && !match_found)
+		crypto_debug("No such pmksa entry exists");
 
 	return QDF_STATUS_E_INVAL;
 }
