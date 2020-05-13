@@ -1990,6 +1990,9 @@ struct hdd_context {
 	qdf_time_t runtime_resume_start_time_stamp;
 	qdf_time_t runtime_suspend_done_time_stamp;
 	bool roam_ch_from_fw_supported;
+#ifdef FW_THERMAL_THROTTLE_SUPPORT
+	uint8_t dutycycle_off_percent;
+#endif
 };
 
 /**
