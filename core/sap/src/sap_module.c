@@ -1733,6 +1733,9 @@ wlansap_set_cac_required_for_chan(struct mac_context *mac_ctx,
 {
 	bool is_ch_dfs = false;
 	bool cac_required;
+	uint8_t vdev_id_list[MAX_NUMBER_OF_CONC_CONNECTIONS];
+	uint8_t chan_list[MAX_NUMBER_OF_CONC_CONNECTIONS];
+	uint8_t sta_cnt, i;
 
 	if (sap_ctx->ch_params.ch_width == CH_WIDTH_160MHZ) {
 		is_ch_dfs = true;
@@ -1761,6 +1764,22 @@ wlansap_set_cac_required_for_chan(struct mac_context *mac_ctx,
 		cac_required = false;
 	else
 		cac_required = true;
+
+	if (cac_required) {
+		sta_cnt =
+		  policy_mgr_get_mode_specific_conn_info(mac_ctx->psoc,
+							 chan_list,
+							 vdev_id_list,
+							 PM_STA_MODE);
+
+		for (i = 0; i < sta_cnt; i++) {
+			if (sap_ctx->channel == chan_list[i]) {
+				sap_debug("STA vdev id %d exists, ignore CAC",
+					  vdev_id_list[i]);
+				cac_required = false;
+			}
+		}
+	}
 
 	mlme_set_cac_required(sap_ctx->vdev, cac_required);
 }
