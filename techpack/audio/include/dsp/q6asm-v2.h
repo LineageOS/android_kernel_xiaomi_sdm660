@@ -105,6 +105,7 @@
 #define ASM_LITTLE_ENDIAN 0
 #define ASM_BIG_ENDIAN 1
 
+#define ADSP_ASM_API_VERSION_V1   1
 #define ADSP_ASM_API_VERSION_V2   2
 
 /* PCM_MEDIA_FORMAT_Version */

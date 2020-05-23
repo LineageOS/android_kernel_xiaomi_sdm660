@@ -23,6 +23,11 @@
 #include <ipc/apr.h>
 #include "adsp_err.h"
 
+/* For legacy version retrieval */
+#include <dsp/q6lsm.h>
+#include <dsp/q6adm-v2.h>
+#include <dsp/q6afe-v2.h>
+
 #define TIMEOUT_MS 1000
 /*
  * AVS bring up in the modem is optimized for the new
@@ -707,6 +712,24 @@ done:
 }
 EXPORT_SYMBOL(q6core_get_fwk_version_size);
 
+static int q6core_get_legacy_avcs_fwk_version(uint32_t service_id)
+{
+	switch (service_id) {
+	case APRV2_IDS_SERVICE_ID_ADSP_LSM_V:
+		return LSM_API_VERSION_V2;
+	case APRV2_IDS_SERVICE_ID_ADSP_ADM_V:
+		return ADSP_ADM_API_VERSION_V1;
+	case APRV2_IDS_SERVICE_ID_ADSP_ASM_V:
+		return ADSP_ASM_API_VERSION_V1;
+	case APRV2_IDS_SERVICE_ID_ADSP_AFE_V:
+		return AFE_API_VERSION_V1;
+	default:
+		break;
+	}
+
+	return -EOPNOTSUPP;
+}
+
 /**
  * q6core_get_avcs_version_per_service -
  *       to get api version of a particular service
@@ -727,7 +750,13 @@ int q6core_get_avcs_api_version_per_service(uint32_t service_id)
 
 	ret = q6core_get_avcs_fwk_version();
 	if (ret < 0) {
-		pr_err("%s: failure in getting AVCS version\n", __func__);
+		if (ret == -EOPNOTSUPP) {
+			/* Look in legacy support... */
+			ret = q6core_get_legacy_avcs_fwk_version(service_id);
+		} else {
+			pr_err("%s: failure in getting AVCS version\n",
+			       __func__);
+		}
 		return ret;
 	}
 
