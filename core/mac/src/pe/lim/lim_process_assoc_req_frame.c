@@ -2175,6 +2175,7 @@ void lim_process_assoc_req_frame(struct mac_context *mac_ctx, uint8_t *rx_pkt_in
 	tpDphHashNode sta_ds = NULL;
 	tpSirAssocReq assoc_req;
 	bool dup_entry = false;
+	struct wlan_objmgr_vdev *vdev;
 	QDF_STATUS status;
 
 	lim_get_phy_mode(mac_ctx, &phy_mode, session);
@@ -2208,6 +2209,18 @@ void lim_process_assoc_req_frame(struct mac_context *mac_ctx, uint8_t *rx_pkt_in
 			GET_LIM_SYSTEM_ROLE(session),
 			QDF_MAC_ADDR_ARRAY(hdr->sa),
 			eLIM_MLM_WT_DEL_BSS_RSP_STATE);
+		return;
+	}
+
+	vdev = session->vdev;
+	if (!vdev) {
+		pe_err("vdev is NULL");
+		return;
+	}
+
+	if (wlan_vdev_mlme_get_state(vdev) != WLAN_VDEV_S_UP) {
+		pe_err("SAP is not up, drop ASSOC REQ on sessionid: %d",
+		       session->peSessionId);
 		return;
 	}
 
