@@ -49,7 +49,7 @@
 #define WLAN_CRYPTO_KEYIX_NONE       ((uint16_t)-1)
 #define WLAN_CRYPTO_MAXKEYIDX        (4)
 #define WLAN_CRYPTO_MAXIGTKKEYIDX    (2)
-#define WLAN_CRYPTO_MAX_PMKID        (3)
+#define WLAN_CRYPTO_MAX_PMKID        (16)
 
 /* 40 bit wep key len */
 #define WLAN_CRYPTO_KEY_WEP40_LEN    (5)
