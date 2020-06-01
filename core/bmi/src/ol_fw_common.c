@@ -30,9 +30,6 @@
 #if defined(HIF_USB)
 #include "regtable_usb.h"
 #endif
-#if  defined(CONFIG_CNSS)
-#include <net/cnss.h>
-#endif
 #include "i_bmi.h"
 #include "cds_api.h"
 

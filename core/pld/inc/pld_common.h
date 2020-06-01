@@ -38,7 +38,7 @@
 
 #define TOTAL_DUMP_SIZE         0x00200000
 
-#ifdef CONFIG_WCNSS_MEM_PRE_ALLOC
+#if IS_ENABLED(CONFIG_WCNSS_MEM_PRE_ALLOC)
 #include <net/cnss_prealloc.h>
 #endif
 
@@ -803,7 +803,7 @@ int pld_pci_read_config_dword(struct pci_dev *pdev, int offset, uint32_t *val);
  *         Non zero failure code for errors
  */
 int pld_pci_write_config_dword(struct pci_dev *pdev, int offset, uint32_t val);
-#if defined(CONFIG_WCNSS_MEM_PRE_ALLOC) && defined(FEATURE_SKB_PRE_ALLOC)
+#if IS_ENABLED(CONFIG_WCNSS_MEM_PRE_ALLOC) && defined(FEATURE_SKB_PRE_ALLOC)
 
 /**
  * pld_nbuf_pre_alloc() - get allocated nbuf from platform driver.
