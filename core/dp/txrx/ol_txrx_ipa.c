@@ -145,7 +145,7 @@ QDF_STATUS ol_txrx_ipa_uc_get_resource(struct cdp_pdev *ppdev)
 				&ipa_res->tx_comp_ring->mem_info)) ||
 	    (0 == qdf_mem_get_dma_addr(osdev,
 				&ipa_res->rx_rdy_ring->mem_info))
-#if defined(QCA_WIFI_3_0) && defined(CONFIG_IPA3)
+#if defined(QCA_WIFI_3_0) && IS_ENABLED(CONFIG_IPA3)
 	    || (0 == qdf_mem_get_dma_addr(osdev,
 				&ipa_res->rx2_rdy_ring->mem_info))
 #endif
