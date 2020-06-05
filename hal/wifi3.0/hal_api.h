@@ -141,26 +141,25 @@ static inline void hal_unlock_reg_access(struct hal_soc *soc,
 #else
 static inline int hal_force_wake_request(struct hal_soc *soc)
 {
-	uint32_t timeout = 0;
 	int ret;
 
-	ret = pld_force_wake_request(soc->qdf_dev->dev);
+	ret = pld_force_wake_request_sync(soc->qdf_dev->dev,
+					  FORCE_WAKE_DELAY_TIMEOUT * 1000);
 	if (ret) {
 		QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_ERROR,
 			  "%s: Request send failed %d\n", __func__, ret);
 		return -EINVAL;
 	}
 
-	while (!pld_is_device_awake(soc->qdf_dev->dev) &&
-	       timeout <= FORCE_WAKE_DELAY_TIMEOUT) {
-		mdelay(FORCE_WAKE_DELAY_MS);
-		timeout += FORCE_WAKE_DELAY_MS;
-	}
+	/* If device's M1 state-change event races here, it can be ignored,
+	 * as the device is expected to immediately move from M2 to M0
+	 * without entering low power state.
+	 */
+	if (!pld_is_device_awake(soc->qdf_dev->dev))
+		QDF_TRACE(QDF_MODULE_ID_DP, QDF_TRACE_LEVEL_INFO_LOW,
+			  "%s: state-change event races, ignore\n", __func__);
 
-	if (pld_is_device_awake(soc->qdf_dev->dev) == true)
-		return 0;
-	else
-		return -ETIMEDOUT;
+	return 0;
 }
 
 static inline int hal_force_wake_release(struct hal_soc *soc)
