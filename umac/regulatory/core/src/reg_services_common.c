@@ -791,6 +791,32 @@ enum channel_state reg_get_channel_state(struct wlan_objmgr_pdev *pdev,
 	return pdev_priv_obj->cur_chan_list[ch_idx].state;
 }
 
+
+static uint32_t reg_get_channel_flags(struct wlan_objmgr_pdev *pdev,
+				      uint32_t chan)
+{
+	enum channel_enum chan_enum;
+	struct wlan_regulatory_pdev_priv_obj *pdev_priv_obj;
+
+	chan_enum = reg_get_chan_enum(chan);
+
+	if (chan_enum == INVALID_CHANNEL) {
+		reg_err("chan is not valid");
+		return REGULATORY_CHAN_INVALID;
+	}
+
+	pdev_priv_obj = reg_get_pdev_obj(pdev);
+
+	if (!IS_VALID_PDEV_REG_OBJ(pdev_priv_obj)) {
+		reg_err("pdev reg obj is NULL");
+		return REGULATORY_CHAN_INVALID;
+	}
+
+	return pdev_priv_obj->cur_chan_list[chan_enum].chan_flags;
+}
+
+
+
 /**
  * reg_get_5g_bonded_chan_array() - get ptr to bonded channel
  * @pdev: Pointer to pdev structure
@@ -1299,11 +1325,11 @@ uint32_t reg_get_channel_freq(struct wlan_objmgr_pdev *pdev,
 bool reg_is_dfs_ch(struct wlan_objmgr_pdev *pdev,
 		   uint32_t chan)
 {
-	enum channel_state ch_state;
+	uint32_t chan_flags;
 
-	ch_state = reg_get_channel_state(pdev, chan);
+	chan_flags = reg_get_channel_flags(pdev, chan);
 
-	return ch_state == CHANNEL_STATE_DFS;
+	return chan_flags & REGULATORY_CHAN_RADAR;
 }
 
 uint32_t reg_freq_to_chan(struct wlan_objmgr_pdev *pdev,
@@ -2135,6 +2161,7 @@ bool reg_is_6ghz_op_class(struct wlan_objmgr_pdev *pdev, uint8_t op_class)
 {
 	return ((op_class >= MIN_6GHZ_OPER_CLASS) &&
 		(op_class <= MAX_6GHZ_OPER_CLASS));
+
 }
 
 bool reg_is_6ghz_supported(struct wlan_objmgr_pdev *pdev)
