@@ -5487,6 +5487,7 @@ struct wmi_host_fw_abi_ver {
  *                    by the AP
  * @max_bssid_indicator: max number of MBSS VAPs
  * @nan_separate_iface_support: Separate iface creation for NAN
+ * @max_ndi: max number of ndi host supports
  */
 typedef struct {
 	uint32_t num_vdevs;
@@ -5571,6 +5572,7 @@ typedef struct {
 		 eapol_minrate_ac_set:2;
 	bool tstamp64_en;
 	bool nan_separate_iface_support;
+	uint32_t max_ndi;
 } target_resource_config;
 
 /**
