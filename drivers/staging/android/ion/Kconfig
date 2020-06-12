@@ -11,6 +11,12 @@ menuconfig ION
 	  If you're not using Android its probably safe to
 	  say N here.
 
+config ION_LEGACY
+	bool "Legacy ion"
+	depends on ION
+	help
+	  Choose this option to enable the legacy ion. If in doubt, say N.
+
 config ION_SYSTEM_HEAP
 	bool "Ion system heap"
 	depends on ION
