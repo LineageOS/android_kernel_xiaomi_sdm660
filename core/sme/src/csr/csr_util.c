@@ -3806,7 +3806,7 @@ bool csr_lookup_pmkid_using_bssid(struct mac_context *mac,
  *
  * Return: true if pmkid is found else false
  */
-static bool csr_lookup_pmkid(struct mac_context *mac, uint32_t sessionId,
+bool csr_lookup_pmkid(struct mac_context *mac, uint32_t sessionId,
 				tPmkidCacheInfo *pmk_cache)
 {
 	bool fRC = false, fMatchFound = false;

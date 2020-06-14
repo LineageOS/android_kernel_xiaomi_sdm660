@@ -241,6 +241,18 @@ uint8_t csr_construct_rsn_ie(struct mac_context *mac, uint32_t sessionId,
 			     struct bss_description *pSirBssDesc,
 			     tDot11fBeaconIEs *pIes, tCsrRSNIe *pRSNIe);
 
+#ifdef WLAN_CONV_CRYPTO_IE_SUPPORT
+static inline
+bool csr_lookup_pmkid(struct mac_context *mac, uint32_t sessionId,
+		      tPmkidCacheInfo *pmk_cache)
+{
+	return false;
+}
+#else
+bool csr_lookup_pmkid(struct mac_context *mac, uint32_t sessionId,
+		      tPmkidCacheInfo *pmk_cache);
+#endif
+
 uint8_t csr_construct_wpa_ie(struct mac_context *mac, uint8_t session_id,
 			     struct csr_roam_profile *pProfile,
 			     struct bss_description *pSirBssDesc,

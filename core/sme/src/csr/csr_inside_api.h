@@ -974,7 +974,6 @@ bool csr_lookup_pmkid_using_bssid(struct mac_context *mac,
 					struct csr_roam_session *session,
 					tPmkidCacheInfo *pmk_cache,
 					uint32_t *index);
-
 /**
  * csr_is_pmkid_found_for_peer() - check if pmkid sent by peer is present
 				   in PMK cache. Used in SAP mode.
