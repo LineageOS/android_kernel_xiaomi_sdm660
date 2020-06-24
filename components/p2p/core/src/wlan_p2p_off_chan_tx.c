@@ -125,6 +125,16 @@ static QDF_STATUS p2p_vdev_check_valid(struct tx_action_context *tx_ctx)
 		status = QDF_STATUS_E_FAILURE;
 	}
 
+	/* drop action frame for sap */
+	if ((mode == QDF_SAP_MODE) &&
+	    (tx_ctx->frame_info.sub_type == P2P_MGMT_ACTION) &&
+	    (tx_ctx->frame_info.public_action_type ==
+	     P2P_PUBLIC_ACTION_NOT_SUPPORT) &&
+	    (tx_ctx->frame_info.action_type == P2P_ACTION_NOT_SUPPORT)) {
+		p2p_debug("drop action frame for SAP");
+		status = QDF_STATUS_E_FAILURE;
+	}
+
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_P2P_ID);
 
 	return status;
@@ -156,6 +166,16 @@ static QDF_STATUS p2p_vdev_check_valid(struct tx_action_context *tx_ctx)
 	     mode == QDF_P2P_GO_MODE) &&
 	    tx_ctx->frame_info.sub_type == P2P_MGMT_PROBE_RSP) {
 		p2p_debug("drop probe response, mode:%d", mode);
+		status = QDF_STATUS_E_FAILURE;
+	}
+
+	/* drop ation frame for sap */
+	if ((mode == QDF_SAP_MODE) &&
+	    (tx_ctx->frame_info.sub_type == P2P_MGMT_ACTION) &&
+	    (tx_ctx->frame_info.public_action_type ==
+	     P2P_PUBLIC_ACTION_NOT_SUPPORT) &&
+	    (tx_ctx->frame_info.action_type == P2P_ACTION_NOT_SUPPORT)) {
+		p2p_debug("drop action frame for SAP");
 		status = QDF_STATUS_E_FAILURE;
 	}
 
