@@ -58,6 +58,8 @@
 		regulator-max-microvolt = <1350000>;
 		enable-active-high;
 		gpio = <&pm660l_gpios 3 0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&cam_sensor_eldo3_default>;
 		vin-supply = <&pm660_s5>;
 	};
 
@@ -68,6 +70,8 @@
 		regulator-max-microvolt = <1200000>;
 		enable-active-high;
 		gpio = <&pm660l_gpios 4 0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&cam_sensor_eldo4_default>;
 		vin-supply = <&pm660_s5>;
 	};
 };
