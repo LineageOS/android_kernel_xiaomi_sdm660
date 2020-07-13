@@ -200,9 +200,9 @@ enum powersave_mode {
 	PS_DUTY_CYCLING_QPOWER = 5
 };
 
-#define PMO_TARGET_SUSPEND_TIMEOUT   6000
+#define PMO_TARGET_SUSPEND_TIMEOUT   (4000)
 #define PMO_WAKE_LOCK_TIMEOUT        1000
-#define PMO_RESUME_TIMEOUT           6000
+#define PMO_RESUME_TIMEOUT           (4000)
 
 /**
  * struct wow_enable_params - A collection of wow enable override parameters
