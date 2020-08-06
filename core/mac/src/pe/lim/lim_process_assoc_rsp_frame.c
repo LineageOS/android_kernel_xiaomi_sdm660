@@ -545,6 +545,14 @@ static uint8_t lim_get_nss_supported_by_ap(tDot11fIEVHTCaps *vht_caps,
 	return NSS_1x1_MODE;
 }
 
+static void clean_up_ft_sha384(tpSirAssocRsp assoc_rsp, bool sha384_akm)
+{
+	if (sha384_akm) {
+		qdf_mem_free(assoc_rsp->sha384_ft_subelem.gtk);
+		qdf_mem_free(assoc_rsp->sha384_ft_subelem.igtk);
+	}
+}
+
 /**
  * lim_process_assoc_rsp_frame() - Processes assoc response
  * @mac_ctx: Pointer to Global MAC structure
@@ -578,6 +586,8 @@ lim_process_assoc_rsp_frame(struct mac_context *mac_ctx,
 #endif
 	uint8_t ap_nss;
 	int8_t rssi;
+	enum ani_akm_type auth_type;
+	bool sha384_akm;
 
 #ifdef WLAN_FEATURE_ROAM_OFFLOAD
 	sme_sessionid = session_entry->smeSessionId;
@@ -751,6 +761,9 @@ lim_process_assoc_rsp_frame(struct mac_context *mac_ctx,
 	lim_update_ese_tspec(mac_ctx, session_entry, assoc_rsp);
 #endif
 
+	auth_type = session_entry->connected_akm;
+	sha384_akm = lim_is_sha384_akm(auth_type);
+
 	if (assoc_rsp->capabilityInfo.ibss) {
 		/*
 		 * Received Re/Association Response from peer
@@ -759,6 +772,7 @@ lim_process_assoc_rsp_frame(struct mac_context *mac_ctx,
 		 * failure timeout.
 		 */
 		pe_err("received Re/AssocRsp frame with IBSS capability");
+		clean_up_ft_sha384(assoc_rsp, sha384_akm);
 		qdf_mem_free(assoc_rsp);
 		qdf_mem_free(beacon);
 		return;
@@ -766,6 +780,7 @@ lim_process_assoc_rsp_frame(struct mac_context *mac_ctx,
 
 	if (lim_get_capability_info(mac_ctx, &caps, session_entry)
 		!= QDF_STATUS_SUCCESS) {
+		clean_up_ft_sha384(assoc_rsp, sha384_akm);
 		qdf_mem_free(assoc_rsp);
 		qdf_mem_free(beacon);
 		pe_err("could not retrieve Capabilities");
@@ -862,6 +877,7 @@ lim_process_assoc_rsp_frame(struct mac_context *mac_ctx,
 			NULL) != QDF_STATUS_SUCCESS) {
 			pe_err("Set link state to POSTASSOC failed");
 			qdf_mem_free(beacon);
+			clean_up_ft_sha384(assoc_rsp, sha384_akm);
 			qdf_mem_free(assoc_rsp);
 			return;
 		}
@@ -1008,6 +1024,7 @@ lim_process_assoc_rsp_frame(struct mac_context *mac_ctx,
 		assoc_cnf.protStatusCode = eSIR_SME_SUCCESS;
 		lim_post_sme_message(mac_ctx, LIM_MLM_ASSOC_CNF,
 			(uint32_t *) &assoc_cnf);
+		clean_up_ft_sha384(assoc_rsp, sha384_akm);
 		qdf_mem_free(assoc_rsp);
 		qdf_mem_free(beacon);
 		return;
@@ -1083,6 +1100,7 @@ lim_process_assoc_rsp_frame(struct mac_context *mac_ctx,
 			beacon,
 			&session_entry->lim_join_req->bssDescription, true,
 			 session_entry)) {
+		clean_up_ft_sha384(assoc_rsp, sha384_akm);
 		qdf_mem_free(assoc_rsp);
 		qdf_mem_free(beacon);
 		return;
