@@ -10,9 +10,8 @@
  * GNU General Public License for more details.
  */
 #include <linux/slimbus/slimbus.h>
-#include <btfm_slim.h>
-#include <btfm_slim_wcn3990.h>
-
+#include "btfm_slim.h"
+#include "btfm_slim_wcn3990.h"
 /* WCN3990 Port assignment */
 struct btfmslim_ch wcn3990_rxport[] = {
 	{.id = BTFM_BT_SCO_A2DP_SLIM_RX, .name = "SCO_A2P_Rx",
