@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright © 2015, STMicroelectronics International N.V.
+ * Copyright Â© 2015, STMicroelectronics International N.V.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -34,10 +34,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "vl53l0_def.h"
 #include "vl53l0_platform_log.h"
 
-#include "stmvl53l0-i2c.h"
-#include "stmvl53l0-cci.h"
-#include "stmvl53l0.h"
-
+#include "../stmvl53l0-i2c.h"
+#include "../stmvl53l0-cci.h"
+#include "../stmvl53l0.h"
 /**
  * @file vl53l0_platform.h
  *
