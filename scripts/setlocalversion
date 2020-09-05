@@ -31,7 +31,7 @@ fi
 scm_version()
 {
 	local short
-	short=false
+	short=true
 
 	cd "$srctree"
 	if test -e .scmversion; then
