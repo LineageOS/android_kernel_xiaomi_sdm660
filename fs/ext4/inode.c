@@ -2842,13 +2842,6 @@ retry_journal:
 	/* In case writeback began while the page was unlocked */
 	wait_for_stable_page(page);
 
-	if (iov_iter_rw(iter) == READ) {
-		loff_t size = i_size_read(inode);
-
-		if (offset >= size)
-			return 0;
-	}
-
 #ifdef CONFIG_EXT4_FS_ENCRYPTION
 	ret = ext4_block_write_begin(page, pos, len,
 				     ext4_da_get_block_prep);
@@ -3392,6 +3385,13 @@ static ssize_t ext4_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
 	struct inode *inode = file->f_mapping->host;
 	size_t count = iov_iter_count(iter);
 	ssize_t ret;
+
+	if (iov_iter_rw(iter) == READ) {
+		loff_t size = i_size_read(inode);
+
+		if (offset >= size)
+			return 0;
+	}
 
 #if defined(CONFIG_EXT4_FS_ENCRYPTION) && \
 !defined(CONFIG_EXT4_FS_ICE_ENCRYPTION)
