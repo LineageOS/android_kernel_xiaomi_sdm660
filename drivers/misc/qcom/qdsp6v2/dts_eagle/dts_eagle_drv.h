@@ -20,9 +20,9 @@
     (printk(KERN_INFO "DTS_EAGLE_DRIVER: " fmt "\n", ##__VA_ARGS__))
 #else
 #define dts_eagle_drv_dbg_msg(fmt, ...) \
-    (no_printk(KERN_INFO "DTS_EAGLE_DRIVER: " fmt "\n", ##__VA_ARGS__))
+    (printk(KERN_INFO "DTS_EAGLE_DRIVER: " fmt "\n", ##__VA_ARGS__))
 #define dts_eagle_drv_err_msg(fmt, ...)  \
-    (no_printk(KERN_INFO "DTS_EAGLE_DRIVER: " fmt "\n", ##__VA_ARGS__))
+    (printk(KERN_INFO "DTS_EAGLE_DRIVER: " fmt "\n", ##__VA_ARGS__))
 #endif
 
 #define EAGLE_DRIVER_ID 0xF2
