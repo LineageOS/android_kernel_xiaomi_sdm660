@@ -27,6 +27,12 @@ menu "Xiaomi board selection"
 		help
 		  Support for Xiaomi Mi Note 3
 
+	config MACH_XIAOMI_PLATINA
+		bool "Xiaomi platina board"
+		select MACH_MI
+		help
+		  Support for Xiaomi Mi 8 Lite
+
 	config MACH_LONGCHEER
 		bool "Longcheer board"
 		select MACH_XIAOMI_SDM660
