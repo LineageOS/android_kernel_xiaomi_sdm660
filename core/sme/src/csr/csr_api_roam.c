@@ -22904,6 +22904,8 @@ static QDF_STATUS csr_process_roam_sync_callback(struct mac_context *mac_ctx,
 	struct mlme_roam_after_data_stall *vdev_roam_params;
 	uint32_t chan_id;
 	struct wlan_crypto_pmksa *pmksa;
+	enum csr_akm_type akm_type;
+	uint8_t mdie_present;
 
 	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(mac_ctx->psoc, session_id,
 						    WLAN_LEGACY_SME_ID);
@@ -23149,6 +23151,9 @@ static QDF_STATUS csr_process_roam_sync_callback(struct mac_context *mac_ctx,
 				 &session->connectedProfile.bssid);
 		sme_debug("Trying to find PMKID for " QDF_MAC_ADDR_STR,
 			  QDF_MAC_ADDR_ARRAY(pmkid_cache->BSSID.bytes));
+		akm_type = session->connectedProfile.AuthType;
+		mdie_present = session->connectedProfile.mdid.mdie_present;
+
 		if (csr_lookup_pmkid_using_bssid(mac_ctx, session,
 						 pmkid_cache,
 						 &pmkid_index)) {
@@ -23163,7 +23168,16 @@ static QDF_STATUS csr_process_roam_sync_callback(struct mac_context *mac_ctx,
 		} else {
 			sme_debug("PMKID Not found in cache for " QDF_MAC_ADDR_STR,
 				  QDF_MAC_ADDR_ARRAY(pmkid_cache->BSSID.bytes));
-			if (roam_synch_data->pmk_len) {
+			/*
+			 * In FT roam when the CSR lookup fails then the PMK
+			 * details from the roam sync indication will be updated
+			 * to Session/PMK cache. This will result in having
+			 * multiple PMK cache entries for the same MDID, So do
+			 * not add the PMKSA cache entry for all FT-Roam.
+			 */
+			if (!csr_is_auth_type11r(mac_ctx, akm_type,
+						 mdie_present) &&
+			    roam_synch_data->pmk_len) {
 				qdf_mem_copy(pmkid_cache->PMKID,
 					     roam_synch_data->pmkid, PMKID_LEN);
 				qdf_mem_copy(pmkid_cache->pmk,
