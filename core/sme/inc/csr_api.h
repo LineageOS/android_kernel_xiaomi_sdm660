@@ -703,6 +703,7 @@ typedef struct tagPmkidCacheInfo {
 	uint8_t ssid_len;
 	uint8_t ssid[WLAN_SSID_MAX_LEN];
 	uint8_t cache_id[CACHE_ID_LEN];
+	struct mobility_domain_info mdid;
 } tPmkidCacheInfo;
 
 #ifdef FEATURE_WLAN_WAPI

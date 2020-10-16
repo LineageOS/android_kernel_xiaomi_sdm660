@@ -842,6 +842,18 @@ QDF_STATUS csr_roam_del_pmkid_from_cache(struct mac_context *mac,
 void csr_roam_del_pmk_cache_entry(struct csr_roam_session *session,
 				  tPmkidCacheInfo *cached_pmksa, u32 del_idx);
 
+/**
+ * csr_update_pmk_cache_ft - API to update MDID in PMKSA cache entry
+ * @mac: Mac context
+ * @vdev_id: session ID
+ * @BSSID: Connecting AP MAC address
+ * @mdid: Connecting AP Mobility Domain ID
+ *
+ * Return: None
+ */
+void csr_update_pmk_cache_ft(struct mac_context *mac,
+			     uint32_t vdev_id, uint8_t *cache_id);
+
 #if defined(WLAN_SAE_SINGLE_PMK) && defined(WLAN_FEATURE_ROAM_OFFLOAD)
 /**
  * csr_clear_sae_single_pmk - API to clear single_pmk_info cache
