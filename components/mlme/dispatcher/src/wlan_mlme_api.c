@@ -3080,7 +3080,6 @@ mlme_update_vht_cap(struct wlan_objmgr_psoc *psoc, struct wma_tgt_vht_cap *cfg)
 	struct wlan_mlme_psoc_obj *mlme_obj;
 	struct mlme_vht_capabilities_info *vht_cap_info;
 	uint32_t value = 0;
-	bool hw_rx_ldpc_enabled;
 
 	mlme_obj = mlme_get_psoc_obj(psoc);
 	if (!mlme_obj)
@@ -3114,11 +3113,6 @@ mlme_update_vht_cap(struct wlan_objmgr_psoc *psoc, struct wma_tgt_vht_cap *cfg)
 	if (vht_cap_info->enable2x2)
 		value = (value & VHT_MCS_2x2) | (vht_cap_info->tx_mcs2x2 << 2);
 	vht_cap_info->tx_mcs_map = value;
-
-	 /* Set HW RX LDPC capability */
-	hw_rx_ldpc_enabled = !!cfg->vht_rx_ldpc;
-	if (hw_rx_ldpc_enabled != vht_cap_info->ldpc_coding_cap)
-		vht_cap_info->ldpc_coding_cap = hw_rx_ldpc_enabled;
 
 	/* set the Guard interval 80MHz */
 	if (vht_cap_info->short_gi_80mhz && !cfg->vht_short_gi_80)
