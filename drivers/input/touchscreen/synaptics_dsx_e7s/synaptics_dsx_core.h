@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2012-2016 Synaptics Incorporated. All rights reserved.
  *
+ * Copyright (c) 2018-2019 The Linux Foundation. All rights reserved.
  * Copyright (C) 2012 Alexandra Chin <alexandra.chin@tw.synaptics.com>
  * Copyright (C) 2012 Scott Lin <scott.lin@tw.synaptics.com>
  *
@@ -292,6 +293,17 @@ struct synaptics_rmi4_device_info {
 	struct list_head support_fn_list;
 };
 
+struct synaptics_rmi4_f01_device_status {
+	union {
+		struct {
+			unsigned char status_code:4;
+			unsigned char reserved:2;
+			unsigned char flash_prog:1;
+			unsigned char unconfigured:1;
+		} __packed;
+		unsigned char data[1];
+	};
+};
 /*
  * struct synaptics_rmi4_data - RMI4 device instance data
  * @pdev: pointer to platform device
@@ -365,6 +377,8 @@ struct synaptics_rmi4_data {
 	const struct synaptics_dsx_hw_interface *hw_if;
 	struct synaptics_rmi4_device_info rmi4_mod_info;
 	struct synaptics_rmi4_input_settings input_settings;
+	struct synaptics_rmi4_fn_desc rmi_fd;
+	struct synaptics_rmi4_f01_device_status status;
 	struct kobject *board_prop_dir;
 	struct regulator *pwr_reg;
 	struct regulator *bus_reg;
@@ -430,7 +444,7 @@ struct synaptics_rmi4_data {
 			bool rebuild);
 	int (*irq_enable)(struct synaptics_rmi4_data *rmi4_data, bool enable,
 			bool attn_only);
-	void (*sleep_enable)(struct synaptics_rmi4_data *rmi4_data,
+	int (*sleep_enable)(struct synaptics_rmi4_data *rmi4_data,
 			bool enable);
 	void (*report_touch)(struct synaptics_rmi4_data *rmi4_data,
 			struct synaptics_rmi4_fn *fhandler);
