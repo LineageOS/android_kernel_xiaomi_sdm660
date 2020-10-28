@@ -21,13 +21,6 @@
 &soc {
 	/delete-node/ qcom,qbt1000;
 
-	qcom,sensor-information {
-		sensor_information22: qcom,sensor-information-22 {
-			qcom,sensor-type = "adc";
-			qcom,sensor-name = "backlight_therm";
-		};
-	};
-
 	sn_fuse: snfuse@0xA4128 {
 		compatible = "qcom,sn-fuse";
 		reg = <0x786134 0x4>,
