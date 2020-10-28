@@ -25,10 +25,6 @@
 	};
 };
 
-&pm660_coincell {
-	qcom,charge-enable = <0>;
-};
-
 &pm660_charger {
 	qcom,usb-icl-ua = <2900000>;
 	qcom,otg-cl-ua = <1500000>;
