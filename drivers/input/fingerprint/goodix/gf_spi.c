@@ -76,7 +76,6 @@ static int SPIDEV_MAJOR;
 static DECLARE_BITMAP(minors, N_SPI_MINORS);
 static LIST_HEAD(device_list);
 static DEFINE_MUTEX(device_list_lock);
-static struct wakeup_source fp_wakelock;
 static struct gf_dev gf;
 
 static struct gf_key_map maps[] = {
@@ -325,7 +324,7 @@ static irqreturn_t gf_irq(int irq, void *handle)
 #if defined(GF_NETLINK_ENABLE)
 	char msg = GF_NET_EVENT_IRQ;
 	struct gf_dev *gf_dev = &gf;
-	__pm_wakeup_event(&fp_wakelock, msecs_to_jiffies(WAKELOCK_HOLD_TIME));
+	__pm_wakeup_event(gf_dev->fp_wakelock, msecs_to_jiffies(WAKELOCK_HOLD_TIME));
 	sendnlmsg(&msg);
 	if ((gf_dev->wait_finger_down == true) && (gf_dev->device_available == 1) && (gf_dev->fb_black == 1)) {
 		printk("%s:shedule_work\n",__func__);
@@ -858,7 +857,7 @@ static int gf_probe(struct platform_device *pdev)
 		goto error_sysfs;
 	}
 
-	wakeup_source_init(&fp_wakelock, "fp_wakelock");
+	gf_dev->fp_wakelock = wakeup_source_register(NULL, "fp_wakelock");
 
 	pr_info("version V%d.%d.%02d\n", VER_MAJOR, VER_MINOR, PATCH_LEVEL);
 
@@ -898,7 +897,7 @@ static int gf_remove(struct platform_device *pdev)
 {
 	struct gf_dev *gf_dev = &gf;
 
-	wakeup_source_trash(&fp_wakelock);
+	wakeup_source_unregister(gf_dev->fp_wakelock);
 	fb_unregister_client(&gf_dev->notifier);
 	if (gf_dev->input)
 		input_unregister_device(gf_dev->input);
