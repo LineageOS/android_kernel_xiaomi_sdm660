@@ -16,6 +16,7 @@
 /* sdm660.dtsi wayne specific diff */
 &firmware {
 	android {
+		/delete-node/ vbmeta;
 		fstab {
 			vendor {
 				mnt_flags = "ro,barrier=1";
