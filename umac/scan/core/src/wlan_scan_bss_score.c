@@ -484,6 +484,8 @@ static int32_t scm_get_congestion_pct(struct scan_cache_entry *entry)
 		 * 0-255 range
 		 */
 		congestion = qdf_do_div(ap_load, MAX_AP_LOAD);
+		if (!congestion)
+			congestion = 1;
 	}
 
 	return congestion;
