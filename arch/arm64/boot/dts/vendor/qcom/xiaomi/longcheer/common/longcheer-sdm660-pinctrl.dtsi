@@ -54,23 +54,6 @@
 		};
 	};
 
-	ant-check-pin {
-		ant_check_default: ant_check_default {
-			mux {
-				pins = "gpio74";
-				function = "gpio";
-			};
-
-			config {
-				pins = "gpio74";
-				drive-strength = <2>;
-				bias-disable;
-				input-enable;
-				input-debounce = <5000>;
-			};
-		};
-	};
-
 	/* add pri_mi2s for smartpa */
 	pri_mi2s_sck {
 		pri_mi2s_sck_sleep: pri_mi2s_sck_sleep {

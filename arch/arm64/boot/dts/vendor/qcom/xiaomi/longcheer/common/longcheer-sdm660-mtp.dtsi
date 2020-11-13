@@ -90,11 +90,4 @@
 		fpc,enable-on-boot;
 		fpc,enable-wakeup;
 	};
-
-	ant_check {
-		compatible = "ant_check";
-		ant_check_gpio = <&tlmm 74 0x0>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&ant_check_default>;
-	};
 };
