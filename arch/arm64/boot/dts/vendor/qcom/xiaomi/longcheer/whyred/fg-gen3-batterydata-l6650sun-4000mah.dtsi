@@ -3,6 +3,13 @@ qcom,l6650sun_4000mah {
 	qcom, = <24>;
 	qcom,max-voltage-uv = <4400000>;
 	qcom,fastchg-current-ma = <2500>;
+	qcom,jeita-fcc-ranges = <0   50   400000
+				 51  150  1200000
+				 151 450  2500000
+				 451 600  1200000>;
+	qcom,jeita-fv-ranges = <0   150  4400000
+				151 450  4400000
+				451 600  4100000>;
 	qcom,fg-cc-cv-threshold-mv = <4390>;
 	qcom,nom-batt-capacity-mah = <4000>;
 	qcom,batt-id-kohm = <68>;
