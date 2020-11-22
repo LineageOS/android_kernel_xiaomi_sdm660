@@ -24,11 +24,6 @@
 	/delete-property/ qcom,dsi-pref-prim-pan;
 };
 
-&pm660l_wled {
-	qcom,fs-curr-ua = <18000>;
-	qcom,string-cfg = <3>;
-};
-
 &dsi_nt36672_tianma_fhd_video {
 	qcom,mdss-dsi-bl-pmic-control-type = "bl_ctrl_wled";
 	qcom,mdss-dsi-bl-min-level = <1>;
