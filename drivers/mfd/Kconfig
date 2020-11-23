@@ -1914,3 +1914,10 @@ config RAVE_SP_CORE
 
 endmenu
 endif
+
+config XIAOMI_SPK_ID
+	bool "Xiaomi Speaker ID"
+	depends on MACH_XIAOMI_PLATINA
+	default n
+	help
+	  Xiaomi Speaker ID platform driver
