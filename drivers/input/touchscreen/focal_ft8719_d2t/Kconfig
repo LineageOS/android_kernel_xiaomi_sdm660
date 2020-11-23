@@ -1,0 +1,11 @@
+#
+# Focaltech Touchscreen driver configuration
+#
+
+config TOUCHSCREEN_FOCAL_FT8719_D2T
+	bool "Focaltech Touchscreen"
+	depends on I2C
+	default n
+	help
+	  Say Y here if you have Focaltech touch panel.
+	  If unsure, say N.
