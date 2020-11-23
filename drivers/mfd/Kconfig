@@ -1616,3 +1616,10 @@ config MFD_VEXPRESS_SYSREG
 
 endmenu
 endif
+
+config XIAOMI_SPK_ID
+	bool "Xiaomi Speaker ID"
+	depends on MACH_XIAOMI_SDM660
+	default n
+	help
+	  Xiaomi Speaker ID platform driver
