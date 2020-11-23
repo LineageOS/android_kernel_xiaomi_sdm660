@@ -908,8 +908,8 @@ static const char *nvt_get_config(struct nvt_ts_data *ts)
 	int i;
 
 	for (i = 0; i < ts->config_array_size; i++) {
-		if ((ts->lockdown_info[0] ==
-		     ts->config_array[i].tp_vendor))
+		if (ts->lockdown_info[0] ==
+		     ts->config_array[i].tp_vendor)
 			break;
 	}
 
