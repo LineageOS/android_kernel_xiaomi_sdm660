@@ -27,6 +27,9 @@ source "drivers/input/touchscreen/synaptics_dsx_e7s/Kconfig"
 source "drivers/input/touchscreen/nvt_touch_f7a/Kconfig"
 source "drivers/input/touchscreen/synaptics_tcm_f7a/Kconfig"
 
+source "drivers/input/touchscreen/focal_ft8719_d2t/Kconfig"
+source "drivers/input/touchscreen/synaptics_tcm_d2t/Kconfig"
+
 config OF_TOUCHSCREEN
 	def_tristate INPUT
 	depends on INPUT
@@ -1187,6 +1190,18 @@ config TOUCHSCREEN_NVT_F7A
 	  To compile this driver as a module, choose M here: the
 	  module will be called nvt.
 
+config TOUCHSCREEN_NVT_D2T
+	tristate "novatek touchscreens"
+	help
+	  Say Y here if you have a nvt touchscreen.
+	  nvt controllers are multi touch controllers which can
+	  report 5 touches at a time.
+
+	  If unsure, say N.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called nvt.
+
 config TOUCHSCREEN_ROHM_BU21023
 	tristate "ROHM BU21023/24 Dual touch support resistive touchscreens"
 	depends on I2C
@@ -1282,12 +1297,27 @@ config TOUCHSCREEN_COMMON
 
 	  If unsure, say N.
 
+config TOUCHSCREEN_FOCAL_FT8719_D2T
+	bool "Focaltech Touchscreen"
+	depends on I2C
+	default n
+	help
+	  Say Y here if you have Focaltech touch panel.
+	  If unsure, say N.
+
 config TOUCHSCREEN_FOCAL_FT8719_E7T
 	bool "Focaltech Touchscreen"
 	depends on I2C
 	default n
 	help
 	  Say Y here if you have Focaltech touch panel.
+	  If unsure, say N.
+
+config TOUCHSCREEN_SYNAPTICS_TCM_D2T
+	bool "Synaptics TCM touchscreen"
+	default n
+	help
+	  Say Y here, if you have a Synaptics TCM touchscreen connected.
 	  If unsure, say N.
 
 config TOUCHSCREEN_SYNAPTICS_TCM_F7A
