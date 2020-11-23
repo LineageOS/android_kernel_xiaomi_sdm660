@@ -21,6 +21,9 @@ fw-external-y := $(subst $(quote),,$(CONFIG_EXTRA_FIRMWARE))
 # accurate. In the latter case it doesn't matter -- it'll use $(fw-shipped-all).
 # But be aware that the config file might not be included at all.
 
+fw-shipped-$(CONFIG_TOUCHSCREEN_SYNAPTICS_TCM_D2T) += synaptics_boe_4320.fw
+fw-shipped-$(CONFIG_TOUCHSCREEN_NVT_D2T) += novatek_nt36672_d2t.fw
+
 quiet_cmd_ihex  = IHEX    $@
       cmd_ihex  = $(OBJCOPY) -Iihex -Obinary $< $@
 
