@@ -5900,14 +5900,14 @@ static const struct snd_kcontrol_new ext_ec_ref_mux_ul29 =
 static int msm_routing_ext_ec_get(struct snd_kcontrol *kcontrol,
 				  struct snd_ctl_elem_value *ucontrol)
 {
-#ifdef CONFIG_MACH_MI
+#ifdef CONFIG_MACH_XIAOMI_JASON
 	struct snd_soc_dapm_widget *widget =
 		snd_soc_dapm_kcontrol_widget(kcontrol);
 #endif
 	pr_debug("%s: ext_ec_ref_rx  = %x\n", __func__, msm_route_ext_ec_ref);
 
 	mutex_lock(&routing_lock);
-#ifdef CONFIG_MACH_MI
+#ifdef CONFIG_MACH_XIAOMI_JASON
 	if (!strncmp(widget->name, "VOC_EXT_EC MUX", strlen("VOC_EXT_EC MUX")))
 		ucontrol->value.integer.value[0] = voice_ext_ec_ref;
 	else
@@ -5998,7 +5998,7 @@ static int msm_routing_ext_ec_put(struct snd_kcontrol *kcontrol,
 						update);
 #endif
 	} else {
-#ifndef CONFIG_MACH_MI
+#ifndef CONFIG_MACH_XIAOMI_JASON
 		ret = -EINVAL;
 #endif
 		mutex_unlock(&routing_lock);
