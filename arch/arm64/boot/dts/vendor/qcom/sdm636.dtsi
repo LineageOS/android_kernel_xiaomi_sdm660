@@ -28,6 +28,23 @@
 	};
 };
 
+&cpu4_memlat_cpugrp {
+	qcom,cpu4-cpu-ddr-latmon {
+		qcom,core-dev-table =
+			< 1113600 MHZ_TO_MBPS(200, 4) >,
+			< 1401600 MHZ_TO_MBPS(1017, 4) >,
+			< 1804800 MHZ_TO_MBPS(1353, 4) >;
+	};
+
+	qcom,cpu4-computemon {
+		qcom,core-dev-table =
+			< 1113600 MHZ_TO_MBPS(200, 4) >,
+			< 1401600 MHZ_TO_MBPS(547, 4) >,
+			< 1747200 MHZ_TO_MBPS(768, 4) >,
+			< 1804800 MHZ_TO_MBPS(1353, 4) >;
+	};
+};
+
 &soc {
 	/delete-node/ qcom,turing@1a300000;
 
@@ -37,23 +54,6 @@
 	funnel@6042000 {
 		ports {
 			/delete-node/ port@4;
-		};
-	};
-
-	devfreq_memlat_4: qcom,arm-memlat-mon-4 {
-		qcom,core-dev-table =
-		< 1113600 762 >,
-		< 1401600 3879 >,
-		< 1804800 5163 >;
-	};
-
-	devfreq_cpufreq: devfreq-cpufreq {
-		mincpubw-cpufreq {
-			cpu-to-dev-map-4 =
-				< 1113600 762 >,
-				< 1401600 2086 >,
-				< 1747200 2929 >,
-				< 1804800 5163 >;
 		};
 	};
 
