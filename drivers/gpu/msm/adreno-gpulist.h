@@ -604,6 +604,8 @@ static const struct adreno_a5xx_core adreno_gpu_core_a512 = {
 	.zap_name = "a512_zap",
 	.hwcg = a512_hwcg_regs,
 	.hwcg_count = ARRAY_SIZE(a512_hwcg_regs),
+	.vbif = a540_vbif_regs,
+	.vbif_count = ARRAY_SIZE(a540_vbif_regs),
 };
 
 static const struct adreno_a5xx_core adreno_gpu_core_a508 = {
@@ -640,6 +642,8 @@ static const struct adreno_a5xx_core adreno_gpu_core_a509 = {
 	.zap_name = "a512_zap",
 	.hwcg = a512_hwcg_regs,
 	.hwcg_count = ARRAY_SIZE(a512_hwcg_regs),
+	.vbif = a540_vbif_regs,
+	.vbif_count = ARRAY_SIZE(a540_vbif_regs),
 };
 
 DEFINE_DEPRECATED_CORE(a630v1, ADRENO_REV_A630, 6, 3, 0, 0);
