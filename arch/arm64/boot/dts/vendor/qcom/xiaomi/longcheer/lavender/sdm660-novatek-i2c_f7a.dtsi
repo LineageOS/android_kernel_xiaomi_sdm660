@@ -34,6 +34,7 @@
 &i2c_1{
     /* Novatek device tree node */
     status = "ok";
+	qcom,disable-dma;
     novatek@62 {
         compatible = "novatek,NVT-ts";
         reg = <0x62>;
