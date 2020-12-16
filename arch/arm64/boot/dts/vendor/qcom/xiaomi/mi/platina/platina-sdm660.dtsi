@@ -188,6 +188,7 @@
 	/* Novatek device tree node */
 	novatek@62 {
 		compatible = "novatek,NVT-ts";
+		qcom,i2c-touch-active = "novatek, NVT-ts";
 		reg = <0x62>;
 		status = "ok";
 
@@ -219,6 +220,7 @@
 	/*Synatics device tree node*/
 	synaptics_tcm@20 {
 		compatible = "synaptics,tcm-i2c";
+		qcom,i2c-touch-active = "synaptics,tcm-i2c";
 		reg = <0x20>;
 		interrupt-parent = <&tlmm>;
 		vdd-supply = <&pm660_l11>;
