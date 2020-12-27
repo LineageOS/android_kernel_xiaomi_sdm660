@@ -75,7 +75,7 @@
 
 
 
-#if 1
+#if 0
 #define LOGV(log, ...) \
 	printk(KERN_ERR "[synaptics] %s (line %d): " log, __func__, __LINE__, ##__VA_ARGS__)
 #else
