@@ -394,11 +394,7 @@ static struct fg_alg_flag pmi8998_v2_alg_flags[] = {
 	},
 };
 
-#ifdef CONFIG_MACH_MI
-static int fg_gen3_debug_mask = FG_IRQ | FG_STATUS;
-#else
 static int fg_gen3_debug_mask;
-#endif
 module_param_named(
 	debug_mask, fg_gen3_debug_mask, int, S_IRUSR | S_IWUSR
 );
