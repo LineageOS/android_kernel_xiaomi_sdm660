@@ -93,13 +93,7 @@ enum print_reason {
 	PR_PARALLEL	= BIT(0),
 };
 
-#ifdef CONFIG_MACH_LONGCHEER
-static int debug_mask = 0xff;
-#elif defined(CONFIG_MACH_MI)
-static int debug_mask = PR_PARALLEL;
-#else
 static int debug_mask;
-#endif
 module_param_named(debug_mask, debug_mask, int, S_IRUSR | S_IWUSR);
 
 #define pl_dbg(chip, reason, fmt, ...)				\
