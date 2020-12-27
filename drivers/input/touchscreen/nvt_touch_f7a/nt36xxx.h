@@ -28,7 +28,7 @@
 
 #include "nt36xxx_mem_map.h"
 
-#define NVT_DEBUG 1
+#define NVT_DEBUG 0
 
 
 #define NVTTOUCH_RST_PIN 66
