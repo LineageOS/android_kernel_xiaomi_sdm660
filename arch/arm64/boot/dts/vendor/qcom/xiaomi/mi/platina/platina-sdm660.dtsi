@@ -382,6 +382,7 @@
 
 &i2c_2 { /* smart PA device. */
 		status = "okay";
+		qcom,disable-dma;		
 		tfa98xx@34 {
 		compatible = "nxp,tfa98xx";
 		reset-gpio = <&tlmm 43 0>;
