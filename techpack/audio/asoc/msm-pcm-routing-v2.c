@@ -33,7 +33,7 @@
 #include <dsp/q6common.h>
 #include <dsp/audio_cal_utils.h>
 #ifdef CONFIG_ELLIPTICLABS
-#include <sound/apr_elliptic.h>
+#include <dsp/apr_elliptic.h>
 #include <elliptic/elliptic_mixer_controls.h>
 #endif
 
@@ -31726,7 +31726,7 @@ static int msm_routing_probe(struct snd_soc_component *component)
 				      ARRAY_SIZE(mclk_src_controls));
 
 #ifdef CONFIG_ELLIPTICLABS
-	elliptic_add_platform_controls(platform);
+	elliptic_add_component_controls(component);
 #endif
 
 	return 0;

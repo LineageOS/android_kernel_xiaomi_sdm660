@@ -8,10 +8,10 @@
 #include <sound/asound.h>
 #include <sound/soc.h>
 #include <sound/control.h>
-#include "msm-pcm-routing-v2.h"
-#include <sound/q6audio-v2.h>
-#include <sound/q6common.h>
-#include <sound/apr_audio-v2.h>
+#include "../asoc/msm-pcm-routing-v2.h"
+#include <dsp/q6audio-v2.h>
+#include <dsp/q6common.h>
+#include <dsp/apr_audio-v2.h>
 #include <dsp/apr_elliptic.h>
 #include <elliptic/elliptic_mixer_controls.h>
 #include <elliptic/elliptic_data_io.h>

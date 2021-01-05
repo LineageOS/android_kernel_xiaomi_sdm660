@@ -34,6 +34,7 @@
 #include <elliptic/elliptic_device.h>
 #include <elliptic/elliptic_data_io.h>
 #include <elliptic/elliptic_mixer_controls.h>
+#include <dsp/apr_elliptic.h>
 
 
 /* Alternative mechanism to load calibration data.
@@ -699,7 +700,7 @@ static int32_t elliptic_send_calibration_to_engine(size_t calib_data_size)
 #endif
 
 
-static int __init elliptic_driver_init(void)
+int __init elliptic_driver_init(void)
 {
 	int err;
 	int i;
@@ -786,7 +787,7 @@ fail:
 	return err;
 }
 
-static void elliptic_driver_exit(void)
+void elliptic_driver_exit(void)
 {
 	if (wake_source) {
 		wakeup_source_trash(wake_source);
