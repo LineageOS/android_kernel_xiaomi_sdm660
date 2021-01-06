@@ -10,7 +10,7 @@
  * GNU General Public License for more details.
  */
 
+#include "xiaomi-sdm660-common.dtsi"
 #include "longcheer/common/longcheer-sdm660-base.dtsi"
 #include "longcheer/common/longcheer-sdm636.dtsi"
-#include "xiaomi-sdm660-common.dtsi"
 #include "longcheer/tulip/tulip-base.dtsi"
