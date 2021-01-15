@@ -1162,7 +1162,7 @@ struct wlan_mlme_generic {
 	bool bmiss_skip_full_scan;
 	bool enable_ring_buffer;
 	bool enable_peer_unmap_conf_support;
-	bool disable_4way_hs_offload;
+	uint32_t disable_4way_hs_offload;
 	uint8_t dfs_chan_ageout_time;
 };
 

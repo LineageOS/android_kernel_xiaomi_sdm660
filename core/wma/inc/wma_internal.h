@@ -84,6 +84,9 @@
 #define MAX_ENTRY_HOLD_REQ_QUEUE 2
 #define MAX_ENTRY_VDEV_RESP_QUEUE 10
 
+#define CFG_DISABLE_4WAY_HS_OFFLOAD_ALL_AKM     BIT(0)
+#define CFG_DISABLE_4WAY_HS_OFFLOAD_WPA3_SAE    BIT(1)
+
 /**
  * struct index_data_rate_type - non vht data rate type
  * @mcs_index: mcs rate index

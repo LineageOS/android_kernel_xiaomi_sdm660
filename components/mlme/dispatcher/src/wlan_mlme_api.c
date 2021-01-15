@@ -3833,7 +3833,7 @@ char *mlme_get_sub_reason_str(uint32_t sub_reason)
 }
 
 QDF_STATUS
-wlan_mlme_get_4way_hs_offload(struct wlan_objmgr_psoc *psoc, bool *value)
+wlan_mlme_get_4way_hs_offload(struct wlan_objmgr_psoc *psoc, uint32_t *value)
 {
 	struct wlan_mlme_psoc_obj *mlme_obj;
 

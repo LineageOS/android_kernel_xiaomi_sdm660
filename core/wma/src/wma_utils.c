@@ -4885,7 +4885,7 @@ static void wma_set_roam_offload_flag(tp_wma_handle wma, uint8_t vdev_id,
 	QDF_STATUS status;
 	uint32_t flag = 0;
 	bool bmiss_skip_full_scan;
-	bool disable_4way_hs_offload;
+	uint32_t disable_4way_hs_offload;
 
 	if (is_set) {
 		flag = WMI_ROAM_FW_OFFLOAD_ENABLE_FLAG |
@@ -4908,8 +4908,14 @@ static void wma_set_roam_offload_flag(tp_wma_handle wma, uint8_t vdev_id,
 		 * If 4-way HS offload is disabled then let supplicant handle
 		 * 4way HS and firmware will still do LFR3.0 till reassoc phase.
 		 */
-		if (disable_4way_hs_offload)
+		if (disable_4way_hs_offload &
+		    CFG_DISABLE_4WAY_HS_OFFLOAD_ALL_AKM)
 			flag |= WMI_VDEV_PARAM_SKIP_ROAM_EAPOL_4WAY_HANDSHAKE;
+		if ((disable_4way_hs_offload &
+		     CFG_DISABLE_4WAY_HS_OFFLOAD_WPA3_SAE) &&
+		    (wmi_service_enabled(wma->wmi_handle,
+		     wmi_service_sae_eapol_offload_support)))
+			flag |= WMI_VDEV_PARAM_SKIP_SAE_ROAM_4WAY_HANDSHAKE;
 	}
 
 	wma_debug("vdev_id:%d, is_set:%d, flag:%d", vdev_id, is_set, flag);
