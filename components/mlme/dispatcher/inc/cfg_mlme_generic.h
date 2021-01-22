@@ -664,15 +664,21 @@
 			1, \
 			"To Enable Ring Buffer")
 
+#define CFG_DISABLE_4WAY_HS_OFFLOAD_ALL_AKM	BIT(0)
+#define CFG_DISABLE_4WAY_HS_OFFLOAD_WPA3_SAE	BIT(1)
+
 /*
  * <ini>
  * disable_4way_hs_offload - Enable/Disable 4 way handshake offload to firmware
  * @Min: 0
- * @Max: 1
+ * @Max: 2
  * @Default: 0
  *
  * 0  4-way HS to be handled in firmware
  * 1  4-way HS to be handled in supplicant
+ * 2  4-way HS to be handled in supplicant for WPA3-SAE Roam
+ *
+ * Based on the requirement the Max value can be increased per AKM.
  *
  * Related: None
  *
@@ -682,8 +688,11 @@
  *
  * </ini>
  */
-#define CFG_DISABLE_4WAY_HS_OFFLOAD CFG_INI_BOOL("disable_4way_hs_offload", \
+#define CFG_DISABLE_4WAY_HS_OFFLOAD CFG_INI_UINT("disable_4way_hs_offload", \
 			0, \
+			CFG_DISABLE_4WAY_HS_OFFLOAD_WPA3_SAE, \
+			0, \
+			CFG_VALUE_OR_DEFAULT, \
 			"Enable/disable 4 way handshake offload to firmware")
 
 /*
