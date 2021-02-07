@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2016-2017, 2020, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -746,7 +746,6 @@ out:
 	return rc;
 }
 
-#ifdef CONFIG_MACH_XIAOMI_TULIP
 int fg_dma_mem_req(struct fg_chip *chip, bool request)
 {
 	int ret, rc = 0, retry_count  = RETRY_COUNT;
@@ -779,7 +778,7 @@ int fg_dma_mem_req(struct fg_chip *chip, bool request)
 				break;
 			msleep(20);
 		}
-		if (!retry_count && !(val & MEM_GNT_BIT)) {
+		if ((retry_count < 0) && !(val & MEM_GNT_BIT)) {
 			pr_err("failed to get memory access\n");
 			rc = -ETIMEDOUT;
 			goto release_mem;
@@ -804,7 +803,6 @@ release_mem:
 
 	return rc;
 }
-#endif
 
 int fg_ima_init(struct fg_chip *chip)
 {

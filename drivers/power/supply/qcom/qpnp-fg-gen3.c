@@ -4132,11 +4132,9 @@ static int fg_psy_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CC_STEP_SEL:
 		pval->intval = chip->ttf.cc_step.sel;
 		break;
-#ifdef CONFIG_MACH_XIAOMI_TULIP
 	case POWER_SUPPLY_PROP_FG_RESET_CLOCK:
 		pval->intval = 0;
 		break;
-#endif
 	default:
 		pr_err("unsupported property %d\n", psp);
 		rc = -EINVAL;
@@ -4149,21 +4147,20 @@ static int fg_psy_get_property(struct power_supply *psy,
 	return 0;
 }
 
-#ifdef CONFIG_MACH_XIAOMI_TULIP
 #define BCL_RESET_RETRY_COUNT 4
 static int fg_bcl_reset(struct fg_chip *chip)
 {
 	int i, ret, rc = 0;
 	u8 val, peek_mux;
 	bool success = false;
-	pr_err("FG_BCL_RESET START\n");
+
 	/* Read initial value of peek mux1 */
 	rc = fg_read(chip, BATT_INFO_PEEK_MUX1(chip), &peek_mux, 1);
 	if (rc < 0) {
 		pr_err("Error in writing peek mux1, rc=%d\n", rc);
 		return rc;
 	}
-	pr_err("FG_BCL_RESET PEEK_MUX = %d\n",peek_mux);
+
 	val = 0x83;
 	rc = fg_write(chip, BATT_INFO_PEEK_MUX1(chip), &val, 1);
 	if (rc < 0) {
@@ -4173,7 +4170,6 @@ static int fg_bcl_reset(struct fg_chip *chip)
 
 	mutex_lock(&chip->sram_rw_lock);
 	for (i = 0; i < BCL_RESET_RETRY_COUNT; i++) {
-		pr_err("FG_BCL_RESET RETRY\n");
 		rc = fg_dma_mem_req(chip, true);
 		if (rc < 0) {
 			pr_err("Error in locking memory, rc=%d\n", rc);
@@ -4185,9 +4181,8 @@ static int fg_bcl_reset(struct fg_chip *chip)
 			pr_err("Error in reading rdback, rc=%d\n", rc);
 			goto release_mem;
 		}
-		pr_err("FG_BCL_RESET VAL = %d\n",val);
+
 		if (val & PEEK_MUX1_BIT) {
-			pr_err("FG_BCL_RESET DEBUG\n");
 			rc = fg_masked_write(chip, BATT_SOC_RST_CTRL0(chip),
 						BCL_RESET_BIT, BCL_RESET_BIT);
 			if (rc < 0) {
@@ -4198,7 +4193,8 @@ static int fg_bcl_reset(struct fg_chip *chip)
 
 			rc = fg_dma_mem_req(chip, false);
 			if (rc < 0)
-				pr_err("Error in unlocking memory, rc=%d\n", rc);
+				pr_err("Error in unlocking memory, rc=%d\n",
+						rc);
 
 			/* Delay of 2ms */
 			usleep_range(2000, 3000);
@@ -4214,8 +4210,9 @@ static int fg_bcl_reset(struct fg_chip *chip)
 		} else {
 			rc = fg_dma_mem_req(chip, false);
 			if (rc < 0) {
-				pr_err("Error in unlocking memory, rc=%d\n", rc);
-				return rc;
+				pr_err("Error in unlocking memory, rc=%d\n",
+						rc);
+				goto unlock;
 			}
 			success = false;
 			pr_err_ratelimited("PEEK_MUX1 not set retrying...\n");
@@ -4243,7 +4240,6 @@ unlock:
 	else
 		return rc;
 }
-#endif
 
 static int fg_psy_set_property(struct power_supply *psy,
 				  enum power_supply_property psp,
@@ -4346,6 +4342,13 @@ static int fg_psy_set_property(struct power_supply *psy,
 		rc = fg_set_jeita_threshold(chip, JEITA_HOT, pval->intval);
 		if (rc < 0) {
 			pr_err("Error in writing jeita_hot, rc=%d\n", rc);
+			return rc;
+		}
+		break;
+	case POWER_SUPPLY_PROP_FG_RESET_CLOCK:
+		rc = fg_bcl_reset(chip);
+		if (rc < 0) {
+			pr_err("Error in resetting BCL clock, rc=%d\n", rc);
 			return rc;
 		}
 		break;
@@ -4452,9 +4455,7 @@ static enum power_supply_property fg_psy_props[] = {
 	POWER_SUPPLY_PROP_CONSTANT_CHARGE_VOLTAGE,
 	POWER_SUPPLY_PROP_CC_STEP,
 	POWER_SUPPLY_PROP_CC_STEP_SEL,
-#ifdef CONFIG_MACH_XIAOMI_TULIP
 	POWER_SUPPLY_PROP_FG_RESET_CLOCK,
-#endif
 };
 
 static const struct power_supply_desc fg_psy_desc = {
