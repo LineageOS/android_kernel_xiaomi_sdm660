@@ -38,6 +38,7 @@
 #endif
 #include "osif_sync.h"
 #include <wlan_hdd_sysfs_set_fw_mode_cfg.h>
+#include <wlan_hdd_sysfs_dl_modes.h>
 
 #define MAX_PSOC_ID_SIZE 10
 
@@ -597,22 +598,24 @@ static int hdd_sysfs_create_bcn_reception_interface(struct hdd_adapter
 	return error;
 }
 
-void hdd_sysfs_create_adapter_root_obj(struct hdd_adapter *adapter)
-{
-	hdd_sysfs_create_bcn_reception_interface(adapter);
-}
-
 static void hdd_sysfs_destroy_bcn_reception_interface(struct hdd_adapter
 						      *adapter)
 {
 	device_remove_file(&adapter->dev->dev, &dev_attr_beacon_stats);
 }
+#endif
+
+void hdd_sysfs_create_adapter_root_obj(struct hdd_adapter *adapter)
+{
+	hdd_sysfs_create_bcn_reception_interface(adapter);
+	hdd_sysfs_dl_modes_create(adapter);
+}
 
 void hdd_sysfs_destroy_adapter_root_obj(struct hdd_adapter *adapter)
 {
+	hdd_sysfs_dl_modes_destroy(adapter);
 	hdd_sysfs_destroy_bcn_reception_interface(adapter);
 }
-#endif
 
 void hdd_create_sysfs_files(struct hdd_context *hdd_ctx)
 {
