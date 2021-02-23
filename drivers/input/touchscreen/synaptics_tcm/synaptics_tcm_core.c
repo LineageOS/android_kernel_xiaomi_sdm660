@@ -1866,10 +1866,16 @@ static irqreturn_t syna_tcm_isr(int irq, void *data)
 			0);
 	if (retval < 0) {
 		LOGE(tcm_hcd->pdev->dev.parent, "Failed to read message\n");
-		if (tcm_hcd->in_suspend) LOGV("TP status: suspend\n");
-		else LOGV("TP status: not suspend\n");
-		if (synaptics_gesture_enable_flag) LOGV("TP status: enabled gesture.\n");
-		else LOGV("TP status:disabled gesture.\n");
+		if (tcm_hcd->in_suspend) {
+		    LOGV("TP status: suspend\n");
+		} else {
+		    LOGV("TP status: not suspend\n");
+		}
+		if (synaptics_gesture_enable_flag) {
+		    LOGV("TP status: enabled gesture.\n");
+		} else {
+		    LOGV("TP status:disabled gesture.\n");
+		}
 		if (retval == -ENXIO && tcm_hcd->hw_if->bus_io->type == BUS_SPI)
 			syna_tcm_check_hdl(tcm_hcd);
 		else
