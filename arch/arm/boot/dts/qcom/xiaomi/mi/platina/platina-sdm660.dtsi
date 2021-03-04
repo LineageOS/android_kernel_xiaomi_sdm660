@@ -311,7 +311,7 @@
 		qcom,msm-mbhc-hphl-swh = <1>;
 		qcom,msm-mbhc-gnd-swh = <1>;
 		qcom,msm-mbhc-usbc-audio-supported = <1>;
-		qcom,usbc-analog-en1-gpio = <&pm660_gpios 13 0>;
+		qcom,usbc-analog-en1_gpio = <&pm660_gpios 13 0>;
 		qcom,us-euro-gpios = <&us_euro_gpio>;
 	};
 
