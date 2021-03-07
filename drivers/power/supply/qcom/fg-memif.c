@@ -746,6 +746,7 @@ out:
 	return rc;
 }
 
+#ifdef CONFIG_MACH_XIAOMI_TULIP
 int fg_dma_mem_req(struct fg_chip *chip, bool request)
 {
 	int ret, rc = 0, retry_count  = RETRY_COUNT;
@@ -803,6 +804,7 @@ release_mem:
 
 	return rc;
 }
+#endif
 
 int fg_ima_init(struct fg_chip *chip)
 {
