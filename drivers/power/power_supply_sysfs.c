@@ -313,15 +313,6 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(pd_voltage_max),
 	POWER_SUPPLY_ATTR(pd_voltage_min),
 	POWER_SUPPLY_ATTR(sdp_current_max),
-#ifdef CONFIG_MACH_LONGCHEER
-	POWER_SUPPLY_ATTR(fg_reset_clock),
-#elif defined(CONFIG_MACH_MI)
-	POWER_SUPPLY_ATTR(type_recheck),
-	POWER_SUPPLY_ATTR(charger_type),
-#endif
-#ifdef CONFIG_MACH_XIAOMI_SDM660
-	POWER_SUPPLY_ATTR(rerun_apsd),
-#endif
 	POWER_SUPPLY_ATTR(fcc_stepper_enable),
 	POWER_SUPPLY_ATTR(ignore_false_negative_isense),
 	POWER_SUPPLY_ATTR(battery_info),
@@ -333,6 +324,13 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(parallel_fcc_max),
 	POWER_SUPPLY_ATTR(min_icl),
 	POWER_SUPPLY_ATTR(fg_reset_clock),
+#ifdef CONFIG_MACH_XIAOMI_SDM660
+	POWER_SUPPLY_ATTR(rerun_apsd),
+#ifdef CONFIG_MACH_MI
+	POWER_SUPPLY_ATTR(type_recheck),
+	POWER_SUPPLY_ATTR(charger_type),
+#endif
+#endif
 	/* Local extensions of type int64_t */
 	POWER_SUPPLY_ATTR(charge_counter_ext),
 	/* Properties of type `const char *' */
