@@ -420,7 +420,15 @@ int fg_write(struct fg_chip *chip, int addr, u8 *val, int len)
 		return -ENXIO;
 
 	mutex_lock(&chip->bus_lock);
+#ifdef CONFIG_MACH_XIAOMI_SDM660
+#if defined(CONFIG_MACH_XIAOMI_TULIP) || defined(CONFIG_MACH_XIAOMI_WAYNE)
+	sec_access = (addr & 0x00FF) > 0xBA;
+#else
+	sec_access = (addr & 0x00FF) > 0xD0;
+#endif
+#else
 	sec_access = (addr & 0x00FF) >= 0xBA;
+#endif
 	if (sec_access) {
 		rc = regmap_write(chip->regmap, (addr & 0xFF00) | 0xD0, 0xA5);
 		if (rc < 0) {
@@ -460,7 +468,15 @@ int fg_masked_write(struct fg_chip *chip, int addr, u8 mask, u8 val)
 		return -ENXIO;
 
 	mutex_lock(&chip->bus_lock);
+#ifdef CONFIG_MACH_XIAOMI_SDM660
+#if defined(CONFIG_MACH_XIAOMI_TULIP) || defined(CONFIG_MACH_XIAOMI_WAYNE)
+	sec_access = (addr & 0x00FF) > 0xBA;
+#else
+	sec_access = (addr & 0x00FF) > 0xD0;
+#endif
+#else
 	sec_access = (addr & 0x00FF) >= 0xBA;
+#endif
 	if (sec_access) {
 		rc = regmap_write(chip->regmap, (addr & 0xFF00) | 0xD0, 0xA5);
 		if (rc < 0) {
