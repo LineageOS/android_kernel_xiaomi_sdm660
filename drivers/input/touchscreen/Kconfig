@@ -18,7 +18,7 @@ source "drivers/input/touchscreen/synaptics_dsx_force/Kconfig"
 source "drivers/input/touchscreen/nvt_touch_a/Kconfig"
 
 # HMI_L6662_A01
-source "drivers/input/touchscreen/focal_ft8719/Kconfig"
+source "drivers/input/touchscreen/focal_ft8719_e7t/Kconfig"
 
 # HMI_L6653_A01
 source "drivers/input/touchscreen/nvt_touch_e7s/Kconfig"
@@ -1282,7 +1282,7 @@ config TOUCHSCREEN_COMMON
 
 	  If unsure, say N.
 
-config TOUCHSCREEN_FOCAL_FT8719
+config TOUCHSCREEN_FOCAL_FT8719_E7T
 	bool "Focaltech Touchscreen"
 	depends on I2C
 	default n
