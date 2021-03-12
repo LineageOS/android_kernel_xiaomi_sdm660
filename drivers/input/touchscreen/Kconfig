@@ -25,7 +25,7 @@ source "drivers/input/touchscreen/nvt_touch_e7s/Kconfig"
 source "drivers/input/touchscreen/synaptics_dsx_e7s/Kconfig"
 
 source "drivers/input/touchscreen/nvt_touch_f7a/Kconfig"
-source "drivers/input/touchscreen/synaptics_tcm/Kconfig"
+source "drivers/input/touchscreen/synaptics_tcm_f7a/Kconfig"
 
 config OF_TOUCHSCREEN
 	def_tristate INPUT
@@ -1288,6 +1288,13 @@ config TOUCHSCREEN_FOCAL_FT8719
 	default n
 	help
 	  Say Y here if you have Focaltech touch panel.
+	  If unsure, say N.
+
+config TOUCHSCREEN_SYNAPTICS_TCM_F7A
+	bool "Synaptics TCM touchscreen"
+	default n
+	help
+	  Say Y here, if you have a Synaptics TCM touchscreen connected.
 	  If unsure, say N.
 
 source "drivers/input/touchscreen/st/Kconfig"
