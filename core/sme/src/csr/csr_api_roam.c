@@ -15214,6 +15214,8 @@ static void csr_update_pmk_cache(struct csr_roam_session *session,
 	}
 
 	session->NumPmkidCache++;
+	sme_debug("PMKSA entry added at index = %d, cache count = %d",
+		  cache_idx, session->NumPmkidCache);
 	if (session->NumPmkidCache > CSR_MAX_PMKID_ALLOWED) {
 		sme_debug("setting num pmkid cache to %d",
 			CSR_MAX_PMKID_ALLOWED);
@@ -15228,7 +15230,8 @@ csr_roam_set_pmkid_cache(struct mac_context *mac, uint32_t sessionId,
 {
 	struct csr_roam_session *pSession = CSR_GET_SESSION(mac, sessionId);
 	uint32_t i = 0;
-	tPmkidCacheInfo *pmksa;
+	uint32_t pmkid_index;
+	tPmkidCacheInfo *pmksa, *pmkid_cache;
 	enum csr_akm_type akm_type;
 
 	if (!pSession) {
@@ -15255,12 +15258,35 @@ csr_roam_set_pmkid_cache(struct mac_context *mac, uint32_t sessionId,
 		return QDF_STATUS_SUCCESS;
 	}
 
+	pmkid_cache = qdf_mem_malloc(sizeof(*pmkid_cache));
+	if (!pmkid_cache)
+		return QDF_STATUS_E_NOMEM;
+
 	for (i = 0; i < numItems; i++) {
 		pmksa = &pPMKIDCache[i];
 
+		if (!pmksa->pmk_len || pmksa->pmk_len > CSR_RSN_MAX_PMK_LEN) {
+			sme_err("Invalid PMK length");
+			qdf_mem_zero(pmkid_cache, sizeof(*pmkid_cache));
+			qdf_mem_free(pmkid_cache);
+			return QDF_STATUS_E_FAILURE;
+		}
+		qdf_copy_macaddr(&pmkid_cache->BSSID, &pmksa->BSSID);
+		sme_debug("Trying to find PMKID for " QDF_MAC_ADDR_STR,
+			  QDF_MAC_ADDR_ARRAY(pmkid_cache->BSSID.bytes));
+		if (csr_lookup_pmkid_using_bssid(mac, pSession, pmkid_cache,
+						 &pmkid_index) &&
+		    (!qdf_mem_cmp(pmkid_cache->pmk,
+				  pmksa->pmk, pmksa->pmk_len))) {
+			sme_debug("PMKSA entry found with same PMK at index %d",
+				  pmkid_index);
+			qdf_mem_zero(pmkid_cache, sizeof(*pmkid_cache));
+			qdf_mem_free(pmkid_cache);
+			return QDF_STATUS_E_EXISTS;
+		}
+
 		/* Delete the entry if present */
-		csr_roam_del_pmkid_from_cache(mac, sessionId,
-				pmksa, false);
+		csr_roam_del_pmkid_from_cache(mac, sessionId, pmksa, false);
 		/* Update new entry */
 		csr_update_pmk_cache(pSession, pmksa);
 
@@ -15276,6 +15302,8 @@ csr_roam_set_pmkid_cache(struct mac_context *mac, uint32_t sessionId,
 						sessionId, pmksa->cache_id);
 		}
 	}
+	qdf_mem_zero(pmkid_cache, sizeof(*pmkid_cache));
+	qdf_mem_free(pmkid_cache);
 	return QDF_STATUS_SUCCESS;
 }
 
