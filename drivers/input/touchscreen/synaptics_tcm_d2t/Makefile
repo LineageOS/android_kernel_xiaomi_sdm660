@@ -4,8 +4,8 @@
 
 # Each configuration option enables a list of files.
 
-obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_TCM_SPI) += synaptics_tcm_spi.o
-obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_TCM_I2C) += synaptics_tcm_i2c.o
+obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_TCM_SPI_D2T) += synaptics_tcm_spi.o
+obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_TCM_I2C_D2T) += synaptics_tcm_i2c.o
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_TCM_CORE) += synaptics_tcm_core.o
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_TCM_TOUCH) += synaptics_tcm_touch.o
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_TCM_DEVICE) += synaptics_tcm_device.o
