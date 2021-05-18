@@ -16526,6 +16526,10 @@ static int __wlan_hdd_cfg80211_add_key(struct wiphy *wiphy,
 
 	mac_handle = hdd_ctx->mac_handle;
 
+	cdp_peer_flush_frags(cds_get_context(QDF_MODULE_ID_SOC),
+			     cds_get_context(QDF_MODULE_ID_TXRX),
+			     adapter->vdev_id, set_key.peerMac.bytes);
+
 	switch (params->cipher) {
 	case WLAN_CIPHER_SUITE_WEP40:
 		set_key.encType = eCSR_ENCRYPT_TYPE_WEP40_STATICKEY;
