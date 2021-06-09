@@ -5574,6 +5574,7 @@ typedef struct {
 	bool tstamp64_en;
 	bool nan_separate_iface_support;
 	uint32_t max_ndi;
+	bool sae_eapol_offload;
 } target_resource_config;
 
 /**

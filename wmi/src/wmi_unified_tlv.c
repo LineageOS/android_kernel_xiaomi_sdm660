@@ -6655,6 +6655,10 @@ void wmi_copy_resource_config(wmi_resource_config *resource_cfg,
 	WMI_RSRC_CFG_HOST_SERVICE_FLAG_NAN_IFACE_SUPPORT_SET(
 		resource_cfg->host_service_flags,
 		tgt_res_cfg->nan_separate_iface_support);
+
+	if (tgt_res_cfg->sae_eapol_offload)
+		WMI_RSRC_CFG_HOST_SERVICE_FLAG_SAE_EAPOL_OFFLOAD_SUPPORT_SET(
+			resource_cfg->host_service_flags, 1);
 }
 
 /* copy_hw_mode_id_in_init_cmd() - Helper routine to copy hw_mode in init cmd
@@ -7760,12 +7764,6 @@ static QDF_STATUS init_cmd_send_tlv(wmi_unified_t wmi_handle,
 			WMITLV_GET_STRUCT_TLVLEN(wmi_init_cmd_fixed_param));
 
 	wmi_copy_resource_config(resource_cfg, param->res_cfg);
-	if (wmi_service_enabled(wmi_handle,
-				wmi_service_sae_eapol_offload_support)) {
-		WMI_RSRC_CFG_HOST_SERVICE_FLAG_SAE_EAPOL_OFFLOAD_SUPPORT_SET(
-			resource_cfg->host_service_flags, 1);
-	}
-
 	WMITLV_SET_HDR(&resource_cfg->tlv_header,
 			WMITLV_TAG_STRUC_wmi_resource_config,
 			WMITLV_GET_STRUCT_TLVLEN(wmi_resource_config));
