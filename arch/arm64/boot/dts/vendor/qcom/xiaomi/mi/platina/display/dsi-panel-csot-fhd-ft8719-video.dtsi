@@ -121,7 +121,7 @@
 		qcom,mdss-dsi-tx-eot-append;
 		qcom,ulps-enabled;
 		qcom,esd-err-irq-gpio = <&tlmm 13 0x2001>;
-		qcom,esd-check-enabled;
+		/*qcom,esd-check-enabled;*/
 		qcom,dispparam-enabled;
 		qcom,mdss-panel-on-dimming-delay = <120>;
 		qcom,mdss-dsi-dispparam-dimmingon-command = [
