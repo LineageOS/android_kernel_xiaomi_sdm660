@@ -2921,6 +2921,107 @@ free_filter:
 	return status;
 }
 
+QDF_STATUS csr_get_scan_res_using_bssid(struct mac_context *mac_ctx,
+					struct qdf_mac_addr *bssid,
+					tCsrScanResultInfo *res)
+{
+	QDF_STATUS status = QDF_STATUS_E_FAILURE;
+	struct scan_filter *scan_filter = NULL;
+	tCsrScanResultInfo *scan_result = NULL;
+	struct wlan_objmgr_pdev *pdev = NULL;
+	struct scan_result_list *ret_list = NULL;
+	qdf_list_t *list = NULL;
+
+	if (!mac_ctx) {
+		QDF_TRACE(QDF_MODULE_ID_SME,
+			  QDF_TRACE_LEVEL_ERROR, FL("mac_ctx is NULL"));
+		return QDF_STATUS_E_FAILURE;
+	}
+
+	pdev = wlan_objmgr_get_pdev_by_id(mac_ctx->psoc, 0, WLAN_LEGACY_MAC_ID);
+	if (!pdev) {
+		sme_err("pdev is NULL");
+		return QDF_STATUS_E_INVAL;
+	}
+
+	scan_filter = qdf_mem_malloc(sizeof(*scan_filter));
+	if (!scan_filter) {
+		sme_err("mem alloc failed for scan_filter");
+		wlan_objmgr_pdev_release_ref(pdev, WLAN_LEGACY_MAC_ID);
+		return QDF_STATUS_E_NOMEM;
+	}
+
+	scan_filter->num_of_bssid = 1;
+	qdf_mem_copy(scan_filter->bssid_list[0].bytes, bssid->bytes,
+		     QDF_MAC_ADDR_SIZE);
+	sme_debug("%pM line %d", scan_filter->bssid_list[0].bytes, __LINE__);
+
+	list = ucfg_scan_get_result(pdev, scan_filter);
+	if (!list) {
+		sme_debug("scan list empty");
+		status = QDF_STATUS_E_FAILURE;
+		goto error;
+	}
+
+	sme_debug("num_entries %d", qdf_list_size(list));
+
+	ret_list = qdf_mem_malloc(sizeof(struct scan_result_list));
+	if (!ret_list) {
+		sme_err("mem alloc failed for ret_list");
+		status = QDF_STATUS_E_NOMEM;
+		goto error;
+	}
+
+	csr_ll_open(&ret_list->List);
+	ret_list->pCurEntry = NULL;
+	status = csr_parse_scan_list(mac_ctx, ret_list, list);
+	if (QDF_IS_STATUS_SUCCESS(status)) {
+		if (!csr_ll_count(&ret_list->List)) {
+			/* This means that there is no match */
+			csr_ll_close(&ret_list->List);
+			qdf_mem_free(ret_list);
+			ret_list = NULL;
+			status = QDF_STATUS_E_FAILURE;
+		}
+	}
+	if (!QDF_IS_STATUS_SUCCESS(status)) {
+		sme_err("Failed to get scan result");
+		status = QDF_STATUS_E_FAILURE;
+		goto error;
+	}
+
+	scan_result = csr_scan_result_get_first(mac_ctx,
+						(tScanResultHandle) ret_list);
+	if (scan_result) {
+		res->pvIes = NULL;
+		res->ssId.length = scan_result->ssId.length;
+		qdf_mem_copy(&res->ssId.ssId, &scan_result->ssId.ssId,
+			     res->ssId.length);
+		res->timer = scan_result->timer;
+		qdf_mem_copy(&res->BssDescriptor, &scan_result->BssDescriptor,
+			     sizeof(struct bss_description));
+		status = QDF_STATUS_SUCCESS;
+	} else {
+		status = QDF_STATUS_E_FAILURE;
+	}
+
+error:
+	if (list)
+		ucfg_scan_purge_results(list);
+	if (ret_list) {
+		csr_scan_result_purge(mac_ctx, (tScanResultHandle) ret_list);
+		ret_list = NULL;
+	}
+	if (scan_filter) {
+		qdf_mem_free(scan_filter);
+		scan_filter = NULL;
+	}
+	if (pdev)
+		wlan_objmgr_pdev_release_ref(pdev, WLAN_LEGACY_MAC_ID);
+
+	return status;
+}
+
 static inline QDF_STATUS
 csr_flush_scan_results(struct mac_context *mac_ctx,
 		       struct scan_filter *filter)

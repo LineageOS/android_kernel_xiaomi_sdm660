@@ -399,6 +399,19 @@ QDF_STATUS csr_scan_get_result_for_bssid(struct mac_context *mac_ctx,
 					 struct qdf_mac_addr *bssid,
 					 tCsrScanResultInfo *res);
 
+/**
+ * csr_get_scan_res_using_bssid - gets the scan result from scan cache without
+ * BLM filtered for the given BSSID
+ * @mac_ctx: mac context
+ * @bssid: bssid to get the scan result for
+ * @res: pointer to tCsrScanResultInfo
+ *
+ * Return: QDF_STATUS
+ */
+QDF_STATUS csr_get_scan_res_using_bssid(struct mac_context *mac_ctx,
+					struct qdf_mac_addr *bssid,
+					tCsrScanResultInfo *res);
+
 /*
  * csr_scan_filter_results() -
  *  Filter scan results based on valid channel list.
@@ -846,13 +859,14 @@ void csr_roam_del_pmk_cache_entry(struct csr_roam_session *session,
  * csr_update_pmk_cache_ft - API to update MDID in PMKSA cache entry
  * @mac: Mac context
  * @vdev_id: session ID
- * @BSSID: Connecting AP MAC address
- * @mdid: Connecting AP Mobility Domain ID
+ * @pmksa: Connecting AP pmk info
+ * @scan_res: Connecting AP scan result
  *
  * Return: None
  */
-void csr_update_pmk_cache_ft(struct mac_context *mac,
-			     uint32_t vdev_id, uint8_t *cache_id);
+void csr_update_pmk_cache_ft(struct mac_context *mac, uint32_t vdev_id,
+			     tPmkidCacheInfo *pmksa,
+			     tCsrScanResultInfo *scan_res);
 
 #if defined(WLAN_SAE_SINGLE_PMK) && defined(WLAN_FEATURE_ROAM_OFFLOAD)
 /**
