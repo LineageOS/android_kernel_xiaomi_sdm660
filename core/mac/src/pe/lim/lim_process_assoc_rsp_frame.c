@@ -809,13 +809,6 @@ lim_process_assoc_rsp_frame(struct mac_context *mac_ctx,
 	}
 	lim_copy_u16((uint8_t *) &mac_capab, caps);
 
-	/* Stop Association failure timer */
-	if (subtype == LIM_ASSOC)
-		lim_deactivate_and_change_timer(mac_ctx, eLIM_ASSOC_FAIL_TIMER);
-	else
-		lim_stop_reassoc_retry_timer(mac_ctx);
-
-
 	if (eSIR_MAC_XS_FRAME_LOSS_POOR_CHANNEL_RSSI_STATUS ==
 	   assoc_rsp->status_code &&
 	    assoc_rsp->rssi_assoc_rej.present) {
@@ -840,6 +833,12 @@ lim_process_assoc_rsp_frame(struct mac_context *mac_ctx,
 		qdf_mem_free(assoc_rsp);
 		return;
 	}
+
+	/* Stop Association failure timer */
+	if (subtype == LIM_ASSOC)
+		lim_deactivate_and_change_timer(mac_ctx, eLIM_ASSOC_FAIL_TIMER);
+	else
+		lim_stop_reassoc_retry_timer(mac_ctx);
 
 	if (assoc_rsp->status_code != eSIR_MAC_SUCCESS_STATUS) {
 		/*
