@@ -1127,6 +1127,7 @@ struct wlan_mlme_chainmask {
  * @enable_peer_unmap_conf_support: Indicate whether to send conf for peer unmap
  * @disable_4way_hs_offload: enable/disable 4 way handshake offload to firmware
  * @dfs_chan_ageout_time: Set DFS Channel ageout time
+ * @sae_connect_retries: sae connect retry bitmask
  */
 struct wlan_mlme_generic {
 	enum band_info band_capability;
@@ -1164,6 +1165,7 @@ struct wlan_mlme_generic {
 	bool enable_peer_unmap_conf_support;
 	uint32_t disable_4way_hs_offload;
 	uint8_t dfs_chan_ageout_time;
+	uint32_t sae_connect_retries;
 };
 
 /*
