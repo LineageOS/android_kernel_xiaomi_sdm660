@@ -26,6 +26,7 @@
 #include <sir_mac_prot_def.h>
 #include "cds_utils.h"
 #include "cdp_txrx_mon.h"
+#include "wlan_utility.h"
 
 void pkt_capture_mon(struct pkt_capture_cb_context *cb_ctx,
 		     qdf_nbuf_t msdu, struct wlan_objmgr_vdev *vdev,
@@ -33,9 +34,12 @@ void pkt_capture_mon(struct pkt_capture_cb_context *cb_ctx,
 {
 	struct radiotap_header *rthdr;
 	uint8_t rtlen;
+	uint16_t status;
+	tSirMacAuthFrameBody *auth;
 	tSirMacFrameCtl *fc;
 	void *soc = cds_get_context(QDF_MODULE_ID_SOC);
 	struct wlan_objmgr_pdev *pdev = wlan_vdev_get_pdev(vdev);
+	struct pkt_capture_vdev_priv *vdev_priv;
 
 	rthdr = (struct radiotap_header *)qdf_nbuf_data(msdu);
 	rtlen = rthdr->it_len;
@@ -47,11 +51,61 @@ void pkt_capture_mon(struct pkt_capture_cb_context *cb_ctx,
 		return;
 	}
 
+	vdev_priv = pkt_capture_vdev_get_priv(vdev);
+	if (!vdev_priv) {
+		pkt_capture_err("packet capture vdev priv is NULL");
+		return;
+	}
+
+	/*
+	 *  Update channel only if successful AUTH Resp is received.
+	 *  This is done so that EAPOL M1 data frame have correct
+	 *  channel
+	 */
 	if ((fc->type == SIR_MAC_MGMT_FRAME) &&
 	    (fc->subType == SIR_MAC_MGMT_AUTH)) {
-		cdp_pktcapture_record_channel(
-				soc,
-				wlan_objmgr_pdev_get_pdev_id(pdev), chan_num);
+		auth = (tSirMacAuthFrameBody *)(qdf_nbuf_data(msdu) + rtlen +
+			sizeof(tSirMacMgmtHdr));
+
+		if (auth->authTransactionSeqNumber == SIR_MAC_AUTH_FRAME_2 ||
+		    auth->authTransactionSeqNumber == SIR_MAC_AUTH_FRAME_4) {
+			if (auth->authStatusCode == eSIR_MAC_SUCCESS_STATUS)
+				cdp_pktcapture_record_channel(
+					soc, wlan_objmgr_pdev_get_pdev_id(pdev),
+					chan_num);
+		}
+	}
+
+	/*
+	 *  Update channel to last connected channel in case of assoc/reassoc
+	 *  response failure and save current chan in case of success
+	 */
+	if ((fc->type == SIR_MAC_MGMT_FRAME) &&
+	    (fc->subType == SIR_MAC_MGMT_ASSOC_RSP ||
+	     fc->subType == SIR_MAC_MGMT_REASSOC_RSP)) {
+		if (qdf_nbuf_len(msdu) < (rtlen + sizeof(tSirMacMgmtHdr) +
+		   SIR_MAC_REASSOC_STATUS_OFFSET)) {
+			pkt_capture_err("Packet length is less than expected");
+			qdf_nbuf_free(msdu);
+			return;
+		}
+
+		status = (uint16_t)(*(qdf_nbuf_data(msdu) + rtlen +
+		       sizeof(tSirMacMgmtHdr) + SIR_MAC_REASSOC_STATUS_OFFSET));
+
+		if (status == eSIR_MAC_SUCCESS_STATUS) {
+			vdev_priv->last_freq = vdev_priv->curr_freq;
+			vdev_priv->curr_freq = wlan_chan_to_freq(chan_num);
+		} else {
+			uint8_t chan;
+
+			chan = wlan_reg_freq_to_chan(pdev,
+						     vdev_priv->last_freq);
+			cdp_pktcapture_record_channel(
+					soc, wlan_objmgr_pdev_get_pdev_id(pdev),
+					chan);
+			vdev_priv->curr_freq = vdev_priv->last_freq;
+		}
 	}
 
 	if (cb_ctx->mon_cb(cb_ctx->mon_ctx, msdu) != QDF_STATUS_SUCCESS) {

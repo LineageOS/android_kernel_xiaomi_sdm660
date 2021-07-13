@@ -31,6 +31,7 @@
 #include "cdp_txrx_mon.h"
 #include "wlan_policy_mgr_api.h"
 #include "wlan_pkt_capture_tgt_api.h"
+#include "wlan_utility.h"
 
 static struct wlan_objmgr_vdev *gp_pkt_capture_vdev;
 
@@ -66,6 +67,8 @@ pkt_capture_register_callbacks(struct wlan_objmgr_vdev *vdev,
 	struct wlan_objmgr_psoc *psoc;
 	enum pkt_capture_mode mode;
 	QDF_STATUS status;
+	uint8_t vdev_id;
+	uint8_t chan = 0;
 
 	if (!vdev) {
 		pkt_capture_err("vdev is NULL");
@@ -96,6 +99,13 @@ pkt_capture_register_callbacks(struct wlan_objmgr_vdev *vdev,
 	target_if_pkt_capture_register_tx_ops(&vdev_priv->tx_ops);
 	target_if_pkt_capture_register_rx_ops(&vdev_priv->rx_ops);
 	pkt_capture_record_channel(vdev);
+	vdev_id = wlan_vdev_get_id(vdev);
+	status = policy_mgr_get_chan_by_session_id(psoc, vdev_id, &chan);
+	if (QDF_IS_STATUS_ERROR(status)) {
+		pkt_capture_err("Failed to get channel");
+	}
+	vdev_priv->last_freq = wlan_chan_to_freq(chan);
+	vdev_priv->curr_freq = wlan_chan_to_freq(chan);
 
 	status = tgt_pkt_capture_register_ev_handler(vdev);
 	if (QDF_IS_STATUS_ERROR(status))

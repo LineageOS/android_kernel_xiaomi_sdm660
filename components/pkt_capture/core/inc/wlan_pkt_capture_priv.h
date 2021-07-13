@@ -58,6 +58,8 @@ struct pkt_capture_cb_context {
  * @cb_ctx: pointer to packet capture mon callback context
  * @rx_ops: rx ops
  * @tx_ops: tx ops
+ * @last_freq: Last connected frequency
+ * @curr_freq: current connected frequency
  */
 struct pkt_capture_vdev_priv {
 	struct wlan_objmgr_vdev *vdev;
@@ -65,6 +67,8 @@ struct pkt_capture_vdev_priv {
 	struct pkt_capture_cb_context *cb_ctx;
 	struct wlan_pkt_capture_rx_ops rx_ops;
 	struct wlan_pkt_capture_tx_ops tx_ops;
+	uint32_t last_freq;
+	uint32_t curr_freq;
 };
 
 /**
