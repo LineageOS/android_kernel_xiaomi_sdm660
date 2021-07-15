@@ -16524,6 +16524,18 @@ static int __wlan_hdd_cfg80211_add_key(struct wiphy *wiphy,
 	qdf_mem_copy(&set_key.Key[0], params->key, params->key_len);
 	qdf_mem_copy(&set_key.keyRsc[0], params->seq, params->seq_len);
 
+	if (!pairwise) {
+		/* set group key */
+		hdd_debug("setting Broadcast key");
+		set_key.keyDirection = eSIR_RX_ONLY;
+		qdf_set_macaddr_broadcast(&set_key.peerMac);
+	} else {
+		/* set pairwise key */
+		hdd_debug("setting pairwise key");
+		set_key.keyDirection = eSIR_TX_RX;
+		qdf_mem_copy(set_key.peerMac.bytes, mac_addr, QDF_MAC_ADDR_SIZE);
+	}
+
 	mac_handle = hdd_ctx->mac_handle;
 
 	cdp_peer_flush_frags(cds_get_context(QDF_MODULE_ID_SOC),
@@ -16626,17 +16638,6 @@ static int __wlan_hdd_cfg80211_add_key(struct wiphy *wiphy,
 
 	hdd_debug("encryption type %d", set_key.encType);
 
-	if (!pairwise) {
-		/* set group key */
-		hdd_debug("setting Broadcast key");
-		set_key.keyDirection = eSIR_RX_ONLY;
-		qdf_set_macaddr_broadcast(&set_key.peerMac);
-	} else {
-		/* set pairwise key */
-		hdd_debug("setting pairwise key");
-		set_key.keyDirection = eSIR_TX_RX;
-		qdf_mem_copy(set_key.peerMac.bytes, mac_addr, QDF_MAC_ADDR_SIZE);
-	}
 	if ((QDF_IBSS_MODE == adapter->device_mode) && !pairwise) {
 		/* if a key is already installed, block all subsequent ones */
 		if (adapter->session.station.ibss_enc_key_installed) {
