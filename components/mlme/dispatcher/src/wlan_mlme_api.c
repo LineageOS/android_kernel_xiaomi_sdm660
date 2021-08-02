@@ -3670,6 +3670,10 @@ void wlan_mlme_update_sae_single_pmk(struct wlan_objmgr_vdev *vdev,
 		return;
 	}
 
+	mlme_legacy_debug("SAE_SPMK: single_pmk_ap:%d, pmk_len:%d",
+			  mlme_priv->mlme_roam.sae_single_pmk.sae_single_pmk_ap,
+			  sae_single_pmk->pmk_len);
+
 	if (mlme_priv->mlme_roam.sae_single_pmk.sae_single_pmk_ap)
 		mlme_priv->mlme_roam.sae_single_pmk.pmk_info = *sae_single_pmk;
 }

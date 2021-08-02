@@ -673,16 +673,19 @@ void csr_get_pmk_info(struct mac_context *mac_ctx, uint8_t session_id,
 		      tPmkidCacheInfo *pmk_cache);
 
 /*
- * csr_roam_set_psk_pmk() -
- * store PSK/PMK
- * mac  - pointer to global structure for MAC
- * sessionId - Sme session id
- * pPSK_PMK - pointer to an array of Psk/Pmk
+ * csr_roam_set_psk_pmk() - store PSK/PMK in CSR session
+ *
+ * @mac  - pointer to global structure for MAC
+ * @sessionId - Sme session id
+ * @psk_pmk - pointer to an array of PSK/PMK
+ * @update_to_fw - Send RSO update config command to firmware to update
+ * PMK
+ *
  * Return QDF_STATUS - usually it succeed unless sessionId is not found
- * Note:
  */
 QDF_STATUS csr_roam_set_psk_pmk(struct mac_context *mac, uint32_t sessionId,
-				uint8_t *pPSK_PMK, size_t pmk_len);
+				uint8_t *psk_pmk, size_t pmk_len,
+				bool update_to_fw);
 
 QDF_STATUS csr_roam_set_key_mgmt_offload(struct mac_context *mac_ctx,
 					 uint32_t session_id,
@@ -870,6 +873,20 @@ void csr_update_pmk_cache_ft(struct mac_context *mac, uint32_t vdev_id,
 
 #if defined(WLAN_SAE_SINGLE_PMK) && defined(WLAN_FEATURE_ROAM_OFFLOAD)
 /**
+ * csr_set_sae_single_pmk_bss_cap - API to set the peer SAE single pmk
+ * feature supported status
+ * @session: sme session pointer
+ * @single_pmk_capable_bss: Flag to indicate SAE single pmk supported BSSID or
+ * not
+ * @bssid: BSSID for which the flag is to be set
+ *
+ * Return : None
+ */
+void csr_set_sae_single_pmk_bss_cap(struct csr_roam_session *session,
+				    bool single_pmk_capable_bss,
+				    struct qdf_mac_addr *bssid);
+
+/**
  * csr_clear_sae_single_pmk - API to clear single_pmk_info cache
  * @pmac: mac context
  * @vdev_id: session id
@@ -880,12 +897,28 @@ void csr_update_pmk_cache_ft(struct mac_context *mac, uint32_t vdev_id,
 void csr_clear_sae_single_pmk(struct mac_context *mac,
 			      uint8_t vdev_id, tPmkidCacheInfo *pmksa);
 
+void csr_store_sae_single_pmk_to_global_cache(struct mac_context *mac,
+					      struct csr_roam_session *session,
+					      uint8_t vdev_id);
 #else
+static inline
+void csr_set_sae_single_pmk_bss_cap(struct csr_roam_session *session,
+				    bool single_pmk_capable_bss,
+				    struct qdf_mac_addr *bssid)
+{
+}
+
 static inline void
 csr_clear_sae_single_pmk(struct mac_context *mac, uint8_t vdev_id,
 			 tPmkidCacheInfo *pmksa)
 {
 }
+
+static inline
+void csr_store_sae_single_pmk_to_global_cache(struct mac_context *mac,
+					      struct csr_roam_session *session,
+					      uint8_t vdev_id)
+{}
 #endif
 
 QDF_STATUS csr_send_ext_change_channel(struct mac_context *mac_ctx,

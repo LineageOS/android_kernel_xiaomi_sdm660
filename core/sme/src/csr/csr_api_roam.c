@@ -9201,6 +9201,62 @@ bool is_disconnect_pending(struct mac_context *pmac,
 	return disconnect_cmd_exist;
 }
 
+#if defined(WLAN_SAE_SINGLE_PMK) && defined(WLAN_FEATURE_ROAM_OFFLOAD)
+static void
+csr_clear_other_bss_sae_single_pmk_entry(struct mac_context *mac,
+					 struct qdf_mac_addr *bssid,
+					 uint8_t vdev_id)
+{
+	struct csr_roam_session *session = CSR_GET_SESSION(mac, vdev_id);
+	tPmkidCacheInfo *cached_pmksa;
+	uint8_t i;
+
+	if (!session) {
+		sme_err("session %d not found", vdev_id);
+		return;
+	}
+
+	for (i = 0; i < session->NumPmkidCache; i++) {
+		cached_pmksa = &session->PmkidCacheInfo[i];
+		if (cached_pmksa->single_pmk_supported &&
+		    !qdf_is_macaddr_equal(&cached_pmksa->BSSID, bssid)) {
+			sme_debug("Deleting other BSS PMK cache entry");
+			csr_roam_del_pmk_cache_entry(session, cached_pmksa, i);
+			i--;
+		}
+	}
+}
+
+static void
+csr_delete_current_bss_sae_single_pmk_entry(struct mac_context *mac,
+					    struct bss_description *bss_desc,
+					    uint8_t vdev_id)
+{
+	tPmkidCacheInfo *pmksa;
+
+	pmksa = qdf_mem_malloc(sizeof(*pmksa));
+	if (pmksa && bss_desc->is_single_pmk) {
+		qdf_copy_macaddr(&pmksa->BSSID,
+				 (struct qdf_mac_addr *)bss_desc->bssId);
+		csr_roam_del_pmkid_from_cache(mac, vdev_id, pmksa, false);
+		qdf_mem_zero(pmksa, sizeof(*pmksa));
+		qdf_mem_free(pmksa);
+	}
+}
+#else
+static inline void
+csr_clear_other_bss_sae_single_pmk_entry(struct mac_context *mac,
+					 struct qdf_mac_addr *bssid,
+					 uint8_t vdev_id)
+{}
+
+static inline void
+csr_delete_current_bss_sae_single_pmk_entry(struct mac_context *mac,
+					    struct bss_description *bss_desc,
+					    uint8_t vdev_id)
+{}
+#endif
+
 static void csr_roam_join_rsp_processor(struct mac_context *mac,
 					struct join_rsp *pSmeJoinRsp)
 {
@@ -9282,6 +9338,19 @@ static void csr_roam_join_rsp_processor(struct mac_context *mac,
 		 * the response to upper layers
 		 */
 		session_ptr->join_bssid_count = 0;
+
+		/*
+		 * On successful connection to sae single pmk AP,
+		 * clear all the single pmk AP.
+		 */
+		if (pCommand && pCommand->u.roamCmd.pLastRoamBss &&
+		    pCommand->u.roamCmd.pLastRoamBss->is_single_pmk)
+			csr_clear_other_bss_sae_single_pmk_entry(
+				mac,
+				(struct qdf_mac_addr *)
+				pCommand->u.roamCmd.pLastRoamBss->bssId,
+				pSmeJoinRsp->sessionId);
+
 		csr_roam_complete(mac, eCsrJoinSuccess, (void *)pSmeJoinRsp,
 				  pSmeJoinRsp->sessionId);
 
@@ -9377,9 +9446,13 @@ static void csr_roam_join_rsp_processor(struct mac_context *mac,
 	qdf_mem_copy(&pmk_cache.BSSID.bytes,
 		     &pCommand->u.roamCmd.pLastRoamBss->bssId,
 		     sizeof(pmk_cache.BSSID.bytes));
-	if (!use_same_bss && pCommand && pCommand->u.roamCmd.pLastRoamBss)
+	if (!use_same_bss && pCommand && pCommand->u.roamCmd.pLastRoamBss) {
+		csr_delete_current_bss_sae_single_pmk_entry(
+			mac, pCommand->u.roamCmd.pLastRoamBss,
+			pSmeJoinRsp->sessionId);
 		csr_clear_sae_single_pmk(mac, pSmeJoinRsp->sessionId,
 					 &pmk_cache);
+	}
 	/* If Join fails while Handoff is in progress, indicate
 	 * disassociated event to supplicant to reconnect
 	 */
@@ -15118,7 +15191,8 @@ void csr_get_pmk_info(struct mac_context *mac_ctx, uint8_t session_id,
 }
 
 QDF_STATUS csr_roam_set_psk_pmk(struct mac_context *mac, uint32_t sessionId,
-				uint8_t *pPSK_PMK, size_t pmk_len)
+				uint8_t *psk_pmk, size_t pmk_len,
+				bool update_to_fw)
 {
 	struct csr_roam_session *pSession = CSR_GET_SESSION(mac, sessionId);
 
@@ -15126,7 +15200,7 @@ QDF_STATUS csr_roam_set_psk_pmk(struct mac_context *mac, uint32_t sessionId,
 		sme_err("session %d not found", sessionId);
 		return QDF_STATUS_E_FAILURE;
 	}
-	qdf_mem_copy(pSession->psk_pmk, pPSK_PMK, sizeof(pSession->psk_pmk));
+	qdf_mem_copy(pSession->psk_pmk, psk_pmk, sizeof(pSession->psk_pmk));
 	pSession->pmk_len = pmk_len;
 
 	if (csr_is_auth_type_ese(mac->roam.roamSession[sessionId].
@@ -15135,7 +15209,9 @@ QDF_STATUS csr_roam_set_psk_pmk(struct mac_context *mac, uint32_t sessionId,
 		return QDF_STATUS_SUCCESS;
 	}
 
-	csr_roam_update_cfg(mac, sessionId, REASON_ROAM_PSK_PMK_CHANGED);
+	if (update_to_fw)
+		csr_roam_update_cfg(mac, sessionId,
+				    REASON_ROAM_PSK_PMK_CHANGED);
 
 	return QDF_STATUS_SUCCESS;
 }
@@ -15373,6 +15449,24 @@ static void csr_mem_zero_psk_pmk(struct csr_roam_session *session)
 #endif
 
 #if defined(WLAN_SAE_SINGLE_PMK) && defined(WLAN_FEATURE_ROAM_OFFLOAD)
+void csr_set_sae_single_pmk_bss_cap(struct csr_roam_session *session,
+				    bool single_pmk_capable_bss,
+				    struct qdf_mac_addr *bssid)
+{
+	tPmkidCacheInfo *cached_pmksa;
+	uint8_t i;
+
+	for (i = 0; i < session->NumPmkidCache; i++) {
+		cached_pmksa = &session->PmkidCacheInfo[i];
+		if (qdf_is_macaddr_equal(&cached_pmksa->BSSID, bssid)) {
+			cached_pmksa->single_pmk_supported =
+					single_pmk_capable_bss;
+			sme_debug("Updated single pmk bss capability = %d "
+				  "at index = %d", single_pmk_capable_bss, i);
+		}
+	}
+}
+
 void csr_clear_sae_single_pmk(struct mac_context *mac,
 			      uint8_t vdev_id, tPmkidCacheInfo *pmk_cache)
 {
@@ -15416,6 +15510,50 @@ void csr_clear_sae_single_pmk(struct mac_context *mac,
 		}
 	}
 	wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_SME_ID);
+}
+
+void
+csr_store_sae_single_pmk_to_global_cache(struct mac_context *mac,
+					 struct csr_roam_session *session,
+					 uint8_t vdev_id)
+{
+	struct wlan_objmgr_vdev *vdev;
+	struct mlme_pmk_info *pmk_info;
+
+	if (!session->pConnectBssDesc)
+		return;
+
+	if (!session->pConnectBssDesc->is_single_pmk)
+		return;
+
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(mac->psoc, vdev_id,
+						    WLAN_LEGACY_SME_ID);
+	if (!vdev) {
+		sme_err("vdev is NULL");
+		return;
+	}
+
+	/*
+	 * Mark the AP as single PMK capable in PMK Cache
+	 */
+	csr_set_sae_single_pmk_bss_cap(session, true,
+				       (struct qdf_mac_addr *)
+				       session->pConnectBssDesc->bssId);
+
+	pmk_info = qdf_mem_malloc(sizeof(*pmk_info));
+	if (!pmk_info) {
+		wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_SME_ID);
+		return;
+	}
+
+	qdf_mem_copy(pmk_info->pmk, session->psk_pmk, session->pmk_len);
+	pmk_info->pmk_len = session->pmk_len;
+
+	wlan_mlme_update_sae_single_pmk(vdev, pmk_info);
+
+	wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_SME_ID);
+	qdf_mem_zero(pmk_info, sizeof(*pmk_info));
+	qdf_mem_free(pmk_info);
 }
 #endif
 
@@ -22950,13 +23088,72 @@ csr_check_and_set_sae_single_pmk_cap(struct mac_context *mac_ctx,
 				     struct csr_roam_session *session,
 				     uint8_t vdev_id)
 {
-	bool val;
+	struct wlan_objmgr_vdev *vdev;
+	struct mlme_pmk_info *pmk_info;
+	tPmkidCacheInfo *pmkid_cache;
+	uint32_t pmkid_index;
+	bool val, lookup_success;
+
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(mac_ctx->psoc, vdev_id,
+						    WLAN_LEGACY_SME_ID);
+	if (!vdev) {
+		sme_err("get vdev failed");
+		return;
+	}
 
 	if (session->connectedProfile.AuthType == eCSR_AUTH_TYPE_SAE) {
 		val = csr_is_sae_single_pmk_vsie_ap(session->pConnectBssDesc);
 		wlan_mlme_set_sae_single_pmk_bss_cap(mac_ctx->psoc, vdev_id,
 						     val);
+		if (!val)
+			goto end;
+
+		csr_set_sae_single_pmk_bss_cap(session, true,
+					       (struct qdf_mac_addr *)
+					       session->pConnectBssDesc->bssId);
+
+		pmkid_cache = qdf_mem_malloc(sizeof(*pmkid_cache));
+		if (!pmkid_cache)
+			goto end;
+
+		qdf_copy_macaddr(&pmkid_cache->BSSID,
+				 &session->connectedProfile.bssid);
+		/*
+		 * In SAE single pmk roaming case, there will
+		 * be no PMK entry found for the AP in pmk cache.
+		 * So if the lookup is successful, then we have done
+		 * a FULL sae here. In that case, clear all other
+		 * single pmk entries.
+		 */
+		lookup_success = csr_lookup_pmkid_using_bssid(mac_ctx, session,
+							      pmkid_cache,
+							      &pmkid_index);
+		if (lookup_success) {
+			csr_clear_other_bss_sae_single_pmk_entry(
+				mac_ctx,
+				&session->connectedProfile.bssid, vdev_id);
+
+			pmk_info = qdf_mem_malloc(sizeof(*pmk_info));
+			if (!pmk_info) {
+				qdf_mem_zero(pmkid_cache, sizeof(*pmkid_cache));
+				qdf_mem_free(pmkid_cache);
+				goto end;
+			}
+
+			qdf_mem_copy(pmk_info->pmk, pmkid_cache->pmk,
+				     session->pmk_len);
+			pmk_info->pmk_len = pmkid_cache->pmk_len;
+			wlan_mlme_update_sae_single_pmk(vdev, pmk_info);
+
+			qdf_mem_zero(pmk_info, sizeof(*pmk_info));
+			qdf_mem_free(pmk_info);
+		}
+		qdf_mem_zero(pmkid_cache, sizeof(*pmkid_cache));
+		qdf_mem_free(pmkid_cache);
 	}
+
+end:
+	wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_SME_ID);
 }
 #else
 static inline void
@@ -23210,12 +23407,21 @@ static QDF_STATUS csr_process_roam_sync_callback(struct mac_context *mac_ctx,
 	 * All other authentications - Host supplicant performs EAPOL
 	 *      with AP after this point and sends new keys to the driver.
 	 *      Driver starts wait_for_key timer for that purpose.
+	 * Allow csr_lookup_pmkid_using_bssid() if akm is SAE/OWE since
+	 * SAE/OWE roaming uses hybrid model and eapol is offloaded to
+	 * supplicant unlike in WPA2 – 802.1x case, after 8 way handshake
+	 * the __wlan_hdd_cfg80211_keymgmt_set_key ->sme_roam_set_psk_pmk()
+	 * will get called after roam synch complete to update the
+	 * session->psk_pmk, but in SAE/OWE roaming this sequence is not
+	 * present and set_pmksa will come before roam synch indication &
+	 * eapol. So the session->psk_pmk will be stale in PMKSA cached
+	 * SAE/OWE roaming case.
 	 */
-	if (roam_synch_data->authStatus
-				== CSR_ROAM_AUTH_STATUS_AUTHENTICATED) {
-		QDF_TRACE(QDF_MODULE_ID_SME,
-				QDF_TRACE_LEVEL_DEBUG,
-				FL("LFR3:Don't start waitforkey timer"));
+	if (roam_synch_data->authStatus == CSR_ROAM_AUTH_STATUS_AUTHENTICATED ||
+	    session->pCurRoamProfile->negotiatedAuthType ==
+	    eCSR_AUTH_TYPE_SAE ||
+	    session->pCurRoamProfile->negotiatedAuthType ==
+	    eCSR_AUTH_TYPE_OWE) {
 		csr_roam_substate_change(mac_ctx,
 				eCSR_ROAM_SUBSTATE_NONE, session_id);
 		/*
@@ -23237,8 +23443,10 @@ static QDF_STATUS csr_process_roam_sync_callback(struct mac_context *mac_ctx,
 		}
 		qdf_copy_macaddr(&pmkid_cache->BSSID,
 				 &session->connectedProfile.bssid);
-		sme_debug("Trying to find PMKID for " QDF_MAC_ADDR_STR,
-			  QDF_MAC_ADDR_ARRAY(pmkid_cache->BSSID.bytes));
+		sme_debug("Trying to find PMKID for " QDF_MAC_ADDR_STR
+			  " AKM Type:%d",
+			  QDF_MAC_ADDR_ARRAY(pmkid_cache->BSSID.bytes),
+			  session->pCurRoamProfile->negotiatedAuthType);
 		akm_type = session->connectedProfile.AuthType;
 		mdie_present = session->connectedProfile.mdid.mdie_present;
 
