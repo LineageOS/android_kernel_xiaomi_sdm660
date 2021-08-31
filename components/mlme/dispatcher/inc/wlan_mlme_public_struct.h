@@ -1966,6 +1966,7 @@ struct wlan_mlme_power {
  * @ap_link_monitor_timeout: AP link monitor timeout value
  * @ps_data_inactivity_timeout: PS data inactivity timeout
  * @wmi_wq_watchdog_timeout: timeout period for wmi watchdog bite
+ * @sae_auth_failure_timeout: SAE authentication failure timeout
  */
 struct wlan_mlme_timeout {
 	uint32_t join_failure_timeout;
@@ -1981,6 +1982,7 @@ struct wlan_mlme_timeout {
 	uint32_t ap_link_monitor_timeout;
 	uint32_t ps_data_inactivity_timeout;
 	uint32_t wmi_wq_watchdog_timeout;
+	uint32_t sae_auth_failure_timeout;
 };
 
 /**
