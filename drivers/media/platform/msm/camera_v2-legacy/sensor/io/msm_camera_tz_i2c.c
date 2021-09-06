@@ -20,7 +20,6 @@
 #include "msm_sensor.h"
 
 #undef CDBG
-#define MSM_CAMERA_TZ_I2C_VERBOSE
 
 #ifdef CONFIG_MSM_SEC_CCI_DEBUG
 	#define TZ_I2C_FN_RETURN(ret, i2c_fn, ...) \
@@ -32,11 +31,11 @@
 
 #ifdef MSM_CAMERA_TZ_I2C_VERBOSE
 	#define CDBG(fmt, args...) \
-		pr_info(CONFIG_MSM_SEC_CCI_TA_NAME "::%s:%d - " fmt, \
+		pr_info(CONFIG_MSM_SEC_CCI_TA_NAME "::%s:%d -\n" fmt, \
 		__func__, __LINE__, ##args)
 #else /* MSM_CAMERA_TZ_I2C_VERBOSE */
 	#define CDBG(fmt, args...) \
-		pr_debug("%s:%d - " fmt,  __func__, __LINE__, ##args)
+		pr_debug("%s:%d -\n" fmt,  __func__, __LINE__, ##args)
 #endif /* MSM_CAMERA_TZ_I2C_VERBOSE */
 
 #pragma pack(push, msm_camera_tz_i2c, 1)
@@ -520,16 +519,14 @@ int32_t msm_camera_tz_i2c_power_up(
 				msm_camera_tz_get_ta_handle(),
 				sensor_id,
 				&sensor_secure);
-			if (!rc && sensor_secure) {
+			if (!rc && sensor_secure)
 				/* Sensor validated by TA*/
 				sensor_info[sensor_id].ready++;
-				msm_camera_tz_unlock();
-			}
 			else {
-				msm_camera_tz_unlock();
 				msm_camera_tz_unload_ta();
 				rc = -EFAULT;
 			}
+			msm_camera_tz_unlock();
 		}
 	} else
 		rc = -EFAULT;

@@ -25,7 +25,7 @@
 #include <linux/timer.h>
 #include <linux/kernel.h>
 #include <linux/workqueue.h>
-#include <linux/clk/msm-clk.h>
+#include <linux/clk/qcom.h>
 #include <media/v4l2-event.h>
 #include <media/v4l2-ioctl.h>
 #include <media/msmb_camera.h>
@@ -300,7 +300,7 @@ static void msm_enqueue(struct msm_device_queue *queue,
 static int msm_cpp_notify_frame_done(struct cpp_device *cpp_dev,
 	uint8_t put_buf);
 static int32_t cpp_load_fw(struct cpp_device *cpp_dev, char *fw_name_bin);
-static void cpp_timer_callback(unsigned long data);
+static void cpp_timer_callback(struct timer_list *cpp_t);
 
 uint8_t induce_error;
 static int msm_cpp_enable_debugfs(struct cpp_device *cpp_dev);
@@ -458,7 +458,7 @@ static unsigned long msm_cpp_queue_buffer_info(struct cpp_device *cpp_dev,
 	if (buff_queue->security_mode == SECURE_MODE)
 		rc = cam_smmu_get_stage2_phy_addr(cpp_dev->iommu_hdl,
 			buffer_info->fd, CAM_SMMU_MAP_RW,
-			cpp_dev->ion_client, &buff->map_info.phy_addr,
+			&buff->map_info.phy_addr,
 			(size_t *)&buff->map_info.len);
 	else
 		rc = cam_smmu_get_phy_addr(cpp_dev->iommu_hdl,
@@ -467,7 +467,7 @@ static unsigned long msm_cpp_queue_buffer_info(struct cpp_device *cpp_dev,
 			(size_t *)&buff->map_info.len);
 	if (rc < 0) {
 		pr_err("ION mmap for CPP buffer failed\n");
-		kzfree(buff);
+		kfree(buff);
 		goto error;
 	}
 
@@ -1100,7 +1100,7 @@ static int cpp_init_hardware(struct cpp_device *cpp_dev)
 			goto clk_failed;
 		}
 	}
-
+	msm_cpp_update_bandwidth(cpp_dev, 0x1000, 0x1000);
 	rc = msm_camera_clk_enable(&cpp_dev->pdev->dev, cpp_dev->clk_info,
 			cpp_dev->cpp_clk, cpp_dev->num_clks, true);
 	if (rc < 0) {
@@ -1481,13 +1481,6 @@ static int cpp_open_node(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 		}
 		cpp_dev->state = CPP_STATE_IDLE;
 
-		CPP_DBG("Invoking msm_ion_client_create()\n");
-		cpp_dev->ion_client = msm_ion_client_create("cpp");
-		if (cpp_dev->ion_client == NULL) {
-			pr_err("msm_ion_client_create() failed\n");
-			mutex_unlock(&cpp_dev->mutex);
-			rc = -ENOMEM;
-		}
 	}
 
 	mutex_unlock(&cpp_dev->mutex);
@@ -1498,6 +1491,8 @@ static int cpp_close_node(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 {
 	uint32_t i;
 	int rc = -1;
+	int counter = 0;
+	u32 result = 0;
 	struct cpp_device *cpp_dev = NULL;
 	struct msm_device_queue *processing_q = NULL;
 	struct msm_device_queue *eventData_q = NULL;
@@ -1579,6 +1574,54 @@ static int cpp_close_node(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 		pr_debug("DEBUG_R1: 0x%x\n",
 			msm_camera_io_r(cpp_dev->cpp_hw_base + 0x8C));
 
+		/* mask IRQ status */
+		msm_camera_io_w(0xB, cpp_dev->cpp_hw_base + 0xC);
+
+		/* clear IRQ status */
+		msm_camera_io_w(0xFFFFF, cpp_dev->cpp_hw_base + 0x14);
+
+		/* MMSS_A_CPP_AXI_CMD = 0x16C, reset 0x1*/
+		msm_camera_io_w(0x1, cpp_dev->cpp_hw_base + 0x16C);
+
+		while (counter < MSM_CPP_POLL_RETRIES) {
+			result = msm_camera_io_r(cpp_dev->cpp_hw_base + 0x10);
+			if (result & 0x2)
+				break;
+			/*
+			 * Below usleep values are chosen based on experiments
+			 * and this was the smallest number which works. This
+			 * sleep is needed to leave enough time for hardware
+			 * to update status register.
+			 */
+			usleep_range(200, 250);
+			counter++;
+		}
+
+		pr_debug("CPP AXI done counter %d result 0x%x\n",
+			counter, result);
+
+		/* clear IRQ status */
+		msm_camera_io_w(0xFFFFF, cpp_dev->cpp_hw_base + 0x14);
+		counter = 0;
+		/* MMSS_A_CPP_RST_CMD_0 = 0x8, firmware reset = 0x3DF77 */
+		msm_camera_io_w(0x3DF77, cpp_dev->cpp_hw_base + 0x8);
+
+		while (counter < MSM_CPP_POLL_RETRIES) {
+			result = msm_camera_io_r(cpp_dev->cpp_hw_base + 0x10);
+			if (result & 0x1)
+				break;
+			/*
+			 * Below usleep values are chosen based on experiments
+			 * and this was the smallest number which works. This
+			 * sleep is needed to leave enough time for hardware
+			 * to update status register.
+			 */
+			usleep_range(200, 250);
+			counter++;
+		}
+		pr_debug("CPP reset done counter %d result 0x%x\n",
+			counter, result);
+
 		msm_camera_io_w(0x0, cpp_dev->base + MSM_CPP_MICRO_CLKEN_CTL);
 		msm_cpp_clear_timer(cpp_dev);
 		cpp_release_hardware(cpp_dev);
@@ -1599,11 +1642,6 @@ static int cpp_close_node(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 		msm_cpp_empty_list(eventData_q, list_eventdata);
 		cpp_dev->state = CPP_STATE_OFF;
 
-		if (cpp_dev->ion_client) {
-			CPP_DBG("Invoking ion_client_destroy()\n");
-			ion_client_destroy(cpp_dev->ion_client);
-			cpp_dev->ion_client = NULL;
-		}
 	}
 
 	/* unregister vbif error handler */
@@ -2004,7 +2042,7 @@ error:
 	return;
 }
 
-void cpp_timer_callback(unsigned long data)
+void cpp_timer_callback(struct timer_list *cpp_t)
 {
 	struct msm_cpp_work_t *work =
 		cpp_timer.data.cpp_dev->work;
@@ -2936,6 +2974,14 @@ static int msm_cpp_cfg(struct cpp_device *cpp_dev,
 		pr_err("%s: Error allocating frame\n", __func__);
 		rc = -EINVAL;
 	} else {
+		if ((frame->msg_len == 0) ||
+			(frame->msg_len > MSM_CPP_MAX_FRAME_LENGTH)) {
+			pr_err("%s:%d: Invalid frame len:%d\n", __func__,
+				__LINE__, frame->msg_len);
+			kfree(frame);
+			return -EINVAL;
+		}
+
 		rc = msm_cpp_cfg_frame(cpp_dev, frame);
 		if (rc >= 0) {
 			for (i = 0; i < num_buff; i++) {
@@ -3666,7 +3712,8 @@ STREAM_BUFF_END:
 			stall_disable = 1;
 			/* disable smmu stall on fault */
 			cam_smmu_set_attr(cpp_dev->iommu_hdl,
-				DOMAIN_ATTR_CB_STALL_DISABLE, &stall_disable);
+				DOMAIN_ATTR_FAULT_MODEL_NO_STALL,
+				&stall_disable);
 			if (cpp_dev->security_mode == SECURE_MODE) {
 				rc = cam_smmu_ops(cpp_dev->iommu_hdl,
 					CAM_SMMU_ATTACH_SEC_CPP);
@@ -4659,8 +4706,7 @@ static int cpp_probe(struct platform_device *pdev)
 	if (rc < 0)
 		goto bus_de_init;
 
-	media_entity_init(&cpp_dev->msm_sd.sd.entity, 0, NULL, 0);
-	cpp_dev->msm_sd.sd.entity.type = MEDIA_ENT_T_V4L2_SUBDEV;
+	media_entity_pads_init(&cpp_dev->msm_sd.sd.entity, 0, NULL);
 	cpp_dev->msm_sd.sd.entity.group_id = MSM_CAMERA_SUBDEV_CPP;
 	cpp_dev->msm_sd.sd.entity.name = pdev->name;
 	cpp_dev->msm_sd.close_seq = MSM_SD_CLOSE_3RD_CATEGORY;
@@ -4707,8 +4753,8 @@ static int cpp_probe(struct platform_device *pdev)
 	atomic_set(&cpp_timer.used, 0);
 	/* install timer for cpp timeout */
 	CPP_DBG("Installing cpp_timer\n");
-	setup_timer(&cpp_timer.cpp_timer,
-		cpp_timer_callback, (unsigned long)&cpp_timer);
+	timer_setup(&cpp_timer.cpp_timer,
+		cpp_timer_callback, 0);
 	cpp_dev->fw_name_bin = NULL;
 	cpp_dev->max_timeout_trial_cnt = MSM_CPP_MAX_TIMEOUT_TRIAL;
 

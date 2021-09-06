@@ -600,8 +600,7 @@ static int32_t msm_ir_cut_platform_probe(struct platform_device *pdev)
 	snprintf(ir_cut_ctrl->msm_sd.sd.name,
 		ARRAY_SIZE(ir_cut_ctrl->msm_sd.sd.name),
 		"msm_camera_ir_cut");
-	media_entity_init(&ir_cut_ctrl->msm_sd.sd.entity, 0, NULL, 0);
-	ir_cut_ctrl->msm_sd.sd.entity.type = MEDIA_ENT_T_V4L2_SUBDEV;
+	media_entity_pads_init(&ir_cut_ctrl->msm_sd.sd.entity, 0, NULL);
 	ir_cut_ctrl->msm_sd.sd.entity.group_id = MSM_CAMERA_SUBDEV_IR_CUT;
 	ir_cut_ctrl->msm_sd.close_seq = MSM_SD_CLOSE_2ND_CATEGORY | 0x1;
 	msm_sd_register(&ir_cut_ctrl->msm_sd);

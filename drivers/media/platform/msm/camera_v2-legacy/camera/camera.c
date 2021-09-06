@@ -638,7 +638,9 @@ static int camera_v4l2_open(struct file *filep)
 	struct v4l2_event event;
 	struct msm_video_device *pvdev = video_drvdata(filep);
 	unsigned long opn_idx, idx;
-	BUG_ON(!pvdev);
+
+	if (WARN_ON(!pvdev))
+		return -EIO;
 
 	mutex_lock(&pvdev->video_drvdata_mutex);
 	rc = camera_v4l2_fh_open(filep);
@@ -752,7 +754,10 @@ static int camera_v4l2_close(struct file *filep)
 	struct camera_v4l2_private *sp = fh_to_private(filep->private_data);
 	unsigned int opn_idx, mask;
 	struct msm_session *session;
-	BUG_ON(!pvdev);
+
+	if (WARN_ON(!pvdev))
+		return -EIO;
+
 	session = msm_session_find(pvdev->vdev->num);
 	if (WARN_ON(!session))
 		return -EIO;
@@ -906,6 +911,7 @@ int camera_init_v4l2(struct device *dev, unsigned int *session)
 		rc = -ENOMEM;
 		goto mdev_fail;
 	}
+	media_device_init(v4l2_dev->mdev);
 	strlcpy(v4l2_dev->mdev->model, MSM_CAMERA_NAME,
 			sizeof(v4l2_dev->mdev->model));
 
@@ -915,10 +921,9 @@ int camera_init_v4l2(struct device *dev, unsigned int *session)
 	if (WARN_ON(rc < 0))
 		goto media_fail;
 
-	rc = media_entity_init(&pvdev->vdev->entity, 0, NULL, 0);
+	rc = media_entity_pads_init(&pvdev->vdev->entity, 0, NULL);
 	if (WARN_ON(rc < 0))
 		goto entity_fail;
-	pvdev->vdev->entity.type = MEDIA_ENT_T_DEVNODE_V4L;
 	pvdev->vdev->entity.group_id = QCAMERA_VNODE_GROUP_ID;
 #endif
 
@@ -935,6 +940,7 @@ int camera_init_v4l2(struct device *dev, unsigned int *session)
 	pvdev->vdev->ioctl_ops = &camera_v4l2_ioctl_ops;
 	pvdev->vdev->minor     = -1;
 	pvdev->vdev->vfl_type  = VFL_TYPE_GRABBER;
+	pvdev->vdev->device_caps = V4L2_CAP_VIDEO_CAPTURE | V4L2_CAP_STREAMING;
 	rc = video_register_device(pvdev->vdev,
 		VFL_TYPE_GRABBER, -1);
 	if (WARN_ON(rc < 0))

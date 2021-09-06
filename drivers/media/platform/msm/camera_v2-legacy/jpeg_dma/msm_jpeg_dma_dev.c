@@ -24,7 +24,7 @@
 #include <media/videobuf2-core.h>
 #include <media/v4l2-mem2mem.h>
 #include <media/msm_jpeg_dma.h>
-#include <linux/clk/msm-clk.h>
+#include <linux/clk/qcom.h>
 
 #include "msm_jpeg_dma_dev.h"
 #include "msm_jpeg_dma_hw.h"
@@ -312,14 +312,15 @@ static int msm_jpegdma_update_hw_config(struct jpegdma_ctx *ctx)
  * @alloc_ctxs: Array of allocated contexts for each plane.
  */
 static int msm_jpegdma_queue_setup(struct vb2_queue *q,
-	const void *parg,
+//	const void *parg,
 	unsigned int *num_buffers, unsigned int *num_planes,
-	unsigned int sizes[], void *alloc_ctxs[])
+	unsigned int sizes[], struct device *alloc_ctxs[])
 {
 	struct jpegdma_ctx *ctx = vb2_get_drv_priv(q);
-	struct v4l2_format *fmt = (struct v4l2_format *)parg;
+	//struct v4l2_format *fmt = (struct v4l2_format *)parg;
+	struct v4l2_format *fmt = NULL;
 
-	if (NULL == fmt) {
+	if (fmt == NULL) {
 		switch (q->type) {
 		case V4L2_BUF_TYPE_VIDEO_OUTPUT:
 			sizes[0] = ctx->format_out.fmt.pix.sizeimage;
@@ -335,7 +336,7 @@ static int msm_jpegdma_queue_setup(struct vb2_queue *q,
 	}
 
 	*num_planes = 1;
-	alloc_ctxs[0] = ctx->jdma_device;
+	alloc_ctxs[0] = (struct device *)ctx->jdma_device;
 
 	return 0;
 }
@@ -419,11 +420,11 @@ static struct vb2_ops msm_jpegdma_vb2_q_ops = {
  * @size: Size of the buffer
  * @write: True if buffer will be used for writing the data.
  */
-static void *msm_jpegdma_get_userptr(void *alloc_ctx,
+static void *msm_jpegdma_get_userptr(struct device *alloc_ctx,
 	unsigned long vaddr, unsigned long size,
 	enum dma_data_direction dma_dir)
 {
-	struct msm_jpegdma_device *dma = alloc_ctx;
+	struct msm_jpegdma_device *dma = (void *)alloc_ctx;
 	struct msm_jpegdma_buf_handle *buf;
 	struct msm_jpeg_dma_buff __user *up_buff;
 	struct msm_jpeg_dma_buff kp_buff;
@@ -1458,7 +1459,7 @@ static int jpegdma_device_remove(struct platform_device *pdev)
 	struct msm_jpegdma_device *dma;
 
 	dma = platform_get_drvdata(pdev);
-	if (NULL == dma) {
+	if (dma == NULL) {
 		dev_err(&pdev->dev, "Can not get jpeg dma drvdata\n");
 		return 0;
 	}

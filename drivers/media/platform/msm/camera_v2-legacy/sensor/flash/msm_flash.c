@@ -690,7 +690,7 @@ static int32_t msm_flash_query_current(
 
 	if (flash_ctrl->switch_trigger) {
 		ret = qpnp_flash_led_prepare(flash_ctrl->switch_trigger,
-					QUERY_MAX_CURRENT, &max_current);
+					QUERY_MAX_AVAIL_CURRENT, &max_current);
 		if (ret < 0) {
 			pr_err("%s:%d Query max_avail_curr failed ret = %d\n",
 				__func__, __LINE__, ret);
@@ -1292,8 +1292,7 @@ static int32_t msm_flash_platform_probe(struct platform_device *pdev)
 	snprintf(flash_ctrl->msm_sd.sd.name,
 		ARRAY_SIZE(flash_ctrl->msm_sd.sd.name),
 		"msm_camera_flash");
-	media_entity_init(&flash_ctrl->msm_sd.sd.entity, 0, NULL, 0);
-	flash_ctrl->msm_sd.sd.entity.type = MEDIA_ENT_T_V4L2_SUBDEV;
+	media_entity_pads_init(&flash_ctrl->msm_sd.sd.entity, 0, NULL);
 	flash_ctrl->msm_sd.sd.entity.group_id = MSM_CAMERA_SUBDEV_FLASH;
 	flash_ctrl->msm_sd.close_seq = MSM_SD_CLOSE_2ND_CATEGORY | 0x1;
 	msm_sd_register(&flash_ctrl->msm_sd);

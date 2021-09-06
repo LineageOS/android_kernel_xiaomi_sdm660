@@ -102,8 +102,7 @@ static int32_t msm_sensor_driver_create_i2c_v4l_subdev
 		s_ctrl->sensor_v4l2_subdev_ops);
 	v4l2_set_subdevdata(&s_ctrl->msm_sd.sd, client);
 	s_ctrl->msm_sd.sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
-	media_entity_init(&s_ctrl->msm_sd.sd.entity, 0, NULL, 0);
-	s_ctrl->msm_sd.sd.entity.type = MEDIA_ENT_T_V4L2_SUBDEV;
+	media_entity_pads_init(&s_ctrl->msm_sd.sd.entity, 0, NULL);
 	s_ctrl->msm_sd.sd.entity.group_id = MSM_CAMERA_SUBDEV_SENSOR;
 	s_ctrl->msm_sd.sd.entity.name =	s_ctrl->msm_sd.sd.name;
 	s_ctrl->sensordata->sensor_info->session_id = session_id;
@@ -147,8 +146,7 @@ static int32_t msm_sensor_driver_create_v4l_subdev
 		s_ctrl->sensordata->sensor_name);
 	v4l2_set_subdevdata(&s_ctrl->msm_sd.sd, s_ctrl->pdev);
 	s_ctrl->msm_sd.sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
-	media_entity_init(&s_ctrl->msm_sd.sd.entity, 0, NULL, 0);
-	s_ctrl->msm_sd.sd.entity.type = MEDIA_ENT_T_V4L2_SUBDEV;
+	media_entity_pads_init(&s_ctrl->msm_sd.sd.entity, 0, NULL);
 	s_ctrl->msm_sd.sd.entity.group_id = MSM_CAMERA_SUBDEV_SENSOR;
 	s_ctrl->msm_sd.sd.entity.name = s_ctrl->msm_sd.sd.name;
 	s_ctrl->msm_sd.close_seq = MSM_SD_CLOSE_2ND_CATEGORY | 0x3;

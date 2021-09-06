@@ -22,6 +22,9 @@
 #define ISP_SOF_DEBUG_COUNT 0
 #define OTHER_VFE(vfe_id) (vfe_id == ISP_VFE0 ? ISP_VFE1 : ISP_VFE0)
 
+#ifdef CONFIG_MSM_AVTIMER
+static struct avtimer_fptr_t avtimer_func;
+#endif
 static void msm_isp_reload_ping_pong_offset(
 		struct msm_vfe_axi_stream *stream_info);
 
@@ -566,7 +569,9 @@ static void msm_isp_cfg_framedrop_reg(
 	if (MSM_VFE_STREAM_STOP_PERIOD != framedrop_period)
 		framedrop_pattern = 0x1;
 
-	BUG_ON(0 == framedrop_period);
+	if (WARN_ON(framedrop_period == 0))
+		pr_err("%s framedrop_period is 0\n", __func__);
+
 	for (i = 0; i < stream_info->num_isp; i++) {
 		vfe_dev = stream_info->vfe_dev[i];
 		vfe_dev->hw_info->vfe_ops.axi_ops.cfg_framedrop(
@@ -1075,9 +1080,6 @@ void msm_isp_notify(struct vfe_device *vfe_dev, uint32_t event_type,
 		ISP_DBG("%s: vfe %d frame_src %d frameid %d\n", __func__,
 			vfe_dev->pdev->id, frame_src,
 			vfe_dev->axi_data.src_info[VFE_PIX_0].frame_id);
-		trace_msm_cam_isp_status_dump("SOFNOTIFY:", vfe_dev->pdev->id,
-			vfe_dev->axi_data.src_info[VFE_PIX_0].frame_id,
-			0, 0);
 
 		/*
 		 * Cannot support dual_cam and framedrop same time in union.
@@ -1229,10 +1231,33 @@ static void msm_isp_calculate_bandwidth(
 }
 
 #ifdef CONFIG_MSM_AVTIMER
+/**
+ * msm_isp_set_avtimer_fptr() - Set avtimer function pointer
+ * @avtimer: struct of type avtimer_fptr_t to hold function pointer.
+ *
+ * Initialize the function pointers sent by the avtimer driver
+ *
+ */
+void msm_isp_set_avtimer_fptr(struct avtimer_fptr_t avtimer)
+{
+	avtimer_func.fptr_avtimer_open   = avtimer.fptr_avtimer_open;
+	avtimer_func.fptr_avtimer_enable = avtimer.fptr_avtimer_enable;
+	avtimer_func.fptr_avtimer_get_time = avtimer.fptr_avtimer_get_time;
+}
+EXPORT_SYMBOL(msm_isp_set_avtimer_fptr);
+
 void msm_isp_start_avtimer(void)
 {
-	avcs_core_open();
-	avcs_core_disable_power_collapse(1);
+	if (avtimer_func.fptr_avtimer_open &&
+			avtimer_func.fptr_avtimer_enable) {
+		avtimer_func.fptr_avtimer_open();
+		avtimer_func.fptr_avtimer_enable(1);
+	}
+}
+void msm_isp_stop_avtimer(void)
+{
+	if (avtimer_func.fptr_avtimer_enable)
+		avtimer_func.fptr_avtimer_enable(0);
 }
 
 void msm_isp_get_avtimer_ts(
@@ -1242,19 +1267,21 @@ void msm_isp_get_avtimer_ts(
 	uint32_t avtimer_usec = 0;
 	uint64_t avtimer_tick = 0;
 
-	rc = avcs_core_query_timer(&avtimer_tick);
-	if (rc < 0) {
-		pr_err_ratelimited("%s: Error: Invalid AVTimer Tick, rc=%d\n",
-			   __func__, rc);
-		/* In case of error return zero AVTimer Tick Value */
-		time_stamp->vt_time.tv_sec = 0;
-		time_stamp->vt_time.tv_usec = 0;
-	} else {
-		avtimer_usec = do_div(avtimer_tick, USEC_PER_SEC);
-		time_stamp->vt_time.tv_sec = (uint32_t)(avtimer_tick);
-		time_stamp->vt_time.tv_usec = avtimer_usec;
-		pr_debug("%s: AVTimer TS = %u:%u\n", __func__,
-			(uint32_t)(avtimer_tick), avtimer_usec);
+	if (avtimer_func.fptr_avtimer_get_time) {
+		rc = avtimer_func.fptr_avtimer_get_time(&avtimer_tick);
+		if (rc < 0) {
+			pr_err_ratelimited("%s: Error: Invalid AVTimer Tick, rc=%d\n",
+				   __func__, rc);
+			/* In case of error return zero AVTimer Tick Value */
+			time_stamp->vt_time.tv_sec = 0;
+			time_stamp->vt_time.tv_usec = 0;
+		} else {
+			avtimer_usec = do_div(avtimer_tick, USEC_PER_SEC);
+			time_stamp->vt_time.tv_sec = (uint32_t)(avtimer_tick);
+			time_stamp->vt_time.tv_usec = avtimer_usec;
+			pr_debug("%s: AVTimer TS = %u:%u\n", __func__,
+				(uint32_t)(avtimer_tick), avtimer_usec);
+		}
 	}
 }
 #else
@@ -1266,10 +1293,14 @@ void msm_isp_start_avtimer(void)
 void msm_isp_get_avtimer_ts(
 		struct msm_isp_timestamp *time_stamp)
 {
-	pr_err_ratelimited("%s: Error: AVTimer driver not available\n",
+	struct timespec ts;
+
+	pr_debug("%s: AVTimer driver not available using system time\n",
 		__func__);
-	time_stamp->vt_time.tv_sec = 0;
-	time_stamp->vt_time.tv_usec = 0;
+
+	get_monotonic_boottime(&ts);
+	time_stamp->vt_time.tv_sec    = ts.tv_sec;
+	time_stamp->vt_time.tv_usec   = ts.tv_nsec/1000;
 }
 #endif
 
