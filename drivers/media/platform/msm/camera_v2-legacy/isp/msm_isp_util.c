@@ -21,9 +21,6 @@
 #include "msm_camera_io_util.h"
 #include "cam_smmu_api.h"
 #include "msm_isp48.h"
-#define CREATE_TRACE_POINTS
-#include "trace/events/msm_cam.h"
-
 
 #define MAX_ISP_V4l2_EVENTS 100
 #define MAX_ISP_REG_LIST 100
@@ -2103,9 +2100,6 @@ static void msm_isp_enqueue_tasklet_cmd(struct vfe_device *vfe_dev,
 		atomic_add(1, &vfe_dev->irq_cnt);
 	}
 	atomic_add(1, &vfe_dev->irq_cnt);
-	trace_msm_cam_isp_status_dump("VFE_IRQ:", vfe_dev->pdev->id,
-		vfe_dev->axi_data.src_info[VFE_PIX_0].frame_id,
-		irq_status0, irq_status1);
 	queue_cmd->vfeInterruptStatus0 = irq_status0;
 	queue_cmd->vfeInterruptStatus1 = irq_status1;
 	queue_cmd->vfe_pingpong_status = ping_pong_status;
@@ -2205,9 +2199,7 @@ void msm_isp_do_tasklet(unsigned long data)
 		atomic_sub(1, &vfe_dev->irq_cnt);
 		msm_isp_prepare_tasklet_debug_info(vfe_dev,
 			irq_status0, irq_status1, ts);
-		trace_msm_cam_isp_status_dump("VFE_TASKLET:", vfe_dev->pdev->id,
-			vfe_dev->axi_data.src_info[VFE_PIX_0].frame_id,
-			irq_status0, irq_status1);
+
 		irq_ops = &vfe_dev->hw_info->vfe_ops.irq_ops;
 		irq_ops->process_reset_irq(vfe_dev,
 			irq_status0, irq_status1);
@@ -2369,7 +2361,7 @@ int msm_isp_open_node(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 #ifdef CONFIG_MSM_AVTIMER
 void msm_isp_end_avtimer(void)
 {
-	avcs_core_disable_power_collapse(0);
+	msm_isp_stop_avtimer();
 }
 #else
 void msm_isp_end_avtimer(void)
@@ -2481,9 +2473,6 @@ void msm_isp_irq_debug_dump(struct vfe_device *vfe_dev)
 	dump_index = vfe_dev->common_data->vfe_irq_dump.
 		current_irq_index;
 	for (i = 0; i < MAX_VFE_IRQ_DEBUG_DUMP_SIZE; i++) {
-		trace_msm_cam_ping_pong_debug_dump(
-			vfe_dev->common_data->vfe_irq_dump.
-			irq_debug[dump_index % MAX_VFE_IRQ_DEBUG_DUMP_SIZE]);
 		dump_index++;
 	}
 	spin_unlock_irqrestore(&vfe_dev->common_data->vfe_irq_dump.
@@ -2502,10 +2491,6 @@ void msm_isp_tasklet_debug_dump(struct vfe_device *vfe_dev)
 	dump_index = vfe_dev->common_data->vfe_irq_dump.
 		current_tasklet_index;
 	for (i = 0; i < MAX_VFE_IRQ_DEBUG_DUMP_SIZE; i++) {
-		trace_msm_cam_tasklet_debug_dump(
-			vfe_dev->common_data->vfe_irq_dump.
-			tasklet_debug[
-			dump_index % MAX_VFE_IRQ_DEBUG_DUMP_SIZE]);
 		dump_index++;
 	}
 	spin_unlock_irqrestore(&vfe_dev->common_data->vfe_irq_dump.
@@ -2515,8 +2500,6 @@ void msm_isp_tasklet_debug_dump(struct vfe_device *vfe_dev)
 void msm_isp_dump_ping_pong_mismatch(struct vfe_device *vfe_dev)
 {
 
-	trace_msm_cam_string(" ***** msm_isp_dump_irq_debug ****");
 	msm_isp_irq_debug_dump(vfe_dev);
-	trace_msm_cam_string(" ***** msm_isp_dump_taskelet_debug ****");
 	msm_isp_tasklet_debug_dump(vfe_dev);
 }

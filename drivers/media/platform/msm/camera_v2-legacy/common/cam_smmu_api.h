@@ -17,7 +17,6 @@
 #include <linux/dma-buf.h>
 #include <asm/dma-iommu.h>
 #include <linux/dma-direction.h>
-#include <linux/dma-attrs.h>
 #include <linux/of_platform.h>
 #include <linux/iommu.h>
 #include <linux/random.h>
@@ -122,7 +121,7 @@ int cam_smmu_put_phy_addr(int handle, int ion_fd);
  */
 int cam_smmu_get_stage2_phy_addr(int handle,
 			int ion_fd, enum cam_smmu_map_dir dir,
-			struct ion_client *client, ion_phys_addr_t *addr,
+			dma_addr_t *addr,
 			size_t *len_ptr);
 
 /**
@@ -145,9 +144,8 @@ int cam_smmu_put_stage2_phy_addr(int handle, int ion_fd);
  * @return Status of operation. Negative in case of error. Zero otherwise.
  */
 int cam_smmu_alloc_get_stage2_scratch_mem(int handle,
-		enum cam_smmu_map_dir dir, struct ion_client *client,
-		struct ion_handle **sc_handle, ion_phys_addr_t *addr,
-		size_t *len_ptr);
+		enum cam_smmu_map_dir dir, struct dma_buf **dmabuf,
+		dma_addr_t *addr, size_t *len_ptr);
 
 
 /**
@@ -159,8 +157,7 @@ int cam_smmu_alloc_get_stage2_scratch_mem(int handle,
  * @return Status of operation. Negative in case of error. Zero otherwise.
  */
 
-int cam_smmu_free_stage2_scratch_mem(int handle,
-	struct ion_client *client, struct ion_handle *sc_handle);
+int cam_smmu_free_stage2_scratch_mem(int handle, struct dma_buf *dmabuf);
 
 /**
  * @brief	   : Allocates a scratch buffer

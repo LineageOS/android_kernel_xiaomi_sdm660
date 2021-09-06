@@ -1591,7 +1591,6 @@ static int vpe_probe(struct platform_device *pdev)
 	}
 
 	media_entity_init(&vpe_dev->msm_sd.sd.entity, 0, NULL, 0);
-	vpe_dev->msm_sd.sd.entity.type = MEDIA_ENT_T_V4L2_SUBDEV;
 	vpe_dev->msm_sd.sd.entity.group_id = MSM_CAMERA_SUBDEV_VPE;
 	vpe_dev->msm_sd.sd.entity.name = pdev->name;
 	msm_sd_register(&vpe_dev->msm_sd);

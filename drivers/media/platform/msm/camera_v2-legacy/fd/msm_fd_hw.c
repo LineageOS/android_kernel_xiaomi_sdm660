@@ -939,7 +939,8 @@ error:
 void msm_fd_hw_put(struct msm_fd_device *fd)
 {
 	mutex_lock(&fd->lock);
-	BUG_ON(fd->ref_count == 0);
+	if (WARN_ON(fd->ref_count == 0))
+		goto err;
 
 	if (--fd->ref_count == 0) {
 		msm_fd_hw_halt(fd);
@@ -953,6 +954,7 @@ void msm_fd_hw_put(struct msm_fd_device *fd)
 				fd->clk, fd->clk_num, false);
 		msm_camera_regulator_enable(fd->vdd_info, fd->num_reg, false);
 	}
+err:
 	mutex_unlock(&fd->lock);
 }
 
