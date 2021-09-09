@@ -94,12 +94,6 @@
 	};
 };
 
-&soc {
-	qcom,bcl {
-		qcom,bcl-soc-hotplug-list = <&CPU5 &CPU7>;
-	};
-};
-
 &pil_modem {
 	/delete-property/ qcom,complete-ramdump;
 };
