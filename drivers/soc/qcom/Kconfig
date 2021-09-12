@@ -760,6 +760,12 @@ config MSM_EVENT_TIMER
 	  monitor events that require the core to be awake and ready to
 	  handle the event.
 
+config MSM_AVTIMER
+	tristate "Avtimer Driver"
+	help
+	  This driver gets the Q6 out of power collapsed state and
+	  exposes ioctl control to read avtimer tick.
+
 config MSM_PM
 	depends on PM
 	select MSM_IDLE_STATS if DEBUG_FS
