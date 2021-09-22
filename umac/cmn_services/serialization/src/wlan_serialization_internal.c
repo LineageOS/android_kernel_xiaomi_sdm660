@@ -565,10 +565,10 @@ QDF_STATUS wlan_serialization_generic_timer_cb(void *arg)
 	 * dequeue cmd API will cleanup and destroy the timer. If it fails to
 	 * dequeue command then we have to destroy the timer.
 	 */
-	wlan_serialization_dequeue_cmd(cmd, SER_TIMEOUT, true);
-
-	/* Release the ref taken before the timer was started */
-	wlan_objmgr_vdev_release_ref(vdev, WLAN_SERIALIZATION_ID);
+	if (wlan_serialization_dequeue_cmd(cmd, SER_TIMEOUT, true) !=
+	    WLAN_SER_CMD_NOT_FOUND)
+		/* Release the ref taken before the timer was started */
+		wlan_objmgr_vdev_release_ref(vdev, WLAN_SERIALIZATION_ID);
 
 	return QDF_STATUS_SUCCESS;
 }
