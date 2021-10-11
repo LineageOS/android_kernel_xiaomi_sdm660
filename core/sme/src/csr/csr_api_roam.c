@@ -9234,8 +9234,11 @@ csr_delete_current_bss_sae_single_pmk_entry(struct mac_context *mac,
 {
 	tPmkidCacheInfo *pmksa;
 
+	if (!bss_desc->is_single_pmk)
+		return;
+
 	pmksa = qdf_mem_malloc(sizeof(*pmksa));
-	if (pmksa && bss_desc->is_single_pmk) {
+	if (pmksa) {
 		qdf_copy_macaddr(&pmksa->BSSID,
 				 (struct qdf_mac_addr *)bss_desc->bssId);
 		csr_roam_del_pmkid_from_cache(mac, vdev_id, pmksa, false);
