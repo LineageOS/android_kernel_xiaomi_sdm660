@@ -1380,6 +1380,10 @@ void target_if_spectral_process_phyerr(
 
 	spectral = get_target_if_spectral_handle_from_pdev(pdev);
 	p_sops = GET_TARGET_IF_SPECTRAL_OPS(spectral);
+	if (!p_sops->spectral_process_phyerr) {
+		spectral_err("null spectral_process_phyerr");
+		return;
+	}
 	p_sops->spectral_process_phyerr(spectral, data, datalen,
 					p_rfqual, p_chaninfo,
 					tsf64, acs_stats);
