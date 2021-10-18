@@ -21,7 +21,7 @@
 
 /* EQUALIZER */
 /* Equal to Frontend after last of the MULTIMEDIA SESSIONS */
-#define MAX_EQ_SESSIONS		(MSM_FRONTEND_DAI_MAX + 1)
+#define MAX_EQ_SESSIONS		MSM_FRONTEND_DAI_CS_VOICE // Warning: Default value has been changed on msm-4.19
 #define CHMIX_CFG_CONST_PARAM_SIZE 4
 
 enum {
