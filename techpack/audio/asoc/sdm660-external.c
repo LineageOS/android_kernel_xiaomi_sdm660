@@ -1319,7 +1319,7 @@ static int sdm660_notifier_service_cb(struct notifier_block *this,
 	struct snd_soc_dai *codec_dai;
 	const char *be_dl_name = LPASS_BE_SLIMBUS_0_RX;
 	struct snd_soc_pcm_runtime *rtd;
-	struct snd_soc_component *component;
+	struct snd_soc_component *component = NULL;
 
 	pr_debug("%s: Service opcode 0x%lx\n", __func__, opcode);
 
@@ -1621,7 +1621,7 @@ int msm_audrx_init(struct snd_soc_pcm_runtime *rtd)
 {
 	int ret;
 	void *config_data;
-	struct snd_soc_component *component;
+	struct snd_soc_component *component = NULL;
 	struct snd_soc_dapm_context *dapm;
 	struct snd_soc_dai *cpu_dai = rtd->cpu_dai;
 	struct snd_soc_dai *codec_dai = rtd->codec_dai;
