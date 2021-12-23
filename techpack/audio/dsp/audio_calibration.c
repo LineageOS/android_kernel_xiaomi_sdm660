@@ -623,6 +623,8 @@ void audio_cal_exit(void)
 	misc_deregister(&audio_cal_misc);
 }
 
+subsys_initcall(audio_cal_init);
+module_exit(audio_cal_exit);
 
 MODULE_DESCRIPTION("SoC QDSP6v2 Audio Calibration driver");
 MODULE_LICENSE("GPL v2");
