@@ -15345,6 +15345,7 @@ csr_roam_set_pmkid_cache(struct mac_context *mac, uint32_t sessionId,
 	tPmkidCacheInfo *pmksa, *pmkid_cache;
 	enum csr_akm_type akm_type;
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
+	enum QDF_OPMODE op_mode;
 
 	if (!pSession) {
 		sme_err("session %d not found", sessionId);
@@ -15376,23 +15377,30 @@ csr_roam_set_pmkid_cache(struct mac_context *mac, uint32_t sessionId,
 
 	for (i = 0; i < numItems; i++) {
 		pmksa = &pPMKIDCache[i];
+		op_mode = csr_get_session_persona(mac, sessionId);
+		sme_debug("op_mode %d", op_mode);
 
-		if (!pmksa->pmk_len || pmksa->pmk_len > CSR_RSN_MAX_PMK_LEN) {
-			sme_err("Invalid PMK length");
-			status = QDF_STATUS_E_FAILURE;
-			goto error;
-		}
-		qdf_copy_macaddr(&pmkid_cache->BSSID, &pmksa->BSSID);
-		sme_debug("Trying to find PMKID for " QDF_MAC_ADDR_STR,
-			  QDF_MAC_ADDR_ARRAY(pmkid_cache->BSSID.bytes));
-		if (csr_lookup_pmkid_using_bssid(mac, pSession, pmkid_cache,
-						 &pmkid_index) &&
-		    (!qdf_mem_cmp(pmkid_cache->pmk,
-				  pmksa->pmk, pmksa->pmk_len))) {
-			sme_debug("PMKSA entry found with same PMK at index %d",
-				  pmkid_index);
-			status = QDF_STATUS_E_EXISTS;
-			goto error;
+		/* Below code only for STA mode case, skip them for SAP mode*/
+		if (op_mode != QDF_SAP_MODE) {
+			if (!pmksa->pmk_len ||
+			    pmksa->pmk_len > CSR_RSN_MAX_PMK_LEN) {
+				sme_err("Invalid PMK length");
+				status = QDF_STATUS_E_FAILURE;
+				goto error;
+			}
+			qdf_copy_macaddr(&pmkid_cache->BSSID, &pmksa->BSSID);
+			sme_debug("Trying to find PMKID for " QDF_MAC_ADDR_STR,
+				  QDF_MAC_ADDR_ARRAY(pmkid_cache->BSSID.bytes));
+			if (csr_lookup_pmkid_using_bssid(mac, pSession,
+							 pmkid_cache,
+							 &pmkid_index) &&
+			    (!qdf_mem_cmp(pmkid_cache->pmk,
+					  pmksa->pmk, pmksa->pmk_len))) {
+				sme_debug("PMKSA entry found with same PMK at index %d",
+					  pmkid_index);
+				status = QDF_STATUS_E_EXISTS;
+				goto error;
+			}
 		}
 
 		/* Delete the entry if present */
@@ -15400,6 +15408,11 @@ csr_roam_set_pmkid_cache(struct mac_context *mac, uint32_t sessionId,
 		/* Update new entry */
 		csr_update_pmk_cache(pSession, pmksa);
 
+		/* Below code only for STA mode case, skip them for SAP mode*/
+		if (op_mode == QDF_SAP_MODE) {
+			status = QDF_STATUS_SUCCESS;
+			continue;
+		}
 		akm_type = pSession->connectedProfile.AuthType;
 		if ((akm_type == eCSR_AUTH_TYPE_FT_RSN ||
 		     akm_type == eCSR_AUTH_TYPE_FT_FILS_SHA256 ||
