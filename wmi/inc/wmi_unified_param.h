@@ -7833,12 +7833,14 @@ struct wmi_roam_scan_data {
  * @timestamp:          Host timestamp in millisecs
  * @status:             0 - Roaming is success ; 1 - Roaming failed
  * @fail_reason:        One of WMI_ROAM_FAIL_REASON_ID
+ * @fail_bssid:         BSSID of the last attempted roam failed AP
  */
 struct wmi_roam_result {
 	bool present;
 	uint32_t timestamp;
 	bool status;
 	uint32_t fail_reason;
+	struct qdf_mac_addr fail_bssid;
 };
 
 /**
