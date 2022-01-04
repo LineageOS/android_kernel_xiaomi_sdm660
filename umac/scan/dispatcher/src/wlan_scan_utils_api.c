@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017-2021 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -545,14 +546,6 @@ util_scan_parse_vendor_ie(struct scan_cache_entry *scan_params,
 			return QDF_STATUS_E_INVAL;
 
 		scan_params->ie_list.adaptive_11r = (uint8_t *)ie +
-						sizeof(struct ie_header);
-	} else if (is_sae_single_pmk_oui((uint8_t *)ie)) {
-		if ((ie->ie_len < OUI_LENGTH) ||
-		    (ie->ie_len > MAX_SAE_SINGLE_PMK_IE_LEN)) {
-			scm_debug("Invalid sae single pmk OUI");
-			return QDF_STATUS_E_INVAL;
-		}
-		scan_params->ie_list.single_pmk = (uint8_t *)ie +
 						sizeof(struct ie_header);
 	} else if (is_sae_single_pmk_oui((uint8_t *)ie)) {
 		if ((ie->ie_len < OUI_LENGTH) ||
