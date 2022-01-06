@@ -70,6 +70,7 @@
 #include "cfg_nan_api.h"
 
 #include "wlan_pkt_capture_ucfg_api.h"
+#include "target_if.h"
 
 #define RSN_AUTH_KEY_MGMT_SAE           WLAN_RSN_SEL(WLAN_AKM_SAE)
 #define MAX_PWR_FCC_CHAN_12 8
@@ -24012,5 +24013,86 @@ QDF_STATUS csr_process_monitor_mode_vdev_up_evt(struct mac_context *mac,
 	}
 
 	return QDF_STATUS_SUCCESS;
+}
+#endif
+
+#ifdef WLAN_FEATURE_ROAM_OFFLOAD
+void
+csr_update_roam_rt_stats(struct wlan_objmgr_psoc *psoc,
+			 uint8_t value, enum roam_rt_stats_params stats)
+{
+	struct wlan_mlme_psoc_obj *mlme_obj;
+	struct csr_roam_rt_stats *roam_rt_stats;
+
+	mlme_obj = mlme_get_psoc_obj(psoc);
+	if (!mlme_obj) {
+		sme_err("Failed to get MLME Obj");
+		return;
+	}
+
+	roam_rt_stats = &mlme_obj->cfg.lfr.roam_rt_stats;
+
+	switch (stats) {
+	case ROAM_RT_STATS_ENABLE:
+		roam_rt_stats->roam_stats_enabled = value;
+		break;
+	default:
+		break;
+	}
+}
+
+uint8_t csr_get_roam_rt_stats(struct wlan_objmgr_psoc *psoc,
+			      enum roam_rt_stats_params stats)
+{
+	struct  wlan_mlme_psoc_obj *mlme_obj;
+	struct csr_roam_rt_stats *roam_rt_stats;
+	uint8_t rstats_value;
+
+	mlme_obj =  mlme_get_psoc_obj(psoc);
+	if (!mlme_obj) {
+		sme_err("Failed to get MLME Obj");
+		return QDF_STATUS_E_FAILURE;
+	}
+	roam_rt_stats = &mlme_obj->cfg.lfr.roam_rt_stats;
+
+	switch (stats) {
+	case ROAM_RT_STATS_ENABLE:
+		rstats_value = roam_rt_stats->roam_stats_enabled;
+		break;
+	default:
+		break;
+	}
+
+	return rstats_value;
+}
+
+/**
+ * csr_roam_send_rt_stats_config() - set roam stats parameters
+ * @psoc: psoc pointer
+ * @vdev_id: vdev id
+ * @param_value: roam stats param value
+ *
+ * This function is used to set roam event stats parameters
+ *
+ * Return: QDF_STATUS
+ */
+QDF_STATUS
+csr_roam_send_rt_stats_config(struct wlan_objmgr_psoc *psoc,
+			      uint8_t vdev_id, uint8_t param_value)
+{
+	QDF_STATUS status;
+	wmi_unified_t wmi_handle;
+
+	wmi_handle = get_wmi_unified_hdl_from_psoc(psoc);
+	if (!wmi_handle)
+		return QDF_STATUS_E_FAILURE;
+
+	status = wma_roam_rt_stats_config_set_param(wmi_handle,
+						    vdev_id,
+						    param_value);
+	if (QDF_IS_STATUS_ERROR(status))
+		sme_debug("fail to send roam rt stats config");
+
+	return status;
 }
 #endif

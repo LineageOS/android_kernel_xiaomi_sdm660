@@ -16526,3 +16526,28 @@ end:
 	sme_release_global_lock(&mac->sme);
 	return status;
 }
+
+#ifdef WLAN_FEATURE_ROAM_OFFLOAD
+void
+sme_update_roam_rt_stats(struct wlan_objmgr_psoc *psoc,
+			 uint8_t value, enum roam_rt_stats_params stats)
+{
+	csr_update_roam_rt_stats(psoc, value, stats);
+}
+
+uint8_t
+sme_get_roam_rt_stats(struct wlan_objmgr_psoc *psoc,
+		      enum roam_rt_stats_params stats)
+{
+	return csr_get_roam_rt_stats(psoc, stats);
+}
+
+QDF_STATUS
+sme_roam_send_rt_stats_config(struct wlan_objmgr_pdev *pdev,
+			      uint8_t vdev_id, uint8_t param_value)
+{
+	struct wlan_objmgr_psoc *psoc = wlan_pdev_get_psoc(pdev);
+
+	return csr_roam_send_rt_stats_config(psoc, vdev_id, param_value);
+}
+#endif /* WLAN_FEATURE_ROAM_OFFLOAD */

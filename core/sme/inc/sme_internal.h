@@ -38,6 +38,7 @@
 #include "sme_power_save.h"
 #include "wmi_unified.h"
 #include "wmi_unified_param.h"
+#include "wlan_mlme_public_struct.h"
 
 struct wmi_twt_enable_complete_event_param;
 /*--------------------------------------------------------------------------

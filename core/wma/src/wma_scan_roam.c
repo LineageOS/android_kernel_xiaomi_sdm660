@@ -749,6 +749,29 @@ QDF_STATUS wma_roam_scan_offload_chan_list(tp_wma_handle wma_handle,
 	return status;
 }
 
+#ifdef WLAN_FEATURE_ROAM_OFFLOAD
+/**
+ * wma_roam_rt_stats_config_set_param() - send enable/disable roam event stats
+ * @wma_handle: wma handle
+ * @vdev: vdev object
+ * @vdev_id: vdev id
+ * @rstats_config: roam event stats config parameters
+ *
+ * Return: QDF status
+ */
+QDF_STATUS wma_roam_rt_stats_config_set_param(wmi_unified_t wmi_handle,
+					      uint8_t vdev_id,
+					      uint32_t rstats_config)
+{
+	struct vdev_set_params roam_param = {0};
+
+	roam_param.if_id = vdev_id;
+	roam_param.param_id = WMI_ROAM_PARAM_ROAM_EVENTS_CONFIG;
+	roam_param.param_value = rstats_config;
+
+	return wmi_unified_roam_set_param_send(wmi_handle, &roam_param);
+}
+#endif
 /**
  * e_csr_auth_type_to_rsn_authmode() - map csr auth type to rsn authmode
  * @authtype: CSR authtype
@@ -1790,6 +1813,7 @@ QDF_STATUS wma_process_roaming_config(tp_wma_handle wma_handle,
 	wmi_start_scan_cmd_fixed_param scan_params;
 	struct mac_context *mac = cds_get_context(QDF_MODULE_ID_PE);
 	uint32_t mode = 0;
+	uint8_t param;
 	struct wma_txrx_node *intr = NULL;
 	struct wmi_bss_load_config *bss_load_cfg;
 
@@ -1805,6 +1829,9 @@ QDF_STATUS wma_process_roaming_config(tp_wma_handle wma_handle,
 		  roam_req->RoamScanOffloadEnabled,
 		  roam_req->offload_11k_params.offload_11k_bitmask);
 	wma_handle->interfaces[roam_req->sessionId].roaming_in_progress = false;
+
+	param = sme_get_roam_rt_stats(wma_handle->psoc, ROAM_RT_STATS_ENABLE);
+
 	switch (roam_req->Command) {
 	case ROAM_SCAN_OFFLOAD_START:
 		intr = &wma_handle->interfaces[roam_req->sessionId];
@@ -1930,6 +1957,13 @@ QDF_STATUS wma_process_roaming_config(tp_wma_handle wma_handle,
 		if (roam_req->bss_load_trig_enabled) {
 			bss_load_cfg = &roam_req->bss_load_config;
 			wma_send_roam_bss_load_config(wma_handle, bss_load_cfg);
+		}
+
+		if (param) {
+			qdf_status = wma_roam_rt_stats_config_set_param(
+						wma_handle->wmi_handle,
+						roam_req->sessionId,
+						param);
 		}
 
 		wma_send_disconnect_roam_params(wma_handle, roam_req);
@@ -2172,6 +2206,12 @@ QDF_STATUS wma_process_roaming_config(tp_wma_handle wma_handle,
 			wma_roam_scan_offload_mode(wma_handle, &scan_params,
 						   roam_req, mode,
 						   roam_req->sessionId);
+		if (param) {
+			qdf_status = wma_roam_rt_stats_config_set_param(
+						wma_handle->wmi_handle,
+						roam_req->sessionId,
+						param);
+		}
 
 		wma_send_disconnect_roam_params(wma_handle, roam_req);
 		wma_send_idle_roam_params(wma_handle, roam_req);
