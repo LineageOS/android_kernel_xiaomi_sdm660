@@ -2317,17 +2317,45 @@ struct wlan_mlme_sae_single_pmk {
 };
 
 /**
+ * struct roam_event_rt_info - Roam event related information
+ * @vdev_id: Vdev id
+ * @roam_scan_state: roam scan state notif value
+ * @roam_invoke_fail_reason: roam invoke fail reason
+ */
+struct roam_event_rt_info {
+	uint8_t vdev_id;
+	uint32_t roam_scan_state;
+	uint32_t roam_invoke_fail_reason;
+};
+
+/**
+ * enum roam_rt_stats_type: different types of params to get roam event stats
+ * for the vdev
+ * @ROAM_RT_STATS_TYPE_SCAN_STATE: Roam Scan Start/End
+ * @ROAM_RT_STATS_TYPE_INVOKE_FAIL_REASON: One of WMI_ROAM_FAIL_REASON_ID for
+ * roam failure in case of forced roam
+ * @ROAM_RT_STATS_TYPE_ROAM_SCAN_INFO: Roam Trigger/Fail/Scan/AP Stats
+ */
+enum roam_rt_stats_type {
+	ROAM_RT_STATS_TYPE_SCAN_STATE,
+	ROAM_RT_STATS_TYPE_INVOKE_FAIL_REASON,
+	ROAM_RT_STATS_TYPE_ROAM_SCAN_INFO,
+};
+
+/**
  * struct mlme_roam_debug_info - Roam debug information storage structure.
  * @trigger:            Roam trigger related data
  * @scan:               Roam scan related data structure.
  * @result:             Roam result parameters.
  * @data_11kv:          Neighbor report/BTM parameters.
+ * @roam_event_param:   Roam event notif params
  */
 struct mlme_roam_debug_info {
 	struct wmi_roam_trigger_info trigger;
 	struct wmi_roam_scan_data scan;
 	struct wmi_roam_result result;
 	struct wmi_neighbor_report_data data_11kv;
+	struct roam_event_rt_info roam_event_param;
 };
 
 #endif
