@@ -24036,6 +24036,9 @@ csr_update_roam_rt_stats(struct wlan_objmgr_psoc *psoc,
 	case ROAM_RT_STATS_ENABLE:
 		roam_rt_stats->roam_stats_enabled = value;
 		break;
+	case ROAM_RT_STATS_SUSPEND_MODE_ENABLE:
+		roam_rt_stats->roam_stats_wow_sent = value;
+		break;
 	default:
 		break;
 	}
@@ -24058,6 +24061,9 @@ uint8_t csr_get_roam_rt_stats(struct wlan_objmgr_psoc *psoc,
 	switch (stats) {
 	case ROAM_RT_STATS_ENABLE:
 		rstats_value = roam_rt_stats->roam_stats_enabled;
+		break;
+	case ROAM_RT_STATS_SUSPEND_MODE_ENABLE:
+		rstats_value = roam_rt_stats->roam_stats_wow_sent;
 		break;
 	default:
 		break;
