@@ -1850,4 +1850,15 @@ int wma_oem_event_handler(void *wma_ctx, uint8_t *event_buff, uint32_t len);
  */
 QDF_STATUS wma_set_roam_triggers(tp_wma_handle wma_handle,
 				 struct roam_triggers *triggers);
+
+/* wma_set_early_stop_roam_scan_channel() - set early stop scan channel to fw
+ * @wma_handle: wma handle
+ * @early_stop_scan_channel: Early stop scan channel
+ * @vdev_id: vdev id
+ *
+ * Return: Success or Failure status
+ */
+QDF_STATUS wma_set_early_stop_roam_scan_channel(tp_wma_handle wma_handle,
+						uint8_t early_stop_scan_channel,
+						uint32_t vdev_id);
 #endif

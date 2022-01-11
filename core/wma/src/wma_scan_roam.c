@@ -1797,6 +1797,30 @@ wma_send_idle_roam_params(tp_wma_handle wma_handle,
 {}
 #endif
 
+QDF_STATUS
+wma_set_early_stop_roam_scan_channel(tp_wma_handle wma_handle,
+				     uint8_t early_stop_scan_channel,
+				     uint32_t vdev_id)
+{
+	QDF_STATUS status;
+	struct vdev_set_params roam_param = {0};
+
+	WMA_LOGD("%s: Early Stop Scan Channel : %d",
+		 __func__, early_stop_scan_channel);
+
+	roam_param.if_id = vdev_id;
+	roam_param.param_id = WMI_ROAM_PARAM_PARTIAL_SCAN_EARLYSTOP_CONFIG;
+	roam_param.param_value = early_stop_scan_channel;
+
+	status = wmi_unified_roam_set_param_send(wma_handle->wmi_handle,
+						 &roam_param);
+	if (QDF_IS_STATUS_ERROR(status)) {
+		WMA_LOGE("%s: WMI_ROAM_PARAM_PARTIAL_SCAN_EARLYSTOP_CONFIG "
+			 "returned Error %d", __func__, status);
+	}
+	return status;
+}
+
 /**
  * wma_process_roaming_config() - process roam request
  * @wma_handle: wma handle
@@ -1964,6 +1988,20 @@ QDF_STATUS wma_process_roaming_config(tp_wma_handle wma_handle,
 						wma_handle->wmi_handle,
 						roam_req->sessionId,
 						param);
+		}
+		/* Send early stop scan in partial scan to fw
+		 * as part of RSO start
+		 */
+		wma_debug("Set early scan stop from RSO Start: %d",
+			  roam_req->early_stop_scan_in_partial_scan);
+		qdf_status = wma_set_early_stop_roam_scan_channel(
+				wma_handle,
+				roam_req->early_stop_scan_in_partial_scan,
+				roam_req->sessionId);
+		if (QDF_IS_STATUS_ERROR(qdf_status)) {
+			WMA_LOGE("Early stop scan not sent, status %d",
+				 qdf_status);
+			break;
 		}
 
 		wma_send_disconnect_roam_params(wma_handle, roam_req);
@@ -2211,6 +2249,21 @@ QDF_STATUS wma_process_roaming_config(tp_wma_handle wma_handle,
 						wma_handle->wmi_handle,
 						roam_req->sessionId,
 						param);
+		}
+		/* Send early stop scan in partial scan to fw
+		 * as part of RSO start
+		 */
+		wma_debug("Set early scan stop from RSO update: %d",
+			  roam_req->early_stop_scan_in_partial_scan);
+
+		qdf_status = wma_set_early_stop_roam_scan_channel(
+				wma_handle,
+				roam_req->early_stop_scan_in_partial_scan,
+				roam_req->sessionId);
+		if (QDF_IS_STATUS_ERROR(qdf_status)) {
+			WMA_LOGE("Early stop scan not sent, status %d",
+				 qdf_status);
+			break;
 		}
 
 		wma_send_disconnect_roam_params(wma_handle, roam_req);

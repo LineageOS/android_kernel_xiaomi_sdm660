@@ -1302,6 +1302,8 @@ QDF_STATUS csr_neighbor_roam_init(struct mac_context *mac, uint8_t sessionId)
 		pNeighborRoamInfo->cfgParams.nRoamBmissFinalBcnt;
 	pNeighborRoamInfo->currentRoamBeaconRssiWeight =
 		pNeighborRoamInfo->cfgParams.nRoamBeaconRssiWeight;
+	pNeighborRoamInfo->cfgParams.early_stop_scan_in_partial_scan =
+		mac->mlme_cfg->lfr.early_stop_scan_in_partial_scan;
 	qdf_mem_zero(&pNeighborRoamInfo->prevConnProfile,
 		    sizeof(tCsrRoamConnectedProfile));
 
