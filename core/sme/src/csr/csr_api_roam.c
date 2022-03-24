@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -8710,6 +8711,12 @@ csr_roam_reassoc(struct mac_context *mac_ctx, uint32_t session_id,
 		sme_err("No profile specified");
 		return QDF_STATUS_E_FAILURE;
 	}
+
+	if (!session) {
+		sme_err("Session_id invalid %d", session_id);
+		return QDF_STATUS_E_FAILURE;
+	}
+
 	sme_debug(
 		"called  BSSType = %s (%d) authtype = %d  encryType = %d",
 		sme_bss_type_to_string(profile->BSSType),
@@ -17662,6 +17669,11 @@ QDF_STATUS csr_send_mb_set_context_req_msg(struct mac_context *mac,
 	QDF_STATUS status = QDF_STATUS_E_FAILURE;
 	struct csr_roam_session *pSession = CSR_GET_SESSION(mac, sessionId);
 
+	if (!pSession) {
+		sme_err("Session_id invalid %d", sessionId);
+		return status;
+	}
+
 	sme_debug("keylength: %d Encry type: %d", keyLength, edType);
 	do {
 		if ((1 != numKeys) && (0 != numKeys))
@@ -18370,6 +18382,10 @@ void csr_cleanup_session(struct mac_context *mac, uint32_t sessionId)
 		struct csr_roam_session *pSession = CSR_GET_SESSION(mac,
 								sessionId);
 
+		if (!pSession) {
+			sme_err("Session_ID Invalid %d", sessionId);
+			return;
+		}
 		csr_roam_stop(mac, sessionId);
 
 		/* Clean up FT related data structures */
@@ -22619,6 +22635,11 @@ static bool csr_is_conn_allow_2g_band(struct mac_context *mac_ctx, uint32_t chnl
 	sap_session_id = csr_find_session_by_type(mac_ctx, QDF_SAP_MODE);
 	if (WLAN_UMAC_VDEV_ID_MAX != sap_session_id) {
 		sap_session = CSR_GET_SESSION(mac_ctx, sap_session_id);
+		if (!sap_session) {
+			sme_err("Session_id invalid %d", sap_session_id);
+			return false;
+		}
+
 		if ((0 != sap_session->bssParams.operationChn) &&
 				(sap_session->bssParams.operationChn != chnl)) {
 
@@ -22657,6 +22678,11 @@ static bool csr_is_conn_allow_5g_band(struct mac_context *mac_ctx, uint32_t chnl
 	p2pgo_session_id = csr_find_session_by_type(mac_ctx, QDF_P2P_GO_MODE);
 	if (WLAN_UMAC_VDEV_ID_MAX != p2pgo_session_id) {
 		p2pgo_session = CSR_GET_SESSION(mac_ctx, p2pgo_session_id);
+		if (!p2pgo_session) {
+			sme_err("Session_id invalid %d", p2pgo_session_id);
+			return false;
+		}
+
 		if ((0 != p2pgo_session->bssParams.operationChn) &&
 				(eCSR_ASSOC_STATE_TYPE_NOT_CONNECTED !=
 				 p2pgo_session->connectState) &&
