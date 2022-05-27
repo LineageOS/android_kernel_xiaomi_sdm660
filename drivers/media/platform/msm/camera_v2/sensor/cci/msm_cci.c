@@ -1441,7 +1441,7 @@ static int32_t msm_cci_init(struct v4l2_subdev *sd,
 		pr_err("%s: irq enable failed\n", __func__);
 	cci_dev->hw_version = msm_camera_io_r_mb(cci_dev->base +
 		CCI_HW_VERSION_ADDR);
-	pr_info("%s:%d: hw_version = 0x%x\n", __func__, __LINE__,
+	CDBG("%s:%d: hw_version = 0x%x\n", __func__, __LINE__,
 		cci_dev->hw_version);
 	cci_dev->payload_size =
 			MSM_CCI_WRITE_DATA_PAYLOAD_SIZE_10;

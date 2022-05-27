@@ -1133,7 +1133,7 @@ static int cpp_init_hardware(struct cpp_device *cpp_dev)
 		if (vbif_version == VBIF_VERSION_2_3_0)
 			cpp_dev->hw_info.cpp_hw_version = CPP_HW_VERSION_4_0_0;
 	}
-	pr_info("CPP HW Version: 0x%x\n", cpp_dev->hw_info.cpp_hw_version);
+	CPP_DBG("CPP HW Version: 0x%x\n", cpp_dev->hw_info.cpp_hw_version);
 	cpp_dev->hw_info.cpp_hw_caps =
 		msm_camera_io_r(cpp_dev->cpp_hw_base + 0x4);
 
@@ -1151,7 +1151,7 @@ static int cpp_init_hardware(struct cpp_device *cpp_dev)
 			__func__, rc);
 		goto pwr_collapse_reset;
 	}
-	pr_err("stream_cnt:%d\n", cpp_dev->stream_cnt);
+	CPP_DBG("stream_cnt:%d\n", cpp_dev->stream_cnt);
 	cpp_dev->stream_cnt = 0;
 	if (cpp_dev->fw_name_bin) {
 		msm_camera_enable_irq(cpp_dev->irq, false);
@@ -1214,7 +1214,7 @@ static void cpp_release_hardware(struct cpp_device *cpp_dev)
 		rc = msm_cpp_update_bandwidth_setting(cpp_dev, 0, 0);
 	}
 	cpp_dev->stream_cnt = 0;
-	pr_info("cpp hw release done\n");
+	CPP_DBG("cpp hw release done\n");
 }
 
 static int32_t cpp_load_fw(struct cpp_device *cpp_dev, char *fw_name_bin)

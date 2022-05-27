@@ -307,7 +307,7 @@ static int msm_csid_reset(struct csid_device *csid_dev)
 		irq = msm_camera_vio_r(csid_dev->base,
 			csid_dev->ctrl_reg->csid_reg.csid_irq_status_addr,
 			csid_dev->pdev->id);
-		pr_err_ratelimited("%s CSID%d_IRQ_STATUS_ADDR = 0x%x\n",
+		CDBG("%s CSID%d_IRQ_STATUS_ADDR = 0x%x\n",
 			__func__, csid_dev->pdev->id, irq);
 		if (irq & (0x1 << irq_bitshift)) {
 			rc = 1;
@@ -595,7 +595,7 @@ static irqreturn_t msm_csid_irq(int irq_num, void *data)
 
 	irq = msm_camera_io_r(csid_dev->base +
 		csid_dev->ctrl_reg->csid_reg.csid_irq_status_addr);
-	pr_err_ratelimited("%s CSID%d_IRQ_STATUS_ADDR = 0x%x\n",
+	CDBG("%s CSID%d_IRQ_STATUS_ADDR = 0x%x\n",
 		 __func__, csid_dev->pdev->id, irq);
 	if (irq & (0x1 <<
 		csid_dev->ctrl_reg->csid_reg.csid_rst_done_irq_bitshift))
@@ -644,7 +644,7 @@ static int msm_csid_init(struct csid_device *csid_dev, uint32_t *csid_version)
 		return rc;
 	}
 
-	pr_info("%s: CSID_VERSION = 0x%x\n", __func__,
+	CDBG("%s: CSID_VERSION = 0x%x\n", __func__,
 		csid_dev->ctrl_reg->csid_reg.csid_version);
 	/* power up */
 	rc = msm_camera_config_vreg(&csid_dev->pdev->dev, csid_dev->csid_vreg,
