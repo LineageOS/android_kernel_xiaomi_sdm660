@@ -405,20 +405,7 @@
 &firmware {
 	android {
 		/delete-node/ vbmeta;
-		fstab {
-			system {
-				compatible = "android,system";
-				dev = "/dev/block/platform/soc/c0c4000.sdhci/by-name/system";
-				type = "ext4";
-				mnt_flags = "ro,barrier=1,discard";
-				fsmgr_flags = "wait";
-				status = "ok";
-			};
-			vendor {
-				dev = "/dev/block/platform/soc/c0c4000.sdhci/by-name/cust";
-				fsmgr_flags = "wait";
-			};
-		};
+		/delete-node/ fstab;
 	};
 };
 

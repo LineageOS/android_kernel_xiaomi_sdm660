@@ -19,24 +19,11 @@
 #include "platina-smb1355.dtsi"
 #include "platina-xiaomi-sdm660-common.dtsi"
 
-/* sdm660.dtsi */
-
+/* sdm660.dtsi platina specific diff */
 &firmware {
 	android {
-		fstab {
-			system {
-				compatible = "android,system";
-				dev = "/dev/block/platform/soc/c0c4000.sdhci/by-name/system";
-				type = "ext4";
-				mnt_flags = "ro,barrier=1,discard";
-				fsmgr_flags = "wait,verify";
-				status = "ok";
-			};
-
-			vendor {
-				fsmgr_flags = "wait,verify";
-			};
-		};
+		/delete-node/ vbmeta;
+		/delete-node/ fstab;
 	};
 };
 
