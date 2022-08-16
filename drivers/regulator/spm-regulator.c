@@ -1336,7 +1336,6 @@ int __init spm_regulator_init(void)
 
 	return platform_driver_register(&spm_regulator_driver);
 }
-EXPORT_SYMBOL(spm_regulator_init);
 
 static void __exit spm_regulator_exit(void)
 {
