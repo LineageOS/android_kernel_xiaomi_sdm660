@@ -1,3 +1,10 @@
+&firmware {
+	android {
+		boot_devices = "soc/c0c4000.sdhci";
+		/delete-node/ fstab;
+	};
+};
+
 &soc {
 	restart@10ac000 {
 		qcom,force-warm-reboot;

@@ -12,6 +12,13 @@
 #include "wayne-camera-sensor-mtp.dtsi"
 #include "sdm660-novatek-i2c_d2s.dtsi"
 
+/* sdm660.dtsi jasmine/wayne specific diff */
+&firmware {
+	android {
+		/delete-node/ vbmeta;
+	};
+};
+
 /* sdm660-common.dtsi diff wayne - whyred/tulip */
 &qusb_phy0 {
 	qcom,qusb-phy-init-seq = <0xf8 0x80
