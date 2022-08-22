@@ -56,6 +56,8 @@
 		regulator-min-microvolt = <1200000>;//1350000
 		regulator-max-microvolt = <1200000>;
 		enable-active-high;
+		pinctrl-names = "default";
+		pinctrl-0 = <&cam_sensor_eldo4_default>;
 		gpio = <&pm660l_gpios 4 0>;
 		vin-supply = <&pm660_s5>;
 	};
@@ -284,7 +286,8 @@
 		qcom,gpio-no-mux = <0>;
 		pinctrl-names = "cam_default", "cam_suspend";
 		pinctrl-0 = <&cam_sensor_mclk1_active
-				 &cam_sensor_front_active>;
+				 &cam_sensor_front_active
+				 &cam_sensor_eldo3_default>;
 		pinctrl-1 = <&cam_sensor_mclk1_suspend
 				 &cam_sensor_front_suspend>;
 		gpios = <&tlmm 33 0>,
@@ -559,7 +562,8 @@
 		qcom,gpio-no-mux = <0>;
 		pinctrl-names = "cam_default", "cam_suspend";
 		pinctrl-0 = <&cam_sensor_mclk1_active
-				 &cam_sensor_front_active>;
+				 &cam_sensor_front_active
+				 &cam_sensor_eldo3_default>;
 		pinctrl-1 = <&cam_sensor_mclk1_suspend
 				 &cam_sensor_front_suspend>;
 		gpios = <&tlmm 33 0>,
@@ -878,7 +882,8 @@
 		qcom,gpio-no-mux = <0>;
 		pinctrl-names = "cam_default", "cam_suspend";
 		pinctrl-0 = <&cam_sensor_mclk1_active
-				 &cam_sensor_front_active>;
+				 &cam_sensor_front_active
+				 &cam_sensor_eldo3_default>;
 		pinctrl-1 = <&cam_sensor_mclk1_suspend
 				 &cam_sensor_front_suspend>;
 		gpios = <&tlmm 33 0>,
