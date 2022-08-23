@@ -40,6 +40,17 @@ menuconfig MSMB_CAMERA
        adds support for the camera driver stack including sensor, isp
        and postprocessing drivers.
 
+menuconfig MSMB_CAMERA_LEGACY
+     bool "QTI MSM camera and video capture 2.0 legacy support"
+     depends on ARCH_QCOM && VIDEO_V4L2 && I2C
+     select MSMB_CAMERA
+     help
+       Say Y here to enable selecting the video adapters for
+       QTI msm camera and video capture 2.0, enabling this
+       adds support for the camera driver stack including sensor, isp
+       and postprocessing drivers.
+       Legacy msm-4.4 version
+
 config MSMB_CAMERA_DEBUG
      bool "QTI MSM camera 2.0 debugging with printk"
      depends on MSMB_CAMERA
@@ -51,7 +62,12 @@ config MSMB_CAMERA_DEBUG
        Enable printk() debug for msm camera 2.0.
 
 if MSMB_CAMERA
-       source "drivers/media/platform/msm/camera_v2/Kconfig"
+       if MSMB_CAMERA_LEGACY
+              source "drivers/media/platform/msm/camera_v2/Kconfig"
+       endif
+       if !MSMB_CAMERA_LEGACY
+              source "drivers/media/platform/msm/camera_v2/Kconfig"
+       endif
 endif # MSMB_CAMERA
 
 source "drivers/media/platform/msm/cvp/Kconfig"
