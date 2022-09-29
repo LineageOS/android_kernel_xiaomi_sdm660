@@ -593,6 +593,13 @@ typedef  enum  {
     WMI_SERVICE_UMAC_HANG_RECOVERY_SUPPORT = 340, /* FW supports recovering system from UMAC hang condition */
     WMI_SERVICE_COAP_OFFLOAD_SUPPORT = 341, /* FW supports CoAP (the Constrained Application Protocol) offload */
     WMI_SERVICE_TDLS_WIDEBAND_SUPPORT = 342, /* FW supports Wideband TDLS */
+    WMI_SERVICE_FEATURE_SET_EVENT_SUPPORT = 343, /* FW supports sending of supported feature set event during init time */
+    WMI_SERVICE_HALPHY_CTRL_PATH_STATS = 344, /* HALPHY STATS through control path */
+    WMI_SERVICE_PEER_CHWIDTH_PUNCTURE_BITMAP_SUPPORT = 345, /* FW supports puncture bitmap change with channel width switch */
+    WMI_SERVICE_BANG_RADAR_320_SUPPORT = 346, /* Host to send frequency offset for bang radar in extended field for 320M support */
+    WMI_SERVICE_XGAP_SUPPORT = 347, /* FW support for XGAP */
+    WMI_SERVICE_OBSS_PER_PACKET_SR_SUPPORT = 348, /* Spatial Reuse support for per PPDU setting */
+
 
     WMI_MAX_EXT2_SERVICE
 
@@ -626,15 +633,15 @@ typedef  enum  {
  */
 #define WMI_SERVICE_ENABLE(pwmi_svc_bmap,svc_id) \
     ( (pwmi_svc_bmap)[(svc_id)/(sizeof(A_UINT32))] |= \
-         (1 << ((svc_id)%(sizeof(A_UINT32)))) )
+         ((A_UINT32) 1 << ((svc_id)%(sizeof(A_UINT32)))) )
 
 #define WMI_SERVICE_DISABLE(pwmi_svc_bmap,svc_id) \
     ( (pwmi_svc_bmap)[(svc_id)/(sizeof(A_UINT32))] &=  \
-      ( ~(1 << ((svc_id)%(sizeof(A_UINT32)))) ) )
+      ( ~((A_UINT32) 1 << ((svc_id)%(sizeof(A_UINT32)))) ) )
 
 #define WMI_SERVICE_IS_ENABLED(pwmi_svc_bmap,svc_id) \
     ( ((pwmi_svc_bmap)[(svc_id)/(sizeof(A_UINT32))] &  \
-       (1 << ((svc_id)%(sizeof(A_UINT32)))) ) != 0)
+       ((A_UINT32) 1 << ((svc_id)%(sizeof(A_UINT32)))) ) != 0)
 
 
 #define WMI_SERVICE_EXT_ENABLE(pwmi_svc_bmap, pwmi_svc_ext_bmap, svc_id) \
@@ -644,7 +651,7 @@ typedef  enum  {
         } else { \
             int word = ((svc_id) - WMI_MAX_SERVICE) / 32; \
             int bit = (svc_id) & 0x1f; /* svc_id mod 32 */ \
-            (pwmi_svc_ext_bmap)[word] |= (1 << bit); \
+            (pwmi_svc_ext_bmap)[word] |= ((A_UINT32) 1 << bit); \
         } \
     } while (0)
 
@@ -655,7 +662,7 @@ typedef  enum  {
         } else { \
             int word = ((svc_id) - WMI_MAX_SERVICE) / 32; \
             int bit = (svc_id) & 0x1f; /* svc_id mod 32 */ \
-            (pwmi_svc_ext_bmap)[word] &= ~(1 << bit); \
+            (pwmi_svc_ext_bmap)[word] &= ~((A_UINT32) 1 << bit); \
         } \
     } while (0)
 
@@ -679,7 +686,7 @@ typedef  enum  {
         } else { \
             int word = ((svc_id) - WMI_MAX_EXT_SERVICE) / 32; \
             int bit = (svc_id) & 0x1f; /* svc_id mod 32 */ \
-            (pwmi_svc_ext2_bmap)[word] |= (1 << bit); \
+            (pwmi_svc_ext2_bmap)[word] |= ((A_UINT32) 1 << bit); \
         } \
     } while (0)
 
@@ -693,7 +700,7 @@ typedef  enum  {
         } else { \
             int word = ((svc_id) - WMI_MAX_EXT_SERVICE) / 32; \
             int bit = (svc_id) & 0x1f; /* svc_id mod 32 */ \
-            (pwmi_svc_ext2_bmap)[word] &= ~(1 << bit); \
+            (pwmi_svc_ext2_bmap)[word] &= ~((A_UINT32) 1 << bit); \
         } \
     } while (0)
 
