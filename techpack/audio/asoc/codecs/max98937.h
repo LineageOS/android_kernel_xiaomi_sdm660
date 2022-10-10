@@ -1977,7 +1977,7 @@ typedef enum{
 struct max989xx_priv {
 	struct device *dev;
 	struct regmap *regmap[MAX_CHANNEL_NUM];
-	struct snd_soc_codec *codec;
+	struct snd_soc_component *component;
 	struct max98927_pdata *pdata;
 	unsigned int spk_mode;
 	unsigned int spk_safe_gain;
