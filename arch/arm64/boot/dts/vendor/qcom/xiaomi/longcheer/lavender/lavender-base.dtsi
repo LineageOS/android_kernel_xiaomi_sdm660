@@ -61,6 +61,7 @@
 /* sdm660-mtp.dtsi lavender specific diff */
 &mtp_batterydata {
 	#include "fg-gen3-batterydata-m6100atl-4000mah.dtsi"
+	#include "fg-gen3-batterydata-m6100cos-4000mah.dtsi"
 	#include "fg-gen3-batterydata-m6100sun-4000mah.dtsi"
 	#include "fg-gen3-batterydata-m6100default-4000mah.dtsi"
 };
