@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "557848ef_c6d0a0ce",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 20370
+      },
+      "writtenOn": "2022-10-19T07:31:19Z",
+      "side": 1,
+      "message": "Here is the original patch (also used by Motorola devices) adding the lines this patch removes: https://github.com/LineageOS/android_kernel_motorola_msm8998/commit/72ac586cf5614cc540062306d3a01a0aefa05ad8\nI am by no means a kernel guru but the original patch also fixed a problem.",
+      "revId": "b83b728a28780611ba0f9b6f496d4e8a44793d9b",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
