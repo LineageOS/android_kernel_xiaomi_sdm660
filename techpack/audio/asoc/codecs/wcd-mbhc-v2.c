@@ -1952,10 +1952,10 @@ int wcd_mbhc_start(struct wcd_mbhc *mbhc, struct wcd_mbhc_config *mbhc_cfg)
 		mbhc->swap_thr = GND_MIC_USBC_SWAP_THRESHOLD;
 		mbhc->fsa_np = of_parse_phandle(card->dev->of_node,
 				"fsa4480-i2c-handle", 0);
-		if (mbhc->fsa_np) {
+		if (unlikely(mbhc->fsa_np)) {
 			mbhc_cfg->fsa_enable = true;
 		} else {
-			dev_err(card->dev, "%s: fsa4480 i2c node not found\n",
+			dev_dbg(card->dev, "%s: fsa4480 i2c node not found\n",
 					__func__);
 
 			mbhc_cfg->fsa_enable = false;
