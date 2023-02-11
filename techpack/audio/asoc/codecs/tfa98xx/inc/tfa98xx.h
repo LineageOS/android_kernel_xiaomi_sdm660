@@ -21,6 +21,7 @@
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/list.h>
+#include <linux/miscdevice.h>
 
 #include "tfa_device.h"
 #include "tfa_container.h"
@@ -102,7 +103,7 @@ struct tfa98xx {
 	struct regmap *regmap;
 	struct i2c_client *i2c;
 	struct regulator *vdd;
-	struct snd_soc_codec *codec;
+	struct snd_soc_component *component;
 	struct workqueue_struct *tfa98xx_wq;
 	struct delayed_work init_work;
 	struct delayed_work monitor_work;
