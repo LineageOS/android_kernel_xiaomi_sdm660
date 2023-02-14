@@ -1508,7 +1508,6 @@ struct bss_load_trigger {
  * full channel roam scans
  * @sae_single_pmk_feature_enabled: Contains value of ini
  * sae_single_pmk_feature_enabled
- * early_stop_scan_in_partial_scan
  */
 struct wlan_mlme_lfr_cfg {
 	bool mawc_roam_enabled;
@@ -1619,7 +1618,6 @@ struct wlan_mlme_lfr_cfg {
 #if defined(WLAN_SAE_SINGLE_PMK) && defined(WLAN_FEATURE_ROAM_OFFLOAD)
 	bool sae_single_pmk_feature_enabled;
 #endif
-	uint8_t early_stop_scan_in_partial_scan;
 };
 
 /**

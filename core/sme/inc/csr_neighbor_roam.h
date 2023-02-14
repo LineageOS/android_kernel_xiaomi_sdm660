@@ -72,7 +72,6 @@ typedef struct sCsrNeighborRoamCfgParams {
 	uint32_t roam_scan_inactivity_time;
 	uint32_t roam_inactive_data_packet_count;
 	uint32_t roam_scan_period_after_inactivity;
-	uint8_t early_stop_scan_in_partial_scan;
 } tCsrNeighborRoamCfgParams, *tpCsrNeighborRoamCfgParams;
 
 #define CSR_NEIGHBOR_ROAM_INVALID_CHANNEL_INDEX    255

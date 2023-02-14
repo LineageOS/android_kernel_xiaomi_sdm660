@@ -2695,35 +2695,6 @@
 	120000, \
 	CFG_VALUE_OR_DEFAULT, \
 	"Roam scan period post inactivity")
-/*
- * <ini>
- * early_stop_scan_in_partial_scan - Early stop scan feature
- * in case of partial scan.
- *
- * @Min: 5
- * @Max: 90
- * @Default: 15
- *
- * In partial scan after finding a cadidate scanning is continued
- * for all the channels.
- * With this feature if Partial scan channel count is more than
- * this value, then firware will enable early stop scan feature.
- *
- * This ini is used to configure the max number of channel in
- * partial scan to stop the scanning.
- *
- * Supported Feature: Roaming
- * Usage: External
- *
- * </ini>
- */
-#define CFG_EARLY_STOP_SCAN_IN_PARTIAL_SCAN CFG_INI_UINT( \
-	"early_stop_scan_in_partial_scan", \
-	5, \
-	90, \
-	15, \
-	CFG_VALUE_OR_DEFAULT, \
-	"Early stop scan in partial scan")
 
 #define CFG_LFR_ALL \
 	CFG(CFG_LFR_MAWC_ROAM_ENABLED) \
@@ -2809,7 +2780,6 @@
 	CFG(CFG_BSS_LOAD_TRIG_5G_RSSI_THRES) \
 	CFG(CFG_BSS_LOAD_TRIG_2G_RSSI_THRES) \
 	CFG(CFG_LFR_FULL_ROAM_SCAN_REFRESH_PERIOD) \
-	CFG(CFG_EARLY_STOP_SCAN_IN_PARTIAL_SCAN) \
 	ADAPTIVE_11R_ALL \
 	ROAM_OFFLOAD_ALL \
 	LFR_ESE_ALL \

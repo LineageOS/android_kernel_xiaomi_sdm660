@@ -2393,7 +2393,6 @@ struct roam_offload_scan_req {
 	struct roam_trigger_min_rssi min_rssi_params[NUM_OF_ROAM_TRIGGERS];
 	struct roam_trigger_score_delta score_delta_param[NUM_OF_ROAM_TRIGGERS];
 	uint32_t full_roam_scan_period;
-	uint8_t early_stop_scan_in_partial_scan;
 };
 
 struct roam_offload_scan_rsp {

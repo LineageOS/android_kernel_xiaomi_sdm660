@@ -1729,8 +1729,6 @@ static void mlme_init_lfr_cfg(struct wlan_objmgr_psoc *psoc,
 		cfg_get(psoc, CFG_ROAM_INACTIVE_COUNT);
 	lfr->roam_scan_period_after_inactivity =
 		cfg_get(psoc, CFG_POST_INACTIVITY_ROAM_SCAN_PERIOD);
-	lfr->early_stop_scan_in_partial_scan =
-		cfg_get(psoc, CFG_EARLY_STOP_SCAN_IN_PARTIAL_SCAN);
 	lfr->fw_akm_bitmap = 0;
 
 	mlme_init_roam_offload_cfg(psoc, lfr);
