@@ -73,7 +73,6 @@ void nvt_change_mode(uint8_t mode)
 {
 	uint8_t buf[8] = {0};
 
-	LOG_ENTRY();
 
 	buf[0] = 0xFF;
 	buf[1] = (ts->mmap->EVENT_BUF_ADDR >> 16) & 0xFF;
@@ -91,7 +90,6 @@ void nvt_change_mode(uint8_t mode)
 		CTP_I2C_WRITE(ts->client, I2C_FW_Address, buf, 2);
 		msleep(20);
 	}
-	LOG_DONE();
 }
 
 /*******************************************************
@@ -105,7 +103,6 @@ uint8_t nvt_get_fw_pipe(void)
 {
 	uint8_t buf[8]= {0};
 
-	LOG_ENTRY();
 
 	buf[0] = 0xFF;
 	buf[1] = (ts->mmap->EVENT_BUF_ADDR >> 16) & 0xFF;
@@ -119,7 +116,6 @@ uint8_t nvt_get_fw_pipe(void)
 
 
 
-	LOG_DONE();
 	return (buf[1] & 0x01);
 }
 
@@ -141,7 +137,6 @@ void nvt_read_mdata(uint32_t xdata_addr, uint32_t xdata_btn_addr)
 	int32_t data_len = 0;
 	int32_t residual_len = 0;
 
-	LOG_ENTRY();
 
 	head_addr = xdata_addr - (xdata_addr % XDATA_SECTOR_SIZE);
 	dummy_len = xdata_addr - head_addr;
@@ -224,7 +219,6 @@ void nvt_read_mdata(uint32_t xdata_addr, uint32_t xdata_btn_addr)
 	buf[1] = (ts->mmap->EVENT_BUF_ADDR >> 16) & 0xFF;
 	buf[2] = (ts->mmap->EVENT_BUF_ADDR >> 8) & 0xFF;
 	CTP_I2C_WRITE(ts->client, I2C_FW_Address, buf, 3);
-	LOG_DONE();
 }
 
 /*******************************************************
@@ -238,7 +232,6 @@ void nvt_read_mdata_rss(uint32_t xdata_i_addr, uint32_t xdata_q_addr, uint32_t x
 {
 	int i = 0;
 
-	LOG_ENTRY();
 	nvt_read_mdata(xdata_i_addr, xdata_btn_i_addr);
 	memcpy(xdata_i, xdata, ((ts->x_num * ts->y_num + TOUCH_KEY_NUM) * sizeof(int32_t)));
 
@@ -248,7 +241,6 @@ void nvt_read_mdata_rss(uint32_t xdata_i_addr, uint32_t xdata_q_addr, uint32_t x
 	for (i = 0; i < (ts->x_num * ts->y_num + TOUCH_KEY_NUM); i++) {
 		xdata[i] = (int32_t)int_sqrt((unsigned long)(xdata_i[i] * xdata_i[i]) + (unsigned long)(xdata_q[i] * xdata_q[i]));
 	}
-	LOG_DONE();
 }
 
 /*******************************************************
@@ -260,11 +252,9 @@ n.a.
  *******************************************************/
 void nvt_get_mdata(int32_t *buf, uint8_t *m_x_num, uint8_t *m_y_num)
 {
-	LOG_ENTRY();
 	*m_x_num = ts->x_num;
 	*m_y_num = ts->y_num;
 	memcpy(buf, xdata, ((ts->x_num * ts->y_num + TOUCH_KEY_NUM) * sizeof(int32_t)));
-	LOG_DONE();
 }
 
 /*******************************************************
@@ -276,9 +266,7 @@ Executive outcomes. 0---succeed.
  *******************************************************/
 static int32_t c_fw_version_show(struct seq_file *m, void *v)
 {
-	LOG_ENTRY();
 	seq_printf(m, "fw_ver=%d, x_num=%d, y_num=%d, button_num=%d\n", ts->fw_ver, ts->x_num, ts->y_num, ts->max_button_num);
-	LOG_DONE();
 	return 0;
 }
 
@@ -295,7 +283,6 @@ static int32_t c_show(struct seq_file *m, void *v)
 	int32_t i = 0;
 	int32_t j = 0;
 
-	LOG_ENTRY();
 	for (i = 0; i < ts->y_num; i++) {
 		for (j = 0; j < ts->x_num; j++) {
 			seq_printf(m, "%5d, ", xdata[i * ts->x_num + j]);
@@ -311,7 +298,6 @@ static int32_t c_show(struct seq_file *m, void *v)
 #endif
 
 	seq_printf(m, "\n\n");
-	LOG_DONE();
 	return 0;
 }
 
@@ -382,7 +368,6 @@ n.a.
  *******************************************************/
 static int32_t nvt_fw_version_open(struct inode *inode, struct file *file)
 {
-	LOG_ENTRY();
 	if (mutex_lock_interruptible(&ts->lock)) {
 		return -ERESTARTSYS;
 	}
@@ -402,7 +387,6 @@ static int32_t nvt_fw_version_open(struct inode *inode, struct file *file)
 
 	NVT_LOG("--\n");
 
-	LOG_DONE();
 	return seq_open(file, &nvt_fw_version_seq_ops);
 }
 
@@ -423,7 +407,6 @@ Executive outcomes. 0---succeed.
  *******************************************************/
 static int32_t nvt_baseline_open(struct inode *inode, struct file *file)
 {
-	LOG_ENTRY();
 	if (mutex_lock_interruptible(&ts->lock)) {
 		return -ERESTARTSYS;
 	}
@@ -464,7 +447,6 @@ static int32_t nvt_baseline_open(struct inode *inode, struct file *file)
 
 	NVT_LOG("--\n");
 
-	LOG_DONE();
 	return seq_open(file, &nvt_seq_ops);
 }
 
@@ -485,7 +467,6 @@ Executive outcomes. 0---succeed.
  *******************************************************/
 static int32_t nvt_raw_open(struct inode *inode, struct file *file)
 {
-	LOG_ENTRY();
 	if (mutex_lock_interruptible(&ts->lock)) {
 		return -ERESTARTSYS;
 	}
@@ -533,7 +514,6 @@ static int32_t nvt_raw_open(struct inode *inode, struct file *file)
 
 	NVT_LOG("--\n");
 
-	LOG_DONE();
 	return seq_open(file, &nvt_seq_ops);
 }
 
@@ -554,7 +534,6 @@ Executive outcomes. 0---succeed. negative---failed.
  *******************************************************/
 static int32_t nvt_diff_open(struct inode *inode, struct file *file)
 {
-	LOG_ENTRY();
 	if (mutex_lock_interruptible(&ts->lock)) {
 		return -ERESTARTSYS;
 	}
@@ -602,7 +581,6 @@ static int32_t nvt_diff_open(struct inode *inode, struct file *file)
 
 	NVT_LOG("--\n");
 
-	LOG_DONE();
 	return seq_open(file, &nvt_seq_ops);
 }
 
@@ -621,8 +599,6 @@ static int update_tp_info(const char *cmd)
 	int32_t ret = -1;
 	uint8_t buf[16] = {0};
 	char tp_info_buf[64];
-
-	LOG_ENTRY();
 
 	if ( suspend_state || (ts->touch_state != TOUCH_STATE_WORKING) ) {
 		NVT_ERR("tp is suspended or flashing, can not to set\n");
@@ -678,7 +654,6 @@ static int32_t nvt_get_xiaomi_lockdown_info(void)
 	uint8_t data_buf[8] = {0};
 	int ret = 0;
 
-	LOG_ENTRY();
 	ret = nvt_get_oem_data(data_buf, 0x1E000, 8);
 
 	if (ret < 0) {
@@ -700,7 +675,6 @@ static int32_t nvt_get_xiaomi_lockdown_info(void)
 		NVT_LOG("Reservation byte: 0x%02X\n", reservation_byte);
 	}
 
-	LOG_DONE();
 	return ret;
 }
 
@@ -708,7 +682,7 @@ int lct_nvt_tp_info_node_init(void)
 {
 	char tp_info_buf[64];
 	char tp_lockdown_info_buf[64];
-	LOG_ENTRY();
+
 	nvt_get_xiaomi_lockdown_info();
 	memset(tp_info_buf, 0, sizeof(tp_info_buf));
 	if (IS_ERR_OR_NULL(g_lcd_id)){
@@ -724,7 +698,6 @@ int lct_nvt_tp_info_node_init(void)
 			goto tp_node_init;
 		} else {
 			init_lct_tp_info(NULL, NULL);
-			LOG_DONE();
 			return -ENODEV;
 		}
 	}
@@ -732,7 +705,7 @@ tp_node_init:
 	sprintf(tp_lockdown_info_buf, "%02X%02X%02X%02X%04X%02X%02X\n", tp_maker_cg_lamination, display_maker, cg_ink_color, hw_version, project_id, cg_maker, reservation_byte);
 	init_lct_tp_info(tp_info_buf, tp_lockdown_info_buf);
 	set_lct_tp_info_callback(update_tp_info);
-	LOG_DONE();
+
 	return 0;
 }
 /* add touchpad information by wanghan end */
@@ -928,7 +901,6 @@ Executive outcomes. 0---succeed. -12---failed.
  *******************************************************/
 int32_t nvt_extra_proc_init(void)
 {
-	LOG_ENTRY();
 	NVT_proc_fw_version_entry = proc_create(NVT_FW_VERSION, 0444, NULL, &nvt_fw_version_fops);
 	if (NVT_proc_fw_version_entry == NULL) {
 		NVT_ERR("create proc/nvt_fw_version Failed!\n");
@@ -969,7 +941,6 @@ int32_t nvt_extra_proc_init(void)
 		NVT_LOG("create proc/nvt_pwr_plug_switch Succeeded!\n");
 	}
 
-	LOG_DONE();
 	return 0;
 }
 #endif

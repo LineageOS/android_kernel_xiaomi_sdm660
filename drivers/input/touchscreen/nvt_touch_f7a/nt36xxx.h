@@ -56,24 +56,6 @@
 #endif
 #define NVT_ERR(fmt, args...)    pr_err("[%s] %s %d: " fmt, NVT_I2C_NAME, __func__, __LINE__, ##args)
 
-#if 1
-#define LOGV(log, ...) \
-        printk("[%s] %s (line %d): " log, NVT_I2C_NAME, __func__, __LINE__, ##__VA_ARGS__)
-#else
-#define LOGV(log, ...) {}
-#endif
-
-#if 0
-#define LOG_ENTRY() \
-        printk(KERN_NOTICE "[NVT-ts][debug] %s (file %s line %d) Entry.\n", __func__, __FILE__, __LINE__)
-#define LOG_DONE() \
-        printk(KERN_NOTICE "[NVT-ts][debug] %s (file %s line %d) Done.\n", __func__, __FILE__, __LINE__)
-#else
-#define LOG_ENTRY() {}
-#define LOG_DONE() {}
-#endif
-
-
 
 #define NVT_TS_NAME "NVTCapacitiveTouchScreen"
 
