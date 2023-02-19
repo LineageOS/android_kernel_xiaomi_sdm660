@@ -145,7 +145,6 @@ bool suspend_state = false;
 
 int nvt_gesture_switch(struct input_dev *dev, unsigned int type, unsigned int code, int value)
 {
-	LOG_ENTRY();
 	if (type == EV_SYN && code == SYN_CONFIG)
 	{
 		if (suspend_state)
@@ -164,7 +163,6 @@ int nvt_gesture_switch(struct input_dev *dev, unsigned int type, unsigned int co
 			enable_gesture_mode  = true;
 		}
 	}
-	LOG_DONE();
 	return 0;
 }
 
@@ -185,7 +183,6 @@ int32_t CTP_I2C_READ(struct i2c_client *client, uint16_t address, uint8_t *buf, 
 	int32_t ret = -1;
 	int32_t retries = 0;
 
-	LOG_ENTRY();
 	msgs[0].flags = !I2C_M_RD;
 	msgs[0].addr  = address;
 	msgs[0].len   = 1;
@@ -207,7 +204,6 @@ int32_t CTP_I2C_READ(struct i2c_client *client, uint16_t address, uint8_t *buf, 
 		ret = -EIO;
 	}
 
-	LOG_DONE();
 	return ret;
 }
 
@@ -224,7 +220,6 @@ int32_t CTP_I2C_WRITE(struct i2c_client *client, uint16_t address, uint8_t *buf,
 	int32_t ret = -1;
 	int32_t retries = 0;
 
-	LOG_ENTRY();
 	msg.flags = !I2C_M_RD;
 	msg.addr  = address;
 	msg.len   = len;
@@ -241,7 +236,6 @@ int32_t CTP_I2C_WRITE(struct i2c_client *client, uint16_t address, uint8_t *buf,
 		ret = -EIO;
 	}
 
-	LOG_DONE();
 	return ret;
 }
 
@@ -258,14 +252,12 @@ void nvt_sw_reset_idle(void)
 {
 	uint8_t buf[4]={0};
 
-	LOG_ENTRY();
 
 	buf[0]=0x00;
 	buf[1]=0xA5;
 	CTP_I2C_WRITE(ts->client, I2C_HW_Address, buf, 2);
 
 	msleep(15);
-	LOG_DONE();
 }
 
 /*******************************************************
@@ -279,7 +271,6 @@ void nvt_bootloader_reset(void)
 {
 	uint8_t buf[8] = {0};
 
-	LOG_ENTRY();
 	//---write i2c cmds to reset---
 	buf[0] = 0x00;
 	buf[1] = 0x69;
@@ -287,7 +278,6 @@ void nvt_bootloader_reset(void)
 
 
 	msleep(35);
-	LOG_DONE();
 }
 
 /*******************************************************
@@ -303,7 +293,6 @@ int32_t nvt_clear_fw_status(void)
 	int32_t i = 0;
 	const int32_t retry = 20;
 
-	LOG_ENTRY();
 	for (i = 0; i < retry; i++) {
 
 		buf[0] = 0xFF;
@@ -329,10 +318,8 @@ int32_t nvt_clear_fw_status(void)
 
 	if (i >= retry) {
 		NVT_ERR("failed, i=%d, buf[1]=0x%02X\n", i, buf[1]);
-		LOG_DONE();
 		return -1;
 	} else {
-		LOG_DONE();
 		return 0;
 	}
 }
@@ -350,7 +337,6 @@ int32_t nvt_check_fw_status(void)
 	int32_t i = 0;
 	const int32_t retry = 50;
 
-	LOG_ENTRY();
 	for (i = 0; i < retry; i++) {
 
 		buf[0] = 0xFF;
@@ -371,10 +357,8 @@ int32_t nvt_check_fw_status(void)
 
 	if (i >= retry) {
 		NVT_ERR("failed, i=%d, buf[1]=0x%02X\n", i, buf[1]);
-		LOG_DONE();
 		return -1;
 	} else {
-		LOG_DONE();
 		return 0;
 	}
 }
@@ -392,7 +376,6 @@ int32_t nvt_check_fw_reset_state(RST_COMPLETE_STATE check_reset_state)
 	int32_t ret = 0;
 	int32_t retry = 0;
 
-	LOG_ENTRY();
 	while (1) {
 		msleep(10);
 
@@ -414,7 +397,6 @@ int32_t nvt_check_fw_reset_state(RST_COMPLETE_STATE check_reset_state)
 		}
 	}
 
-	LOG_DONE();
 	return ret;
 }
 
@@ -431,7 +413,6 @@ int32_t nvt_read_pid(void)
 	uint8_t buf[3] = {0};
 	int32_t ret = 0;
 
-	LOG_ENTRY();
 
 	buf[0] = 0xFF;
 	buf[1] = (ts->mmap->EVENT_BUF_ADDR >> 16) & 0xFF;
@@ -448,7 +429,6 @@ int32_t nvt_read_pid(void)
 
 	NVT_LOG("PID=%04X\n", ts->nvt_pid);
 
-	LOG_DONE();
 	return ret;
 }
 
@@ -466,7 +446,6 @@ int32_t nvt_get_fw_info(void)
 	uint32_t retry_count = 0;
 	int32_t ret = 0;
 
-	LOG_ENTRY();
 info_retry:
 
 	buf[0] = 0xFF;
@@ -511,7 +490,6 @@ info_retry:
 
 	nvt_read_pid();
 
-	LOG_DONE();
 	return ret;
 }
 
@@ -536,7 +514,6 @@ static ssize_t nvt_flash_read(struct file *file, char __user *buff, size_t count
 	int32_t retries = 0;
 	int8_t i2c_wr = 0;
 
-	LOG_ENTRY();
 	if (count > sizeof(str)) {
 		NVT_ERR("error count=%zu\n", count);
 		return -EFAULT;
@@ -615,7 +592,6 @@ static int32_t nvt_flash_open(struct inode *inode, struct file *file)
 {
 	struct nvt_flash_data *dev;
 
-	LOG_ENTRY();
 	dev = kmalloc(sizeof(struct nvt_flash_data), GFP_KERNEL);
 	if (dev == NULL) {
 		NVT_ERR("Failed to allocate memory for nvt flash data\n");
@@ -625,7 +601,6 @@ static int32_t nvt_flash_open(struct inode *inode, struct file *file)
 	rwlock_init(&dev->lock);
 	file->private_data = dev;
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -640,11 +615,9 @@ static int32_t nvt_flash_close(struct inode *inode, struct file *file)
 {
 	struct nvt_flash_data *dev = file->private_data;
 
-	LOG_ENTRY();
 	if (dev)
 		kfree(dev);
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -664,7 +637,6 @@ Executive outcomes. 0---succeed. -12---failed.
  *******************************************************/
 static int32_t nvt_flash_proc_init(void)
 {
-	LOG_ENTRY();
 	NVT_proc_entry = proc_create(DEVICE_NAME, 0444, NULL, &nvt_flash_fops);
 	if (NVT_proc_entry == NULL) {
 		NVT_ERR("Failed!\n");
@@ -677,7 +649,6 @@ static int32_t nvt_flash_proc_init(void)
 	NVT_LOG("Create /proc/NVTflash\n");
 	NVT_LOG("============================================================\n");
 
-	LOG_DONE();
 	return 0;
 }
 #endif
@@ -717,7 +688,6 @@ void nvt_ts_wakeup_gesture_report(uint8_t gesture_id, uint8_t *data)
 	uint8_t func_type = data[2];
 	uint8_t func_id = data[3];
 
-	LOG_ENTRY();
 	/* support fw specifal data protocol */
 	if ((gesture_id == DATA_PROTOCOL) && (func_type == FUNCPAGE_GESTURE)) {
 		gesture_id = func_id;
@@ -791,7 +761,6 @@ void nvt_ts_wakeup_gesture_report(uint8_t gesture_id, uint8_t *data)
 		input_report_key(ts->input_dev, keycode, 0);
 		input_sync(ts->input_dev);
 	}
-	LOG_DONE();
 }
 #endif
 
@@ -807,7 +776,6 @@ static void nvt_parse_dt(struct device *dev)
 {
 	struct device_node *np = dev->of_node;
 
-	LOG_ENTRY();
 #if NVT_TOUCH_SUPPORT_HW_RST
 	ts->reset_gpio = of_get_named_gpio_flags(np, "novatek,reset-gpio", 0, &ts->reset_flags);
 	NVT_LOG("novatek,reset-gpio=%d\n", ts->reset_gpio);
@@ -815,17 +783,14 @@ static void nvt_parse_dt(struct device *dev)
 	ts->irq_gpio = of_get_named_gpio_flags(np, "novatek,irq-gpio", 0, &ts->irq_flags);
 	NVT_LOG("novatek,irq-gpio=%d\n", ts->irq_gpio);
 
-	LOG_DONE();
 }
 #else
 static void nvt_parse_dt(struct device *dev)
 {
-	LOG_ENTRY();
 #if NVT_TOUCH_SUPPORT_HW_RST
 	ts->reset_gpio = NVTTOUCH_RST_PIN;
 #endif
 	ts->irq_gpio = NVTTOUCH_INT_PIN;
-	LOG_DONE();
 }
 #endif
 
@@ -840,7 +805,6 @@ static int nvt_gpio_config(struct nvt_ts_data *ts)
 {
 	int32_t ret = 0;
 
-	LOG_ENTRY();
 #if NVT_TOUCH_SUPPORT_HW_RST
 	/* request RST-pin (Output/High) */
 	if (gpio_is_valid(ts->reset_gpio)) {
@@ -868,21 +832,18 @@ err_request_irq_gpio:
 	gpio_free(ts->reset_gpio);
 err_request_reset_gpio:
 #endif
-	LOG_DONE();
 	return ret;
 }
 
 #if NVT_TOUCH_ESD_PROTECT
 void nvt_esd_check_enable(uint8_t enable)
 {
-	LOG_ENTRY();
 	/* enable/disable esd check flag */
 	esd_check = enable;
 	/* update interrupt timer */
 	irq_timer = jiffies;
 	/* clear esd_retry counter, if protect function is enabled */
 	esd_retry = enable ? 0 : esd_retry;
-	LOG_DONE();
 }
 
 static uint8_t nvt_fw_recovery(uint8_t *point_data)
@@ -890,7 +851,6 @@ static uint8_t nvt_fw_recovery(uint8_t *point_data)
 	uint8_t i = 0;
 	uint8_t detected = true;
 
-	LOG_ENTRY();
 	/* check pattern */
 	for (i=1 ; i<7 ; i++) {
 		if (point_data[i] != 0x77) {
@@ -899,7 +859,6 @@ static uint8_t nvt_fw_recovery(uint8_t *point_data)
 		}
 	}
 
-	LOG_DONE();
 	return detected;
 }
 
@@ -907,7 +866,6 @@ static void nvt_esd_check_func(struct work_struct *work)
 {
 	unsigned int timer = jiffies_to_msecs(jiffies - irq_timer);
 
-	LOG_ENTRY();
 
 
 	if (esd_retry >= esd_retry_max)
@@ -925,7 +883,6 @@ static void nvt_esd_check_func(struct work_struct *work)
 
 	queue_delayed_work(nvt_esd_check_wq, &nvt_esd_check_work,
 			msecs_to_jiffies(NVT_TOUCH_ESD_CHECK_PERIOD));
-	LOG_DONE();
 }
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
 
@@ -953,7 +910,6 @@ static void nvt_ts_work_func(struct work_struct *work)
 	int32_t i = 0;
 	int32_t finger_cnt = 0;
 
-	LOG_ENTRY();
 	mutex_lock(&ts->lock);
 
 	ret = CTP_I2C_READ(ts->client, I2C_FW_Address, point_data, POINT_DATA_LEN + 1);
@@ -1085,7 +1041,6 @@ XFER_ERROR:
 	enable_irq(ts->client->irq);
 
 	mutex_unlock(&ts->lock);
-	LOG_DONE();
 }
 
 /*******************************************************
@@ -1100,7 +1055,6 @@ static void nvt_ts_usb_plugin_work_func(struct work_struct *work)
 	uint8_t buf[8] = {0};
 	int32_t ret = 0;
 
-	LOG_ENTRY();
 	if ( !bTouchIsAwake || (ts->touch_state != TOUCH_STATE_WORKING) ) {
 		NVT_ERR("tp is suspended or flashing, can not to set\n");
 		return;
@@ -1137,7 +1091,6 @@ static void nvt_ts_usb_plugin_work_func(struct work_struct *work)
 exit:
 	mutex_unlock(&ts->lock);
 	NVT_LOG("--\n");
-	LOG_DONE();
 }
 
 /*******************************************************
@@ -1149,7 +1102,6 @@ irq execute status.
  *******************************************************/
 static irqreturn_t nvt_ts_irq_handler(int32_t irq, void *dev_id)
 {
-	LOG_ENTRY();
 	disable_irq_nosync(ts->client->irq);
 
 #if WAKEUP_GESTURE
@@ -1160,7 +1112,6 @@ static irqreturn_t nvt_ts_irq_handler(int32_t irq, void *dev_id)
 
 	queue_work(nvt_wq, &ts->nvt_work);
 
-	LOG_DONE();
 	return IRQ_HANDLED;
 }
 
@@ -1176,7 +1127,6 @@ void nvt_stop_crc_reboot(void)
 	uint8_t buf[8] = {0};
 	int32_t retry = 0;
 
-	LOG_ENTRY();
 
 
 
@@ -1233,7 +1183,6 @@ void nvt_stop_crc_reboot(void)
 			NVT_ERR("CRC auto reboot is not able to be stopped! buf[1]=0x%02X\n", buf[1]);
 	}
 
-	LOG_DONE();
 	return;
 }
 
@@ -1253,7 +1202,6 @@ static int8_t nvt_ts_check_chip_ver_trim(void)
 	int32_t found_nvt_chip = 0;
 	int32_t ret = -1;
 
-	LOG_ENTRY();
 	nvt_bootloader_reset();
 
 
@@ -1320,7 +1268,6 @@ static int8_t nvt_ts_check_chip_ver_trim(void)
 	}
 
 out:
-	LOG_DONE();
 	return ret;
 }
 
@@ -1338,7 +1285,6 @@ static int32_t nvt_ts_probe(struct i2c_client *client, const struct i2c_device_i
 	int32_t retry = 0;
 #endif
 
-	LOG_ENTRY();
 	NVT_LOG("start\n");
 
 	ts = kzalloc(sizeof(struct nvt_ts_data), GFP_KERNEL);
@@ -1580,7 +1526,6 @@ static int32_t nvt_ts_probe(struct i2c_client *client, const struct i2c_device_i
 	g_nvt.valid = true;
 	g_nvt.usb_plugin = false;
 
-	LOG_DONE();
 	return 0;
 
 #if defined(CONFIG_FB)
@@ -1607,7 +1552,6 @@ err_check_functionality_failed:
 err_gpio_config_failed:
 	i2c_set_clientdata(client, NULL);
 	kfree(ts);
-	LOG_DONE();
 	return ret;
 }
 
@@ -1622,7 +1566,6 @@ static int32_t nvt_ts_remove(struct i2c_client *client)
 {
 
 
-	LOG_ENTRY();
 #if defined(CONFIG_FB)
 	if (fb_unregister_client(&ts->fb_notif))
 		NVT_ERR("Error occurred while unregistering fb_notifier.\n");
@@ -1644,7 +1587,6 @@ static int32_t nvt_ts_remove(struct i2c_client *client)
 	i2c_set_clientdata(client, NULL);
 	kfree(ts);
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1662,7 +1604,6 @@ static int32_t nvt_ts_suspend(struct device *dev)
 	uint32_t i = 0;
 #endif
 
-	LOG_ENTRY();
 	if (!bTouchIsAwake) {
 		NVT_LOG("Touch is already suspend\n");
 		return 0;
@@ -1727,7 +1668,6 @@ static int32_t nvt_ts_suspend(struct device *dev)
 
 	NVT_LOG("end\n");
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1740,7 +1680,6 @@ Executive outcomes. 0---succeed.
  *******************************************************/
 static int32_t nvt_ts_resume(struct device *dev)
 {
-	LOG_ENTRY();
 	if (bTouchIsAwake) {
 		NVT_LOG("Touch is already resume\n");
 		return 0;
@@ -1785,7 +1724,6 @@ static int32_t nvt_ts_resume(struct device *dev)
 
 	NVT_LOG("end\n");
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1793,13 +1731,13 @@ static int32_t nvt_ts_resume(struct device *dev)
 static void do_nvt_ts_resume_work(struct work_struct *work)
 {
 	int ret = 0;
-	LOG_ENTRY();
+
 	mutex_lock(&ts->pm_mutex);
 	ret = nvt_ts_resume(&ts->client->dev);
 	if (ret < 0)
 		NVT_ERR("nvt_ts_resume faild! ret=%d\n", ret);
 	mutex_unlock(&ts->pm_mutex);
-	LOG_DONE();
+
 	return;
 }
 /* add resume work by wanghan end */
@@ -1809,7 +1747,6 @@ static int lct_tp_work_node_callback(bool flag)
 {
 	int ret = 0;
 
-	LOG_ENTRY();
 	if (enable_gesture_mode) {
 		LOGV("ERROR: novatek gesture=%d!\n", enable_gesture_mode);
 		return -1;
@@ -1825,7 +1762,6 @@ static int lct_tp_work_node_callback(bool flag)
 	}
 	suspend_state = false;
 
-	LOG_DONE();
 	return ret;
 }
 #endif
@@ -1834,7 +1770,6 @@ static int lct_tp_gesture_node_callback(bool flag)
 {
 	int retval = 0;
 
-	LOG_ENTRY();
 	if (suspend_state) {
 		LOGV("ERROR: TP is suspend!\n");
 		return -1;
@@ -1846,7 +1781,7 @@ static int lct_tp_gesture_node_callback(bool flag)
 		enable_gesture_mode = false;
 		LOGV("disable gesture mode\n");
 	}
-	LOG_DONE();
+
 	return retval;
 }
 
@@ -1944,7 +1879,6 @@ static int fb_notifier_callback(struct notifier_block *self, unsigned long event
 	struct nvt_ts_data *ts =
 		container_of(self, struct nvt_ts_data, fb_notif);
 
-	LOG_ENTRY();
 	if (evdata && evdata->data && event == FB_EARLY_EVENT_BLANK) {
 		blank = evdata->data;
 		if (*blank == FB_BLANK_POWERDOWN) {
@@ -1974,7 +1908,6 @@ static int fb_notifier_callback(struct notifier_block *self, unsigned long event
 		}
 	}
 
-	LOG_DONE();
 	return 0;
 }
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
@@ -1987,9 +1920,7 @@ n.a.
  *******************************************************/
 static void nvt_ts_early_suspend(struct early_suspend *h)
 {
-	LOG_ENTRY();
 	nvt_ts_suspend(ts->client, PMSG_SUSPEND);
-	LOG_DONE();
 }
 
 /*******************************************************
@@ -2001,9 +1932,7 @@ n.a.
  *******************************************************/
 static void nvt_ts_late_resume(struct early_suspend *h)
 {
-	LOG_ENTRY();
 	nvt_ts_resume(ts->client);
-	LOG_DONE();
 }
 #endif
 
@@ -2071,7 +2000,6 @@ static int32_t __init nvt_driver_init(void)
 {
 	int32_t ret = 0;
 
-	LOG_ENTRY();
 	NVT_LOG("start\n");
 
 
@@ -2112,7 +2040,6 @@ static int32_t __init nvt_driver_init(void)
 err:
 	ret = -ENODEV;
 exit:
-	LOG_DONE();
 	return ret;
 }
 
@@ -2125,7 +2052,6 @@ n.a.
  ********************************************************/
 static void __exit nvt_driver_exit(void)
 {
-	LOG_ENTRY();
 	NVT_LOG("exit tp driver ...\n");
 	i2c_del_driver(&nvt_i2c_driver);
 
@@ -2141,7 +2067,6 @@ static void __exit nvt_driver_exit(void)
 	if (nvt_esd_check_wq)
 		destroy_workqueue(nvt_esd_check_wq);
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
-	LOG_DONE();
 }
 
 

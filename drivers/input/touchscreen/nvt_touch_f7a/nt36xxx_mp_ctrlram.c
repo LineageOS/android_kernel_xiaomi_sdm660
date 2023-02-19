@@ -108,7 +108,6 @@ static int nvt_mp_buffer_init(void)
 	size_t RecordResult_BufSize = IC_X_CFG_SIZE * IC_Y_CFG_SIZE + IC_KEY_CFG_SIZE;
 	size_t RawData_BufSize = (IC_X_CFG_SIZE * IC_Y_CFG_SIZE + IC_KEY_CFG_SIZE) * sizeof(int32_t);
 
-	LOG_ENTRY();
 	RecordResult_Short = (uint8_t *)kzalloc(RecordResult_BufSize, GFP_KERNEL);
 	if (!RecordResult_Short) {
 		NVT_ERR("kzalloc for RecordResult_Short failed!\n");
@@ -219,7 +218,6 @@ static int nvt_mp_buffer_init(void)
 		return -ENOMEM;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -238,7 +236,6 @@ static void nvt_print_lmt_array(int32_t *array, int32_t x_ch, int32_t y_ch)
 	int32_t k = 0;
 #endif /* #if TOUCH_KEY_NUM > 0 */
 
-	LOG_ENTRY();
 	for (j = 0; j < y_ch; j++) {
 		for(i = 0; i < x_ch; i++) {
 			printk("%5d, ", array[j * x_ch + i]);
@@ -251,12 +248,10 @@ static void nvt_print_lmt_array(int32_t *array, int32_t x_ch, int32_t y_ch)
 	}
 	printk("\n");
 #endif /* #if TOUCH_KEY_NUM > 0 */
-	LOG_DONE();
 }
 
 static void nvt_print_criteria(void)
 {
-	LOG_ENTRY();
 	NVT_LOG("++\n");
 
 	if (ts->carrier_system) {
@@ -316,7 +311,6 @@ static void nvt_print_criteria(void)
 	nvt_print_lmt_array(PS_Config_Lmt_FW_Diff_N, X_Channel, Y_Channel);
 
 	NVT_LOG("--\n");
-	LOG_DONE();
 }
 
 static int32_t nvt_save_rawdata_to_csv(int32_t *rawdata, uint8_t x_ch, uint8_t y_ch, const char *file_path, uint32_t offset)
@@ -335,7 +329,6 @@ static int32_t nvt_save_rawdata_to_csv(int32_t *rawdata, uint8_t x_ch, uint8_t y
 	int32_t keydata_output_offset = 0;
 #endif /* #if TOUCH_KEY_NUM > 0 */
 
-	LOG_ENTRY();
 	printk("%s:++\n", __func__);
 	fbufp = (char *)kzalloc(8192, GFP_KERNEL);
 	if (!fbufp) {
@@ -409,7 +402,6 @@ static int32_t nvt_save_rawdata_to_csv(int32_t *rawdata, uint8_t x_ch, uint8_t y
 
 	printk("%s:--\n", __func__);
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -419,7 +411,6 @@ static int32_t nvt_polling_hand_shake_status(void)
 	int32_t i = 0;
 	const int32_t retry = 50;
 
-	LOG_ENTRY();
 	for (i = 0; i < retry; i++) {
 
 		buf[0] = 0xFF;
@@ -456,10 +447,8 @@ static int32_t nvt_polling_hand_shake_status(void)
 		CTP_I2C_READ(ts->client, I2C_FW_Address, buf, 6);
 		NVT_ERR("Read back 5 bytes from offset EVENT_MAP_HOST_CMD: 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X\n", buf[1], buf[2], buf[3], buf[4], buf[5]);
 
-		LOG_DONE();
 		return -1;
 	} else {
-		LOG_DONE();
 		return 0;
 	}
 }
@@ -470,7 +459,6 @@ static int8_t nvt_switch_FreqHopEnDis(uint8_t FreqHopEnDis)
 	uint8_t retry = 0;
 	int8_t ret = 0;
 
-	LOG_ENTRY();
 	NVT_LOG("++\n");
 
 	for (retry = 0; retry < 20; retry++) {
@@ -502,7 +490,6 @@ static int8_t nvt_switch_FreqHopEnDis(uint8_t FreqHopEnDis)
 
 	NVT_LOG("--\n");
 
-	LOG_DONE();
 	return ret;
 }
 
@@ -517,7 +504,6 @@ static int32_t nvt_read_baseline(int32_t *xdata)
 	int32_t k = 0;
 #endif /* #if TOUCH_KEY_NUM > 0 */
 
-	LOG_ENTRY();
 	NVT_LOG("++\n");
 
 	nvt_read_mdata(ts->mmap->BASELINE_ADDR, ts->mmap->BASELINE_BTN_ADDR);
@@ -554,7 +540,6 @@ static int32_t nvt_read_baseline(int32_t *xdata)
 
 	NVT_LOG("--\n");
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -571,7 +556,6 @@ static int32_t nvt_read_CC(int32_t *xdata)
 #endif /* #if TOUCH_KEY_NUM > 0 */
 	uint32_t rawdata_cc_q_offset = 0;
 
-	LOG_ENTRY();
 	NVT_LOG("++\n");
 
 	if (nvt_get_fw_pipe() == 0)
@@ -635,7 +619,6 @@ static int32_t nvt_read_CC(int32_t *xdata)
 
 	NVT_LOG("--\n");
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -643,7 +626,6 @@ static void nvt_enable_noise_collect(int32_t frame_num)
 {
 	uint8_t buf[8] = {0};
 
-	LOG_ENTRY();
 
 	buf[0] = 0xFF;
 	buf[1] = (ts->mmap->EVENT_BUF_ADDR >> 16) & 0xFF;
@@ -657,7 +639,6 @@ static void nvt_enable_noise_collect(int32_t frame_num)
 	buf[3] = frame_num;
 	buf[4] = 0x00;
 	CTP_I2C_WRITE(ts->client, I2C_FW_Address, buf, 5);
-	LOG_DONE();
 }
 
 static int32_t nvt_read_fw_noise(int32_t *xdata)
@@ -673,7 +654,6 @@ static int32_t nvt_read_fw_noise(int32_t *xdata)
 	int32_t k = 0;
 #endif /* #if TOUCH_KEY_NUM > 0 */
 
-	LOG_ENTRY();
 	NVT_LOG("++\n");
 
 
@@ -755,7 +735,6 @@ static int32_t nvt_read_fw_noise(int32_t *xdata)
 
 	NVT_LOG("--\n");
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -763,7 +742,6 @@ static void nvt_enable_open_test(void)
 {
 	uint8_t buf[8] = {0};
 
-	LOG_ENTRY();
 
 	buf[0] = 0xFF;
 	buf[1] = (ts->mmap->EVENT_BUF_ADDR >> 16) & 0xFF;
@@ -777,14 +755,12 @@ static void nvt_enable_open_test(void)
 	buf[3] = 0x02;
 	buf[4] = 0x00;
 	CTP_I2C_WRITE(ts->client, I2C_FW_Address, buf, 5);
-	LOG_DONE();
 }
 
 static void nvt_enable_short_test(void)
 {
 	uint8_t buf[8] = {0};
 
-	LOG_ENTRY();
 
 	buf[0] = 0xFF;
 	buf[1] = (ts->mmap->EVENT_BUF_ADDR >> 16) & 0xFF;
@@ -798,7 +774,6 @@ static void nvt_enable_short_test(void)
 	buf[3] = 0x02;
 	buf[4] = 0x00;
 	CTP_I2C_WRITE(ts->client, I2C_FW_Address, buf, 5);
-	LOG_DONE();
 }
 
 static int32_t nvt_read_fw_open(int32_t *xdata)
@@ -813,7 +788,6 @@ static int32_t nvt_read_fw_open(int32_t *xdata)
 	int32_t k = 0;
 #endif /* #if TOUCH_KEY_NUM > 0 */
 
-	LOG_ENTRY();
 	NVT_LOG("++\n");
 
 
@@ -900,7 +874,6 @@ static int32_t nvt_read_fw_open(int32_t *xdata)
 
 	NVT_LOG("--\n");
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -918,7 +891,6 @@ static int32_t nvt_read_fw_short(int32_t *xdata)
 #endif /* #if TOUCH_KEY_NUM > 0 */
 	uint32_t rawdata_short_base_offset = 0;
 
-	LOG_ENTRY();
 	NVT_LOG("++\n");
 
 
@@ -1072,7 +1044,6 @@ static int32_t nvt_read_fw_short(int32_t *xdata)
 
 	NVT_LOG("--\n");
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1093,7 +1064,6 @@ static int32_t RawDataTest_SinglePoint_Sub(int32_t rawdata[], uint8_t RecordResu
 	int32_t iArrayIndex = 0;
 	bool isPass = true;
 
-	LOG_ENTRY();
 	for (j = 0; j < y_ch; j++) {
 		for (i = 0; i < x_ch; i++) {
 			iArrayIndex = j * x_ch + i;
@@ -1142,10 +1112,8 @@ static int32_t RawDataTest_SinglePoint_Sub(int32_t rawdata[], uint8_t RecordResu
 #endif /* #if TOUCH_KEY_NUM > 0 */
 
 	if (isPass == false) {
-		LOG_DONE();
 		return -1;
 	} else {
-		LOG_DONE();
 		return 0;
 	}
 }
@@ -1166,7 +1134,6 @@ void print_selftest_result(struct seq_file *m, int32_t TestResult, uint8_t Recor
 	int32_t k = 0;
 #endif /* #if TOUCH_KEY_NUM > 0 */
 
-	LOG_ENTRY();
 	switch (TestResult) {
 	case 0:
 		nvt_mp_seq_printf(m, " PASS!\n");
@@ -1223,7 +1190,6 @@ Executive outcomes. 0---succeed.
  *******************************************************/
 static int32_t c_show_selftest(struct seq_file *m, void *v)
 {
-	LOG_ENTRY();
 	NVT_LOG("++\n");
 
 	nvt_mp_seq_printf(m, "FW Version: %d\n\n", ts->fw_ver);
@@ -1311,7 +1277,6 @@ static int32_t c_show_selftest(struct seq_file *m, void *v)
 
 	NVT_LOG("--\n");
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1384,7 +1349,6 @@ static int lct_nova_tp_selftest(unsigned char cmd)
 	TestResult_FW_DiffMax = 0;
 	TestResult_FW_DiffMin = 0;
 
-	LOG_ENTRY();
 	NVT_LOG("++\n");
 
 	if (mutex_lock_interruptible(&ts->lock)) {
@@ -1569,33 +1533,27 @@ Longcheer_mmi:
 xiaomi_i2c:
 	if ((TestResult_FWMutual == 0)&& (TestResult_FW_CC == 0) && (TestResult_Noise == 0)&& (TestResult_Short ==0) && (TestResult_Open == 0)){
 		NVT_LOG("Pass\n");
-		LOG_DONE();
 		return 2;
 	}
 	else {
 		NVT_LOG("FWMutual=%d, FW_CC=%d, Noise=%d, Short=%d, Open=%d, Fail!\n",
 				TestResult_FWMutual, TestResult_FW_CC, TestResult_Noise, TestResult_Short, TestResult_Open);
-		LOG_DONE();
 		return 1;
 	}
 xiaomi_open:
 	if (TestResult_Open == 0){
 		NVT_LOG("Open Test Pass!\n");
-		LOG_DONE();
 		return 2;
 	} else {
 		NVT_LOG("Open Test Fail!\n");
-		LOG_DONE();
 		return 1;
 	}
 xiaomi_short:
 	if (TestResult_Short == 0){
 		NVT_LOG("Short Test Pass!\n");
-		LOG_DONE();
 		return 2;
 	} else {
 		NVT_LOG("Short Test Fail!\n");
-		LOG_DONE();
 		return 1;
 	}
 }
@@ -1626,7 +1584,6 @@ static int32_t nvt_selftest_open(struct inode *inode, struct file *file)
 	TestResult_FW_DiffMax = 0;
 	TestResult_FW_DiffMin = 0;
 
-	LOG_ENTRY();
 	NVT_LOG("++\n");
 
 	if (mutex_lock_interruptible(&ts->lock)) {
@@ -1824,7 +1781,6 @@ void nvt_mp_parse_ain(struct device_node *np, const char *name, uint8_t *array, 
 	int32_t tmp[40];
 	int32_t i;
 
-	LOG_ENTRY();
 	data = of_find_property(np, name, &len);
 	len /= sizeof(u32);
 	if ((!data) || (!len) || (len != size)) {
@@ -1848,7 +1804,6 @@ void nvt_mp_parse_ain(struct device_node *np, const char *name, uint8_t *array, 
 		printk("\n");
 #endif
 	}
-	LOG_DONE();
 }
 
 /*******************************************************
@@ -1862,7 +1817,6 @@ void nvt_mp_parse_u32(struct device_node *np, const char *name, int32_t *para)
 {
 	int32_t ret;
 
-	LOG_ENTRY();
 	ret = of_property_read_u32(np, name, para);
 	if (ret)
 		NVT_ERR("error reading %s. ret=%d\n", name, ret);
@@ -1871,7 +1825,6 @@ void nvt_mp_parse_u32(struct device_node *np, const char *name, int32_t *para)
 		NVT_LOG("%s=%d\n", name, *para);
 #endif
 	}
-	LOG_DONE();
 }
 
 /*******************************************************
@@ -1890,7 +1843,6 @@ void nvt_mp_parse_array(struct device_node *np, const char *name, int32_t *array
 	int32_t i, j, iArrayIndex = 0;
 #endif
 
-	LOG_ENTRY();
 	data = of_find_property(np, name, &len);
 	len /= sizeof(u32);
 	if ((!data) || (!len) || (len < size)) {
@@ -1923,7 +1875,6 @@ void nvt_mp_parse_array(struct device_node *np, const char *name, int32_t *array
 #endif
 #endif
 	}
-	LOG_DONE();
 }
 
 /*******************************************************
@@ -1938,7 +1889,6 @@ void nvt_mp_parse_dt(struct device_node *root, const char *node_compatible)
 	struct device_node *np = root;
 	struct device_node *child = NULL;
 
-	LOG_ENTRY();
 	NVT_LOG("Parse mp criteria for node %s\n", node_compatible);
 
 	/* find each MP sub-nodes */
@@ -2038,7 +1988,6 @@ void nvt_mp_parse_dt(struct device_node *root, const char *node_compatible)
 	nvt_mp_parse_u32(np, "PS_Config_Diff_Test_Frame", &PS_Config_Diff_Test_Frame);
 
 	NVT_LOG("Parse mp criteria done!\n");
-	LOG_DONE();
 }
 #endif /* #ifdef CONFIG_OF */
 
@@ -2052,7 +2001,6 @@ Executive outcomes. 0---succeed. -1---failed.
  *******************************************************/
 int32_t nvt_mp_proc_init(void)
 {
-	LOG_ENTRY();
 	/* add nova tp selftest by wanghan 2018-8-21 start*/
 	lct_tp_selftest_init(lct_nova_tp_selftest);
 	/* add nova tp selftest by wanghan 2018-8-21 end*/
@@ -2068,7 +2016,6 @@ int32_t nvt_mp_proc_init(void)
 		else {
 			NVT_LOG("create /proc/nvt_selftest Succeeded!\n");
 		}
-		LOG_DONE();
 		return 0;
 	}
 }
