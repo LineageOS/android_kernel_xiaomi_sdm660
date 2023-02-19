@@ -137,7 +137,6 @@ static ssize_t recovery_sysfs_recovery_store(struct device *dev,
 	unsigned int input;
 	struct syna_tcm_hcd *tcm_hcd = recovery_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	if (sscanf(buf, "%u", &input) != 1)
 		return -EINVAL;
 
@@ -180,7 +179,6 @@ exit:
 
 	mutex_unlock(&tcm_hcd->extif_mutex);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -191,7 +189,6 @@ static ssize_t recovery_sysfs_ihex_store(struct file *data_file,
 	int retval;
 	struct syna_tcm_hcd *tcm_hcd = recovery_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	mutex_lock(&tcm_hcd->extif_mutex);
 
 	retval = secure_memcpy(&recovery_hcd->ihex_buf[pos],
@@ -213,7 +210,6 @@ static ssize_t recovery_sysfs_ihex_store(struct file *data_file,
 exit:
 	mutex_unlock(&tcm_hcd->extif_mutex);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -224,7 +220,6 @@ static int recovery_device_reset(void)
 	struct syna_tcm_hcd *tcm_hcd = recovery_hcd->tcm_hcd;
 	const struct syna_tcm_board_data *bdata = tcm_hcd->hw_if->bdata;
 
-	LOG_ENTRY();
 	command = F35_RESET_COMMAND;
 
 	retval = syna_tcm_rmi_write(tcm_hcd,
@@ -239,7 +234,6 @@ static int recovery_device_reset(void)
 
 	msleep(bdata->reset_delay_ms);
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -247,7 +241,6 @@ static int recovery_add_data_entry(unsigned char data)
 {
 	struct syna_tcm_hcd *tcm_hcd = recovery_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	if (recovery_hcd->data_entries >= DATA_BUF_SIZE) {
 		LOGE(tcm_hcd->pdev->dev.parent,
 				"Reached data buffer size limit\n");
@@ -256,7 +249,6 @@ static int recovery_add_data_entry(unsigned char data)
 
 	recovery_hcd->data_buf[recovery_hcd->data_entries++] = data;
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -266,7 +258,6 @@ static int recovery_add_padding(unsigned int *words)
 	unsigned int padding;
 	struct syna_tcm_hcd *tcm_hcd = recovery_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	padding = (F35_CHUNK_SIZE_WORDS - *words % F35_CHUNK_SIZE_WORDS);
 	padding %= F35_CHUNK_SIZE_WORDS;
 
@@ -289,7 +280,6 @@ static int recovery_add_padding(unsigned int *words)
 		padding--;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -310,7 +300,6 @@ static int recovery_parse_ihex(void)
 	unsigned int record;
 	struct syna_tcm_hcd *tcm_hcd = recovery_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	words = 0;
 
 	offset = 0;
@@ -392,7 +381,6 @@ static int recovery_parse_ihex(void)
 		return retval;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -402,7 +390,6 @@ static int recovery_check_status(void)
 	unsigned char status;
 	struct syna_tcm_hcd *tcm_hcd = recovery_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	retval = syna_tcm_rmi_read(tcm_hcd,
 			recovery_hcd->f35_addr.data_base,
 			&status,
@@ -422,7 +409,6 @@ static int recovery_check_status(void)
 		return -EINVAL;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -436,7 +422,6 @@ static int recovery_write_flash(void)
 	unsigned int entries_to_write;
 	struct syna_tcm_hcd *tcm_hcd = recovery_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	entries_written = 0;
 
 	data_ptr = recovery_hcd->data_buf;
@@ -482,7 +467,6 @@ static int recovery_write_flash(void)
 		return retval;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -495,7 +479,6 @@ static int recovery_poll_erase_completion(void)
 	unsigned int timeout;
 	struct syna_tcm_hcd *tcm_hcd = recovery_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	timeout = F35_ERASE_ALL_WAIT_MS;
 
 	data_base = recovery_hcd->f35_addr.data_base;
@@ -569,7 +552,6 @@ exit:
 				"Failed to get erase completion\n");
 	}
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -579,7 +561,6 @@ static int recovery_erase_flash(void)
 	unsigned char command;
 	struct syna_tcm_hcd *tcm_hcd = recovery_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	command = F35_ERASE_ALL_COMMAND;
 
 	retval = syna_tcm_rmi_write(tcm_hcd,
@@ -610,7 +591,6 @@ static int recovery_erase_flash(void)
 		return retval;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -620,7 +600,6 @@ static int recovery_set_up_recovery_mode(void)
 	struct syna_tcm_hcd *tcm_hcd = recovery_hcd->tcm_hcd;
 	const struct syna_tcm_board_data *bdata = tcm_hcd->hw_if->bdata;
 
-	LOG_ENTRY();
 	retval = tcm_hcd->identify(tcm_hcd, true);
 	if (retval < 0) {
 		LOGE(tcm_hcd->pdev->dev.parent,
@@ -655,7 +634,6 @@ static int recovery_set_up_recovery_mode(void)
 
 	msleep(bdata->reset_delay_ms);
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -665,7 +643,6 @@ static int recovery_do_recovery(void)
 	struct rmi_pdt_entry p_entry;
 	struct syna_tcm_hcd *tcm_hcd = recovery_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	retval = recovery_parse_ihex();
 	if (retval < 0) {
 		LOGE(tcm_hcd->pdev->dev.parent,
@@ -766,7 +743,6 @@ static int recovery_do_recovery(void)
 		}
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -775,7 +751,6 @@ static int recovery_init(struct syna_tcm_hcd *tcm_hcd)
 	int retval;
 	int idx;
 
-	LOG_ENTRY();
 	recovery_hcd = kzalloc(sizeof(*recovery_hcd), GFP_KERNEL);
 	if (!recovery_hcd) {
 		LOGE(tcm_hcd->pdev->dev.parent,
@@ -834,7 +809,6 @@ static int recovery_init(struct syna_tcm_hcd *tcm_hcd)
 		goto err_sysfs_create_bin_file;
 	}
 
-	LOG_DONE();
 	return 0;
 
 err_sysfs_create_bin_file:
@@ -852,7 +826,6 @@ err_allocate_ihex_buf:
 	kfree(recovery_hcd);
 	recovery_hcd = NULL;
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -860,7 +833,6 @@ static int recovery_remove(struct syna_tcm_hcd *tcm_hcd)
 {
 	int idx;
 
-	LOG_ENTRY();
 	if (!recovery_hcd)
 		goto exit;
 
@@ -883,7 +855,6 @@ static int recovery_remove(struct syna_tcm_hcd *tcm_hcd)
 exit:
 	complete(&recovery_remove_complete);
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -891,13 +862,11 @@ static int recovery_reset(struct syna_tcm_hcd *tcm_hcd)
 {
 	int retval;
 
-	LOG_ENTRY();
 	if (!recovery_hcd) {
 		retval = recovery_init(tcm_hcd);
 		return retval;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -916,7 +885,7 @@ static struct syna_tcm_module_cb recovery_module = {
 static int __init recovery_module_init(void)
 {
 	int retval;
-	LOG_ENTRY();
+
 	/* add check F7A LCM by wanghan start */
 	if(!lct_syna_verify_flag)
 		return -ENODEV;
@@ -926,18 +895,16 @@ static int __init recovery_module_init(void)
 	if(retval) {
 		LOGV("syna_tcm_add_module failed! retval = %d\n", retval);
 	}
-	LOG_DONE();
+
 	return retval;
 }
 
 static void __exit recovery_module_exit(void)
 {
-	LOG_ENTRY();
 	syna_tcm_add_module(&recovery_module, false);
 
 	wait_for_completion(&recovery_remove_complete);
 
-	LOG_DONE();
 	return;
 }
 
