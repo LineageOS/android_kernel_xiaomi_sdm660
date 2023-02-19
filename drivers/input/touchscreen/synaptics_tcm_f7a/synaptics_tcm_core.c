@@ -235,7 +235,6 @@ static ssize_t syna_tcm_sysfs_info_show(struct device *dev,
 	struct kobject *p_kobj;
 	struct syna_tcm_hcd *tcm_hcd;
 
-	LOG_ENTRY();
 	p_kobj = sysfs_dir->parent;
 	p_dev = container_of(p_kobj, struct device, kobj);
 	tcm_hcd = dev_get_drvdata(p_dev);
@@ -356,7 +355,6 @@ static ssize_t syna_tcm_sysfs_info_show(struct device *dev,
 exit:
 	mutex_unlock(&tcm_hcd->extif_mutex);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -369,7 +367,6 @@ static ssize_t syna_tcm_sysfs_irq_en_store(struct device *dev,
 	struct kobject *p_kobj;
 	struct syna_tcm_hcd *tcm_hcd;
 
-	LOG_ENTRY();
 	p_kobj = sysfs_dir->parent;
 	p_dev = container_of(p_kobj, struct device, kobj);
 	tcm_hcd = dev_get_drvdata(p_dev);
@@ -403,7 +400,6 @@ static ssize_t syna_tcm_sysfs_irq_en_store(struct device *dev,
 exit:
 	mutex_unlock(&tcm_hcd->extif_mutex);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -417,7 +413,6 @@ static ssize_t syna_tcm_sysfs_reset_store(struct device *dev,
 	struct kobject *p_kobj;
 	struct syna_tcm_hcd *tcm_hcd;
 
-	LOG_ENTRY();
 	p_kobj = sysfs_dir->parent;
 	p_dev = container_of(p_kobj, struct device, kobj);
 	tcm_hcd = dev_get_drvdata(p_dev);
@@ -446,7 +441,6 @@ static ssize_t syna_tcm_sysfs_reset_store(struct device *dev,
 exit:
 	mutex_unlock(&tcm_hcd->extif_mutex);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -458,7 +452,6 @@ static ssize_t syna_tcm_sysfs_watchdog_store(struct device *dev,
 	struct kobject *p_kobj;
 	struct syna_tcm_hcd *tcm_hcd;
 
-	LOG_ENTRY();
 	p_kobj = sysfs_dir->parent;
 	p_dev = container_of(p_kobj, struct device, kobj);
 	tcm_hcd = dev_get_drvdata(p_dev);
@@ -476,7 +469,6 @@ static ssize_t syna_tcm_sysfs_watchdog_store(struct device *dev,
 
 	mutex_unlock(&tcm_hcd->extif_mutex);
 
-	LOG_DONE();
 	return count;
 }
 
@@ -509,8 +501,6 @@ dynamic_config_sysfs(enable_glove, DC_ENABLE_GLOVE)
 int syna_tcm_add_module(struct syna_tcm_module_cb *mod_cb, bool insert)
 {
 	struct syna_tcm_module_handler *mod_handler;
-
-	LOG_ENTRY();
 
 	if (!mod_pool.initialized) {
 		mutex_init(&mod_pool.mutex);
@@ -548,7 +538,6 @@ exit:
 	if (mod_pool.queue_work)
 		queue_work(mod_pool.workqueue, &mod_pool.work);
 
-	LOG_DONE();
 	return 0;
 }
 EXPORT_SYMBOL(syna_tcm_add_module);
@@ -559,7 +548,6 @@ static void syna_tcm_module_work(struct work_struct *work)
 	struct syna_tcm_module_handler *tmp_handler;
 	struct syna_tcm_hcd *tcm_hcd = mod_pool.tcm_hcd;
 
-	LOG_ENTRY();
 	mutex_lock(&mod_pool.mutex);
 	mod_pool.reconstructing = true;
 
@@ -585,7 +573,6 @@ static void syna_tcm_module_work(struct work_struct *work)
 	mod_pool.reconstructing = false;
 	mutex_unlock(&mod_pool.mutex);
 
-	LOG_DONE();
 	return;
 }
 
@@ -603,7 +590,6 @@ static int syna_tcm_report_notifier(void *data)
 	struct syna_tcm_module_handler *mod_handler;
 	struct syna_tcm_hcd *tcm_hcd = data;
 
-	LOG_ENTRY();
 	sched_setscheduler(current, SCHED_RR, &param);
 
 	set_current_state(TASK_INTERRUPTIBLE);
@@ -632,7 +618,6 @@ static int syna_tcm_report_notifier(void *data)
 		set_current_state(TASK_INTERRUPTIBLE);
 	};
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -650,7 +635,6 @@ static void syna_tcm_dispatch_report(struct syna_tcm_hcd *tcm_hcd)
 {
 	struct syna_tcm_module_handler *mod_handler;
 
-	LOG_ENTRY();
 	LOCK_BUFFER(tcm_hcd->in);
 	LOCK_BUFFER(tcm_hcd->report.buffer);
 
@@ -680,7 +664,6 @@ static void syna_tcm_dispatch_report(struct syna_tcm_hcd *tcm_hcd)
 
 	wake_up_process(tcm_hcd->notifier_thread);
 
-	LOG_DONE();
 	return;
 }
 
@@ -695,7 +678,6 @@ static void syna_tcm_dispatch_response(struct syna_tcm_hcd *tcm_hcd)
 {
 	int retval;
 
-	LOG_ENTRY();
 	if (atomic_read(&tcm_hcd->command_status) != CMD_BUSY)
 		return;
 
@@ -745,7 +727,6 @@ static void syna_tcm_dispatch_response(struct syna_tcm_hcd *tcm_hcd)
 exit:
 	complete(&response_complete);
 
-	LOG_DONE();
 	return;
 }
 
@@ -765,7 +746,6 @@ static void syna_tcm_dispatch_message(struct syna_tcm_hcd *tcm_hcd)
 	unsigned int payload_length;
 	unsigned int max_write_size;
 
-	LOG_ENTRY();
 	if (tcm_hcd->status_report_code == REPORT_IDENTIFY) {
 		payload_length = tcm_hcd->payload_length;
 
@@ -843,7 +823,6 @@ static void syna_tcm_dispatch_message(struct syna_tcm_hcd *tcm_hcd)
 		syna_tcm_dispatch_response(tcm_hcd);
 	}
 
-	LOG_DONE();
 	return;
 }
 
@@ -868,7 +847,6 @@ static int syna_tcm_continued_read(struct syna_tcm_hcd *tcm_hcd)
 	unsigned int total_length;
 	unsigned int remaining_length;
 
-	LOG_ENTRY();
 	total_length = MESSAGE_HEADER_SIZE + tcm_hcd->payload_length + 1;
 
 	remaining_length = total_length - tcm_hcd->read_length;
@@ -977,7 +955,6 @@ static int syna_tcm_continued_read(struct syna_tcm_hcd *tcm_hcd)
 	UNLOCK_BUFFER(tcm_hcd->temp);
 	UNLOCK_BUFFER(tcm_hcd->in);
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1003,7 +980,6 @@ static int syna_tcm_raw_read(struct syna_tcm_hcd *tcm_hcd,
 	unsigned int xfer_length;
 	unsigned int remaining_length;
 
-	LOG_ENTRY();
 	if (length < 2) {
 		LOGE(tcm_hcd->pdev->dev.parent,
 				"Invalid length information\n");
@@ -1101,7 +1077,6 @@ static int syna_tcm_raw_read(struct syna_tcm_hcd *tcm_hcd,
 
 	UNLOCK_BUFFER(tcm_hcd->temp);
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1126,7 +1101,6 @@ static int syna_tcm_raw_write(struct syna_tcm_hcd *tcm_hcd,
 	unsigned int xfer_length;
 	unsigned int remaining_length;
 
-	LOG_ENTRY();
 	remaining_length = length;
 
 	/* available chunk space for data = total chunk size minus command
@@ -1192,7 +1166,6 @@ static int syna_tcm_raw_write(struct syna_tcm_hcd *tcm_hcd,
 
 	UNLOCK_BUFFER(tcm_hcd->out);
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1214,8 +1187,6 @@ static int syna_tcm_read_message(struct syna_tcm_hcd *tcm_hcd,
 	bool retry;
 	unsigned int total_length;
 	struct syna_tcm_message_header *header;
-
-	LOG_ENTRY();
 
 	mutex_lock(&tcm_hcd->rw_ctrl_mutex);
 
@@ -1368,7 +1339,6 @@ exit:
 
 	mutex_unlock(&tcm_hcd->rw_ctrl_mutex);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -1402,8 +1372,6 @@ static int syna_tcm_write_message(struct syna_tcm_hcd *tcm_hcd,
 	unsigned int xfer_length;
 	unsigned int remaining_length;
 	unsigned int command_status;
-
-	LOG_ENTRY();
 
 	if (response_code != NULL)
 		*response_code = STATUS_INVALID;
@@ -1595,7 +1563,6 @@ exit:
 
 	mutex_unlock(&tcm_hcd->command_mutex);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -1603,7 +1570,6 @@ static int syna_tcm_wait_hdl(struct syna_tcm_hcd *tcm_hcd)
 {
 	int retval;
 
-	LOG_ENTRY();
 	msleep(HOST_DOWNLOAD_WAIT_MS);
 
 	if (!atomic_read(&tcm_hcd->host_downloading))
@@ -1621,7 +1587,6 @@ static int syna_tcm_wait_hdl(struct syna_tcm_hcd *tcm_hcd)
 		retval = 0;
 	}
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -1629,7 +1594,6 @@ static void syna_tcm_check_hdl(struct syna_tcm_hcd *tcm_hcd)
 {
 	struct syna_tcm_module_handler *mod_handler;
 
-	LOG_ENTRY();
 	LOCK_BUFFER(tcm_hcd->report.buffer);
 
 	tcm_hcd->report.buffer.buf = NULL;
@@ -1652,13 +1616,11 @@ static void syna_tcm_check_hdl(struct syna_tcm_hcd *tcm_hcd)
 
 	mutex_unlock(&mod_pool.mutex);
 
-	LOG_DONE();
 	return;
 }
 
 static void syna_tcm_update_watchdog(struct syna_tcm_hcd *tcm_hcd, bool en)
 {
-	LOG_ENTRY();
 	cancel_delayed_work_sync(&tcm_hcd->watchdog.work);
 	flush_workqueue(tcm_hcd->watchdog.workqueue);
 
@@ -1675,7 +1637,6 @@ static void syna_tcm_update_watchdog(struct syna_tcm_hcd *tcm_hcd, bool en)
 		tcm_hcd->watchdog.count = 0;
 	}
 
-	LOG_DONE();
 	return;
 }
 
@@ -1691,7 +1652,6 @@ static void syna_tcm_watchdog_work(struct work_struct *work)
 	struct syna_tcm_hcd *tcm_hcd =
 		container_of(watchdog, struct syna_tcm_hcd, watchdog);
 
-	LOG_ENTRY();
 	if (mutex_is_locked(&tcm_hcd->rw_ctrl_mutex))
 		goto exit;
 
@@ -1724,13 +1684,11 @@ exit:
 			&tcm_hcd->watchdog.work,
 			msecs_to_jiffies(WATCHDOG_DELAY_MS));
 
-	LOG_DONE();
 	return;
 }
 
 static void syna_tcm_glove_control(struct syna_tcm_hcd *tcm_hcd, bool en)
 {
-	LOG_ENTRY();
 	cancel_delayed_work_sync(&tcm_hcd->glove.work);
 	flush_workqueue(tcm_hcd->glove.workqueue);
 
@@ -1742,7 +1700,6 @@ static void syna_tcm_glove_control(struct syna_tcm_hcd *tcm_hcd, bool en)
 
 	}
 
-	LOG_DONE();
 	return;
 }
 
@@ -1778,8 +1735,6 @@ static void syna_tcm_glove_work(struct work_struct *work)
 	struct syna_tcm_hcd *tcm_hcd =
 		container_of(glove, struct syna_tcm_hcd, glove);
 
-	LOG_ENTRY();
-
 	if (!tcm_hcd->glove.keep_runing) {
 		LOGV("disable glove mode\n");
 		if (syna_tcm_disable_glove(tcm_hcd) < 0) {
@@ -1788,7 +1743,6 @@ static void syna_tcm_glove_work(struct work_struct *work)
 		}
 	}
 
-	LOG_DONE();
 	return;
 }
 
@@ -1801,7 +1755,6 @@ static void syna_tcm_polling_work(struct work_struct *work)
 		container_of(delayed_work, struct syna_tcm_hcd,
 				polling_work);
 
-	LOG_ENTRY();
 	if (!tcm_hcd->do_polling)
 		return;
 
@@ -1821,7 +1774,6 @@ static void syna_tcm_polling_work(struct work_struct *work)
 				msecs_to_jiffies(POLLING_DELAY_MS));
 	}
 
-	LOG_DONE();
 	return;
 }
 
@@ -1831,8 +1783,6 @@ static irqreturn_t syna_tcm_isr(int irq, void *data)
 	struct syna_tcm_hcd *tcm_hcd = data;
 	const struct syna_tcm_board_data *bdata = tcm_hcd->hw_if->bdata;
 	static int syna_tcm_isr_err_count = 0;
-
-	LOG_ENTRY();
 
 	if (unlikely(gpio_get_value(bdata->irq_gpio) != bdata->irq_on_state))
 		goto exit;
@@ -1866,7 +1816,6 @@ irq_read_message_err:
 		}
 	}
 exit:
-	LOG_DONE();
 	return IRQ_HANDLED;
 }
 
@@ -1876,7 +1825,6 @@ static int syna_tcm_enable_irq(struct syna_tcm_hcd *tcm_hcd, bool en, bool ns)
 	const struct syna_tcm_board_data *bdata = tcm_hcd->hw_if->bdata;
 	static bool irq_freed = true;
 
-	LOG_ENTRY();
 	mutex_lock(&tcm_hcd->irq_en_mutex);
 
 	if (en) {
@@ -1958,7 +1906,6 @@ exit:
 
 	mutex_unlock(&tcm_hcd->irq_en_mutex);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -1968,7 +1915,6 @@ static int syna_tcm_set_gpio(struct syna_tcm_hcd *tcm_hcd, int gpio,
 	int retval;
 	char label[16];
 
-	LOG_ENTRY();
 	if (config) {
 		retval = snprintf(label, 16, "tcm_gpio_%d\n", gpio);
 		if (retval < 0) {
@@ -1999,7 +1945,6 @@ static int syna_tcm_set_gpio(struct syna_tcm_hcd *tcm_hcd, int gpio,
 		gpio_free(gpio);
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -2008,7 +1953,6 @@ static int syna_tcm_config_gpio(struct syna_tcm_hcd *tcm_hcd)
 	int retval;
 	const struct syna_tcm_board_data *bdata = tcm_hcd->hw_if->bdata;
 
-	LOG_ENTRY();
 	if (bdata->irq_gpio >= 0) {
 		retval = syna_tcm_set_gpio(tcm_hcd, bdata->irq_gpio,
 				true, 0, 0);
@@ -2044,7 +1988,6 @@ static int syna_tcm_config_gpio(struct syna_tcm_hcd *tcm_hcd)
 		msleep(bdata->power_delay_ms);
 	}
 
-	LOG_DONE();
 	return 0;
 
 err_set_gpio_reset:
@@ -2056,7 +1999,6 @@ err_set_gpio_power:
 		syna_tcm_set_gpio(tcm_hcd, bdata->irq_gpio, false, 0, 0);
 
 err_set_gpio_irq:
-	LOG_DONE();
 	return retval;
 }
 
@@ -2068,7 +2010,6 @@ static int syna_tcm_get_app_info(struct syna_tcm_hcd *tcm_hcd)
 	unsigned int resp_length;
 	unsigned int timeout;
 
-	LOG_ENTRY();
 	timeout = APP_STATUS_POLL_TIMEOUT_MS;
 
 	resp_buf = NULL;
@@ -2122,7 +2063,6 @@ get_app_info:
 exit:
 	kfree(resp_buf);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -2133,7 +2073,6 @@ static int syna_tcm_get_boot_info(struct syna_tcm_hcd *tcm_hcd)
 	unsigned int resp_buf_size;
 	unsigned int resp_length;
 
-	LOG_ENTRY();
 	resp_buf = NULL;
 	resp_buf_size = 0;
 
@@ -2169,7 +2108,6 @@ static int syna_tcm_get_boot_info(struct syna_tcm_hcd *tcm_hcd)
 exit:
 	kfree(resp_buf);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -2181,7 +2119,6 @@ static int syna_tcm_identify(struct syna_tcm_hcd *tcm_hcd, bool id)
 	unsigned int resp_length;
 	unsigned int max_write_size;
 
-	LOG_ENTRY();
 	resp_buf = NULL;
 	resp_buf_size = 0;
 
@@ -2254,7 +2191,6 @@ exit:
 
 	kfree(resp_buf);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -2266,7 +2202,6 @@ static int syna_tcm_run_production_test_firmware(struct syna_tcm_hcd *tcm_hcd)
 	unsigned int resp_buf_size;
 	unsigned int resp_length;
 
-	LOG_ENTRY();
 	retry = true;
 
 	resp_buf = NULL;
@@ -2309,7 +2244,6 @@ retry:
 exit:
 	kfree(resp_buf);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -2321,7 +2255,6 @@ static int syna_tcm_run_application_firmware(struct syna_tcm_hcd *tcm_hcd)
 	unsigned int resp_buf_size;
 	unsigned int resp_length;
 
-	LOG_ENTRY();
 	retry = true;
 
 	resp_buf = NULL;
@@ -2372,7 +2305,6 @@ retry:
 exit:
 	kfree(resp_buf);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -2383,7 +2315,6 @@ static int syna_tcm_run_bootloader_firmware(struct syna_tcm_hcd *tcm_hcd)
 	unsigned int resp_buf_size;
 	unsigned int resp_length;
 
-	LOG_ENTRY();
 	resp_buf = NULL;
 	resp_buf_size = 0;
 
@@ -2422,7 +2353,6 @@ static int syna_tcm_run_bootloader_firmware(struct syna_tcm_hcd *tcm_hcd)
 exit:
 	kfree(resp_buf);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -2431,7 +2361,6 @@ static int syna_tcm_switch_mode(struct syna_tcm_hcd *tcm_hcd,
 {
 	int retval;
 
-	LOG_ENTRY();
 	mutex_lock(&tcm_hcd->reset_mutex);
 
 	tcm_hcd->update_watchdog(tcm_hcd, false);
@@ -2475,7 +2404,6 @@ exit:
 
 	mutex_unlock(&tcm_hcd->reset_mutex);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -2488,7 +2416,6 @@ static int syna_tcm_get_dynamic_config(struct syna_tcm_hcd *tcm_hcd,
 	unsigned int resp_buf_size;
 	unsigned int resp_length;
 
-	LOG_ENTRY();
 	resp_buf = NULL;
 	resp_buf_size = 0;
 
@@ -2524,7 +2451,6 @@ static int syna_tcm_get_dynamic_config(struct syna_tcm_hcd *tcm_hcd,
 exit:
 	kfree(resp_buf);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -2537,7 +2463,6 @@ static int syna_tcm_set_dynamic_config(struct syna_tcm_hcd *tcm_hcd,
 	unsigned int resp_buf_size;
 	unsigned int resp_length;
 
-	LOG_ENTRY();
 	resp_buf = NULL;
 	resp_buf_size = 0;
 
@@ -2566,7 +2491,6 @@ static int syna_tcm_set_dynamic_config(struct syna_tcm_hcd *tcm_hcd,
 exit:
 	kfree(resp_buf);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -2579,7 +2503,6 @@ static int syna_tcm_get_data_location(struct syna_tcm_hcd *tcm_hcd,
 	unsigned int resp_buf_size;
 	unsigned int resp_length;
 
-	LOG_ENTRY();
 	switch (area) {
 	case CUSTOM_LCM:
 		out_buf = LCM_DATA;
@@ -2629,7 +2552,6 @@ static int syna_tcm_get_data_location(struct syna_tcm_hcd *tcm_hcd,
 
 exit:
 	kfree(resp_buf);
-	LOG_DONE();
 
 	return retval;
 }
@@ -2642,7 +2564,6 @@ static int syna_tcm_sleep(struct syna_tcm_hcd *tcm_hcd, bool en)
 	unsigned int resp_buf_size;
 	unsigned int resp_length;
 
-	LOG_ENTRY();
 	command = en ? CMD_ENTER_DEEP_SLEEP : CMD_EXIT_DEEP_SLEEP;
 
 	resp_buf = NULL;
@@ -2671,7 +2592,6 @@ static int syna_tcm_sleep(struct syna_tcm_hcd *tcm_hcd, bool en)
 exit:
 	kfree(resp_buf);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -2684,7 +2604,6 @@ static int syna_tcm_reset(struct syna_tcm_hcd *tcm_hcd, bool hw, bool update_wd)
 	struct syna_tcm_module_handler *mod_handler;
 	const struct syna_tcm_board_data *bdata = tcm_hcd->hw_if->bdata;
 
-	LOG_ENTRY();
 	resp_buf = NULL;
 	resp_buf_size = 0;
 
@@ -2842,7 +2761,6 @@ exit:
 
 	kfree(resp_buf);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -2853,7 +2771,6 @@ static int syna_tcm_rezero(struct syna_tcm_hcd *tcm_hcd)
 	unsigned int resp_buf_size;
 	unsigned int resp_length;
 
-	LOG_ENTRY();
 	resp_buf = NULL;
 	resp_buf_size = 0;
 
@@ -2878,7 +2795,6 @@ static int syna_tcm_rezero(struct syna_tcm_hcd *tcm_hcd)
 exit:
 	kfree(resp_buf);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -2892,7 +2808,6 @@ static void syna_tcm_helper_work(struct work_struct *work)
 	struct syna_tcm_hcd *tcm_hcd =
 		container_of(helper, struct syna_tcm_hcd, helper);
 
-	LOG_ENTRY();
 	task = atomic_read(&helper->task);
 
 	switch (task) {
@@ -2934,7 +2849,6 @@ static void syna_tcm_helper_work(struct work_struct *work)
 
 	atomic_set(&helper->task, HELP_NONE);
 
-	LOG_DONE();
 	return;
 }
 
@@ -2944,8 +2858,6 @@ static int syna_tcm_resume(struct device *dev)
 	int retval;
 	struct syna_tcm_module_handler *mod_handler;
 	struct syna_tcm_hcd *tcm_hcd = dev_get_drvdata(dev);
-
-	LOG_ENTRY();
 	if (!tcm_hcd->in_suspend)
 		return 0;
 
@@ -3039,7 +2951,6 @@ mod_resume:
 exit:
 	tcm_hcd->in_suspend = false;
 	LOGV("Out\n");
-	LOG_DONE();
 	return retval;
 }
 
@@ -3048,7 +2959,6 @@ static int syna_tcm_suspend(struct device *dev)
 	struct syna_tcm_module_handler *mod_handler;
 	struct syna_tcm_hcd *tcm_hcd = dev_get_drvdata(dev);
 
-	LOG_ENTRY();
 	if (tcm_hcd->in_suspend)
 		return 0;
 
@@ -3069,7 +2979,6 @@ static int syna_tcm_suspend(struct device *dev)
 
 	tcm_hcd->in_suspend = true;
 
-	LOG_DONE();
 	return 0;
 }
 #endif
@@ -3082,7 +2991,6 @@ static int syna_tcm_early_suspend(struct device *dev)
 	struct syna_tcm_module_handler *mod_handler;
 	struct syna_tcm_hcd *tcm_hcd = dev_get_drvdata(dev);
 
-	LOG_ENTRY();
 	if (tcm_hcd->in_suspend)
 		return 0;
 
@@ -3126,7 +3034,6 @@ static int syna_tcm_early_suspend(struct device *dev)
 		LOGV("gesture mode, keep TP's irq and power support\n");
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -3139,7 +3046,6 @@ static int syna_tcm_fb_notifier_cb(struct notifier_block *nb,
 	struct syna_tcm_hcd *tcm_hcd =
 		container_of(nb, struct syna_tcm_hcd, fb_notifier);
 
-	LOG_ENTRY();
 	retval = 0;
 
 
@@ -3189,7 +3095,6 @@ static int syna_tcm_fb_notifier_cb(struct notifier_block *nb,
 		}
 	}
 
-	LOG_DONE();
 	return retval;
 }
 #endif
@@ -3200,7 +3105,6 @@ static void do_syna_reset_work(struct work_struct *work)
 	int retval;
 	struct syna_tcm_hcd *tcm_hcd = g_tcm_hcd;
 
-	LOG_ENTRY();
 	if(tcm_hcd->reseting) return;
 	tcm_hcd->reseting = true;
 	LOGV("ERROR: TouchPad Interrupt Abnormal! Next : Reset TP IC!\n");
@@ -3215,7 +3119,6 @@ static void do_syna_reset_work(struct work_struct *work)
 
 exit:
 	tcm_hcd->reseting = false;
-	LOG_DONE();
 	return;
 }
 /* add reset work by wanghan end */
@@ -3225,12 +3128,12 @@ static void do_syna_resume_work(struct work_struct *work)
 {
 	int retval;
 	struct syna_tcm_hcd *tcm_hcd = g_tcm_hcd;
-	LOG_ENTRY();
+
 	mutex_lock(&tcm_hcd->pm_mutex);
 	retval = syna_tcm_resume(&(tcm_hcd->pdev->dev));
 	if (retval < 0) LOGV("syna_tcm_resume Failed! retval = %d\n", retval);
 	mutex_unlock(&tcm_hcd->pm_mutex);
-	LOG_DONE();
+
 	return;
 }
 /* add resume work by wanghan end */
@@ -3241,7 +3144,6 @@ static int lct_tp_work_node_callback(bool flag)
 	int retval = 0;
 	struct syna_tcm_hcd *tcm_hcd = g_tcm_hcd;
 
-	LOG_ENTRY();
 	if (synaptics_gesture_enable_flag) {
 		LOGV("ERROR: synaptics_gesture=%d!\n", synaptics_gesture_enable_flag);
 		return -1;
@@ -3264,7 +3166,6 @@ static int lct_tp_work_node_callback(bool flag)
 	tcm_hcd->in_suspend = false;
 	mutex_unlock(&tcm_hcd->pm_mutex);
 
-	LOG_DONE();
 	return retval;
 }
 #endif
@@ -3274,7 +3175,6 @@ static int lct_tp_gesture_node_callback(bool flag)
 	int retval = 0;
 	struct syna_tcm_hcd *tcm_hcd = g_tcm_hcd;
 
-	LOG_ENTRY();
 	if (tcm_hcd->in_suspend) {
 		LOGV("ERROR: TP is suspend!\n");
 		return -1;
@@ -3286,7 +3186,7 @@ static int lct_tp_gesture_node_callback(bool flag)
 		synaptics_gesture_enable_flag = false;
 		LOGV("disable gesture mode\n");
 	}
-	LOG_DONE();
+
 	return retval;
 }
 
@@ -3362,7 +3262,6 @@ static int syna_tcm_probe(struct platform_device *pdev)
 	const struct syna_tcm_board_data *bdata;
 	const struct syna_tcm_hw_interface *hw_if;
 
-	LOG_ENTRY();
 	hw_if = pdev->dev.platform_data;
 	if (!hw_if) {
 		LOGE(&pdev->dev,
@@ -3619,7 +3518,6 @@ static int syna_tcm_probe(struct platform_device *pdev)
 
 	syna_tcm_glove_control(tcm_hcd, true);
 
-	LOG_DONE();
 	return 0;
 
 #ifndef KEEP_DRIVER_ON_ERROR
@@ -3702,7 +3600,6 @@ err_alloc_mem:
 	lct_syna_verify_flag = false;
 	/* add check F7A LCM by wanghan end */
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -3713,7 +3610,6 @@ static int syna_tcm_remove(struct platform_device *pdev)
 	struct syna_tcm_hcd *tcm_hcd = platform_get_drvdata(pdev);
 	const struct syna_tcm_board_data *bdata = tcm_hcd->hw_if->bdata;
 
-	LOG_ENTRY();
 	LOGV("remove touchpad driver ...\n");
 	mutex_lock(&mod_pool.mutex);
 
@@ -3800,7 +3696,6 @@ static int syna_tcm_remove(struct platform_device *pdev)
 
 	kfree(tcm_hcd);
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -3831,7 +3726,6 @@ static int lct_syna_set_gpio(int gpio, bool config)
 	int retval;
 	char label[16];
 
-	LOG_ENTRY();
 	if (config) {
 		retval = snprintf(label, 16, "f7a_gpio_%d\n", gpio);
 		if (retval < 0) return retval;
@@ -3843,7 +3737,6 @@ static int lct_syna_set_gpio(int gpio, bool config)
 		gpio_free(gpio);
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -3892,8 +3785,6 @@ static int __init syna_tcm_module_init(void)
 {
 	int retval;
 
-	LOG_ENTRY();
-
 #ifdef DOES_NOT_SUPPORT_SHUTDOWN_CHARGING
 	if (strstr(saved_command_line, "androidboot.mode=charger") != NULL) {
 		LOGV("androidboot.mode=charger, TP doesn't support!\n");
@@ -3927,7 +3818,6 @@ static int __init syna_tcm_module_init(void)
 	}
 	retval = platform_driver_register(&syna_tcm_driver);
 
-	LOG_DONE();
 	return retval;
 
 err:
@@ -3938,13 +3828,11 @@ err:
 
 static void __exit syna_tcm_module_exit(void)
 {
-	LOG_ENTRY();
 	LOGV("exit touchpad driver ...\n");
 	platform_driver_unregister(&syna_tcm_driver);
 
 	syna_tcm_bus_exit();
 
-	LOG_DONE();
 	return;
 }
 

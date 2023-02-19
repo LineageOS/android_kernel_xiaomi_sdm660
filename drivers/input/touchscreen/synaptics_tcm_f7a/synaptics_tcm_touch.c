@@ -144,7 +144,6 @@ extern bool gesture_delay;
 
 int synaptics_gesture_switch(struct input_dev *dev, unsigned int type, unsigned int code, int value)
 {
-	LOG_ENTRY();
 	LOGV("type=%d, code=%d, value=%d\n", type, code, value);
 	if (type == EV_SYN && code == SYN_CONFIG)
 	{
@@ -163,7 +162,7 @@ int synaptics_gesture_switch(struct input_dev *dev, unsigned int type, unsigned 
 			LOGV("enable gesture mode\n");
 		}
 	}
-	LOG_DONE();
+
 	return 0;
 }
 
@@ -178,7 +177,6 @@ static void touch_free_objects(void)
 	unsigned int idx;
 #endif
 
-	LOG_ENTRY();
 	if (touch_hcd->input_dev == NULL)
 		return;
 
@@ -202,7 +200,6 @@ static void touch_free_objects(void)
 
 	mutex_unlock(&touch_hcd->report_mutex);
 
-	LOG_DONE();
 	return;
 }
 
@@ -226,7 +223,6 @@ static int touch_get_report_data(unsigned int offset,
 	unsigned char *touch_report;
 	struct syna_tcm_hcd *tcm_hcd = touch_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	if (bits == 0 || bits > 32) {
 		LOGE(tcm_hcd->pdev->dev.parent,
 				"Invalid number of bits\n");
@@ -265,7 +261,6 @@ static int touch_get_report_data(unsigned int offset,
 
 	*data = output_data;
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -298,7 +293,6 @@ static int touch_parse_report(void)
 	struct syna_tcm_hcd *tcm_hcd = touch_hcd->tcm_hcd;
 	static unsigned int end_of_foreach;
 
-	LOG_ENTRY();
 	touch_data = &touch_hcd->touch_data;
 	object_data = touch_hcd->touch_data.object_data;
 
@@ -599,7 +593,6 @@ static int touch_parse_report(void)
 	}
 
 exit:
-	LOG_DONE();
 	return 0;
 }
 
@@ -623,7 +616,7 @@ static void touch_report(void)
 	struct syna_tcm_hcd *tcm_hcd = touch_hcd->tcm_hcd;
 	const struct syna_tcm_board_data *bdata = tcm_hcd->hw_if->bdata;
 
-	LOG_ENTRY();
+
 	if (!touch_hcd->report_touch)
 		return;
 
@@ -727,7 +720,6 @@ static void touch_report(void)
 exit:
 	mutex_unlock(&touch_hcd->report_mutex);
 
-	LOG_DONE();
 	return;
 }
 
@@ -742,7 +734,6 @@ static int touch_set_input_params(void)
 {
 	struct syna_tcm_hcd *tcm_hcd = touch_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	input_set_abs_params(touch_hcd->input_dev,
 			ABS_MT_POSITION_X, 0, touch_hcd->max_x, 0, 0);
 	input_set_abs_params(touch_hcd->input_dev,
@@ -766,7 +757,6 @@ static int touch_set_input_params(void)
 		return -ENOMEM;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -785,7 +775,6 @@ static int touch_get_input_params(void)
 	struct syna_tcm_hcd *tcm_hcd = touch_hcd->tcm_hcd;
 	const struct syna_tcm_board_data *bdata = tcm_hcd->hw_if->bdata;
 
-	LOG_ENTRY();
 	app_info = &tcm_hcd->app_info;
 	touch_hcd->max_x = le2_to_uint(app_info->max_x);
 	touch_hcd->max_y = le2_to_uint(app_info->max_y);
@@ -818,7 +807,6 @@ static int touch_get_input_params(void)
 
 	UNLOCK_BUFFER(tcm_hcd->config);
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -834,7 +822,6 @@ static int touch_set_input_dev(void)
 	int retval;
 	struct syna_tcm_hcd *tcm_hcd = touch_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	touch_hcd->input_dev = input_allocate_device();
 	if (touch_hcd->input_dev == NULL) {
 		LOGE(tcm_hcd->pdev->dev.parent,
@@ -879,8 +866,6 @@ static int touch_set_input_dev(void)
 		touch_hcd->input_dev = NULL;
 		return retval;
 	}
-
-	LOG_DONE();
 	return 0;
 }
 
@@ -898,7 +883,6 @@ static int touch_set_report_config(void)
 	struct syna_tcm_app_info *app_info;
 	struct syna_tcm_hcd *tcm_hcd = touch_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 #ifdef USE_DEFAULT_TOUCH_REPORT_CONFIG
 	return 0;
 #endif
@@ -962,7 +946,6 @@ static int touch_set_report_config(void)
 	UNLOCK_BUFFER(touch_hcd->resp);
 	UNLOCK_BUFFER(touch_hcd->out);
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -977,7 +960,6 @@ static int touch_check_input_params(void)
 	unsigned int size;
 	struct syna_tcm_hcd *tcm_hcd = touch_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	if (touch_hcd->max_x == 0 && touch_hcd->max_y == 0)
 		return 0;
 
@@ -1000,7 +982,6 @@ static int touch_check_input_params(void)
 	if (touch_hcd->input_params.max_y != touch_hcd->max_y)
 		return 1;
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1016,7 +997,6 @@ static int touch_set_input_reporting(void)
 	int retval;
 	struct syna_tcm_hcd *tcm_hcd = touch_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	if (tcm_hcd->id_info.mode != MODE_APPLICATION ||
 			tcm_hcd->app_status != APP_STATUS_OK) {
 		LOGN(tcm_hcd->pdev->dev.parent,
@@ -1072,7 +1052,6 @@ exit:
 
 	touch_hcd->report_touch = retval < 0 ? false : true;
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -1080,7 +1059,6 @@ static int touch_init(struct syna_tcm_hcd *tcm_hcd)
 {
 	int retval;
 
-	LOG_ENTRY();
 	touch_hcd = kzalloc(sizeof(*touch_hcd), GFP_KERNEL);
 	if (!touch_hcd) {
 		LOGE(tcm_hcd->pdev->dev.parent,
@@ -1116,13 +1094,11 @@ err_set_input_reporting:
 	kfree(touch_hcd);
 	touch_hcd = NULL;
 
-	LOG_DONE();
 	return retval;
 }
 
 static int touch_remove(struct syna_tcm_hcd *tcm_hcd)
 {
-	LOG_ENTRY();
 	if (!touch_hcd)
 		goto exit;
 
@@ -1142,13 +1118,11 @@ static int touch_remove(struct syna_tcm_hcd *tcm_hcd)
 exit:
 	complete(&touch_remove_complete);
 
-	LOG_DONE();
 	return 0;
 }
 
 static int touch_syncbox(struct syna_tcm_hcd *tcm_hcd)
 {
-	LOG_ENTRY();
 	if (!touch_hcd)
 		return 0;
 
@@ -1164,7 +1138,6 @@ static int touch_syncbox(struct syna_tcm_hcd *tcm_hcd)
 		break;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1172,7 +1145,6 @@ static int touch_asyncbox(struct syna_tcm_hcd *tcm_hcd)
 {
 	int retval;
 
-	LOG_ENTRY();
 	if (!touch_hcd)
 		return 0;
 
@@ -1197,7 +1169,6 @@ static int touch_asyncbox(struct syna_tcm_hcd *tcm_hcd)
 		break;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1205,7 +1176,6 @@ static int touch_reset(struct syna_tcm_hcd *tcm_hcd)
 {
 	int retval;
 
-	LOG_ENTRY();
 	if (!touch_hcd) {
 		retval = touch_init(tcm_hcd);
 		return retval;
@@ -1220,13 +1190,11 @@ static int touch_reset(struct syna_tcm_hcd *tcm_hcd)
 		}
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
 static int touch_early_suspend(struct syna_tcm_hcd *tcm_hcd)
 {
-	LOG_ENTRY();
 	if (!touch_hcd)
 		return 0;
 
@@ -1234,7 +1202,6 @@ static int touch_early_suspend(struct syna_tcm_hcd *tcm_hcd)
 
 	touch_free_objects();
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1242,7 +1209,6 @@ static int touch_suspend(struct syna_tcm_hcd *tcm_hcd)
 {
 	int retval;
 
-	LOG_ENTRY();
 	if (!touch_hcd)
 		return 0;
 
@@ -1267,7 +1233,6 @@ static int touch_suspend(struct syna_tcm_hcd *tcm_hcd)
 		}
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1275,7 +1240,6 @@ static int touch_resume(struct syna_tcm_hcd *tcm_hcd)
 {
 	int retval;
 
-	LOG_ENTRY();
 	if (!touch_hcd)
 		return 0;
 
@@ -1297,7 +1261,6 @@ static int touch_resume(struct syna_tcm_hcd *tcm_hcd)
 		}
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1316,7 +1279,7 @@ static struct syna_tcm_module_cb touch_module = {
 static int __init touch_module_init(void)
 {
 	int retval;
-	LOG_ENTRY();
+
 	/* add check F7A LCM by wanghan start */
 	if(!lct_syna_verify_flag)
 		return -ENODEV;
@@ -1326,18 +1289,16 @@ static int __init touch_module_init(void)
 	if(retval) {
 		LOGV("syna_tcm_add_module failed! retval = %d\n", retval);
 	}
-	LOG_DONE();
+
 	return retval;
 }
 
 static void __exit touch_module_exit(void)
 {
-	LOG_ENTRY();
 	syna_tcm_add_module(&touch_module, false);
 
 	wait_for_completion(&touch_remove_complete);
 
-	LOG_DONE();
 	return;
 }
 

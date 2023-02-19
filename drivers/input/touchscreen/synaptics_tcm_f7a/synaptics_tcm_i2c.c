@@ -55,7 +55,6 @@ static int parse_dt(struct device *dev, struct syna_tcm_board_data *bdata)
 	struct device_node *np = dev->of_node;
 	const char *name;
 
-	LOG_ENTRY();
 	prop = of_find_property(np, "synaptics,irq-gpio", NULL);
 	if (prop && prop->length) {
 		bdata->irq_gpio = of_get_named_gpio_flags(np,
@@ -198,7 +197,6 @@ static int parse_dt(struct device *dev, struct syna_tcm_board_data *bdata)
 		bdata->ubl_i2c_addr = 0;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 #endif
@@ -208,7 +206,6 @@ static int syna_tcm_i2c_alloc_mem(struct syna_tcm_hcd *tcm_hcd,
 {
 	struct i2c_client *i2c = to_i2c_client(tcm_hcd->pdev->dev.parent);
 
-	LOG_ENTRY();
 	if (size > buf_size) {
 		if (buf_size)
 			kfree(buf);
@@ -222,7 +219,6 @@ static int syna_tcm_i2c_alloc_mem(struct syna_tcm_hcd *tcm_hcd,
 		buf_size = size;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -236,7 +232,6 @@ static int syna_tcm_i2c_rmi_read(struct syna_tcm_hcd *tcm_hcd,
 	struct i2c_client *i2c = to_i2c_client(tcm_hcd->pdev->dev.parent);
 	const struct syna_tcm_board_data *bdata = tcm_hcd->hw_if->bdata;
 
-	LOG_ENTRY();
 	mutex_lock(&tcm_hcd->io_ctrl_mutex);
 
 	address = (unsigned char)addr;
@@ -271,7 +266,6 @@ static int syna_tcm_i2c_rmi_read(struct syna_tcm_hcd *tcm_hcd,
 exit:
 	mutex_unlock(&tcm_hcd->io_ctrl_mutex);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -285,7 +279,6 @@ static int syna_tcm_i2c_rmi_write(struct syna_tcm_hcd *tcm_hcd,
 	struct i2c_client *i2c = to_i2c_client(tcm_hcd->pdev->dev.parent);
 	const struct syna_tcm_board_data *bdata = tcm_hcd->hw_if->bdata;
 
-	LOG_ENTRY();
 	mutex_lock(&tcm_hcd->io_ctrl_mutex);
 
 	byte_count = length + 1;
@@ -334,7 +327,6 @@ static int syna_tcm_i2c_rmi_write(struct syna_tcm_hcd *tcm_hcd,
 exit:
 	mutex_unlock(&tcm_hcd->io_ctrl_mutex);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -346,7 +338,6 @@ static int syna_tcm_i2c_read(struct syna_tcm_hcd *tcm_hcd, unsigned char *data,
 	struct i2c_msg msg;
 	struct i2c_client *i2c = to_i2c_client(tcm_hcd->pdev->dev.parent);
 
-	LOG_ENTRY();
 	mutex_lock(&tcm_hcd->io_ctrl_mutex);
 
 	msg.addr = i2c->addr;
@@ -374,7 +365,6 @@ static int syna_tcm_i2c_read(struct syna_tcm_hcd *tcm_hcd, unsigned char *data,
 exit:
 	mutex_unlock(&tcm_hcd->io_ctrl_mutex);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -386,7 +376,6 @@ static int syna_tcm_i2c_write(struct syna_tcm_hcd *tcm_hcd, unsigned char *data,
 	struct i2c_msg msg;
 	struct i2c_client *i2c = to_i2c_client(tcm_hcd->pdev->dev.parent);
 
-	LOG_ENTRY();
 	mutex_lock(&tcm_hcd->io_ctrl_mutex);
 
 	msg.addr = i2c->addr;
@@ -414,7 +403,6 @@ static int syna_tcm_i2c_write(struct syna_tcm_hcd *tcm_hcd, unsigned char *data,
 exit:
 	mutex_unlock(&tcm_hcd->io_ctrl_mutex);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -423,7 +411,6 @@ static int syna_tcm_i2c_probe(struct i2c_client *i2c,
 {
 	int retval;
 
-	LOG_ENTRY();
 	LOGV("allocate platform device\n");
 	syna_tcm_i2c_device = platform_device_alloc(PLATFORM_DRIVER_NAME, 0);
 	if (!syna_tcm_i2c_device) {
@@ -463,18 +450,15 @@ static int syna_tcm_i2c_probe(struct i2c_client *i2c,
 		return retval;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
 static int syna_tcm_i2c_remove(struct i2c_client *i2c)
 {
-	LOG_ENTRY();
 	syna_tcm_i2c_device->dev.platform_data = NULL;
 
 	platform_device_unregister(syna_tcm_i2c_device);
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -511,12 +495,10 @@ int syna_tcm_bus_init(void)
 {
 	int retval;
 
-	LOG_ENTRY();
 	retval = i2c_add_driver(&syna_tcm_i2c_driver);
 	if(retval) {
 		LOGV("i2c_del_driver failed! retval = %d\n", retval);
 	}
-	LOG_DONE();
 
 	return retval;
 }
@@ -524,11 +506,9 @@ EXPORT_SYMBOL(syna_tcm_bus_init);
 
 void syna_tcm_bus_exit(void)
 {
-	LOG_ENTRY();
 	kfree(buf);
 
 	i2c_del_driver(&syna_tcm_i2c_driver);
-	LOG_DONE();
 
 	return;
 }

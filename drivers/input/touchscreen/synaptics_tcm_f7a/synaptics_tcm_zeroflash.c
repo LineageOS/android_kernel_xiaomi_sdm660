@@ -198,7 +198,6 @@ static int zeroflash_check_uboot(void)
 	struct rmi_pdt_entry p_entry;
 	struct syna_tcm_hcd *tcm_hcd = zeroflash_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	retval = syna_tcm_rmi_read(tcm_hcd,
 			PDT_END_ADDR,
 			&fn_number,
@@ -258,7 +257,6 @@ static int zeroflash_check_uboot(void)
 		return -ENODEV;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -279,7 +277,6 @@ static int zeroflash_parse_fw_image(void)
 	const unsigned char *image;
 	const unsigned char *content;
 
-	LOG_ENTRY();
 	image = zeroflash_hcd->image;
 	image_info = &zeroflash_hcd->image_info;
 	header = (struct image_header *)image;
@@ -382,7 +379,6 @@ static int zeroflash_parse_fw_image(void)
 		}
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -391,7 +387,6 @@ static int zeroflash_get_fw_image(void)
 	int retval;
 	struct syna_tcm_hcd *tcm_hcd = zeroflash_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	if (zeroflash_hcd->fw_entry != NULL)
 		return 0;
 
@@ -425,7 +420,6 @@ static int zeroflash_get_fw_image(void)
 		return retval;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -434,7 +428,6 @@ static void zeroflash_download_config(void)
 	struct firmware_status *fw_status;
 	struct syna_tcm_hcd *tcm_hcd = zeroflash_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	fw_status = &zeroflash_hcd->fw_status;
 
 	if (!fw_status->need_app_config && !fw_status->need_disp_config) {
@@ -451,15 +444,12 @@ static void zeroflash_download_config(void)
 
 	queue_work(zeroflash_hcd->workqueue, &zeroflash_hcd->config_work);
 
-	LOG_DONE();
 	return;
 }
 
 static void zeroflash_download_firmware(void)
 {
-	LOG_ENTRY();
 	queue_work(zeroflash_hcd->workqueue, &zeroflash_hcd->firmware_work);
-	LOG_DONE();
 
 	return;
 }
@@ -472,7 +462,6 @@ static int zeroflash_download_disp_config(void)
 	struct syna_tcm_hcd *tcm_hcd = zeroflash_hcd->tcm_hcd;
 	static unsigned int retry_count;
 
-	LOG_ENTRY();
 	LOGN(tcm_hcd->pdev->dev.parent,
 			"Downloading display config\n");
 
@@ -571,7 +560,6 @@ unlock_resp:
 unlock_out:
 	UNLOCK_BUFFER(zeroflash_hcd->out);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -584,7 +572,6 @@ static int zeroflash_download_app_config(void)
 	struct syna_tcm_hcd *tcm_hcd = zeroflash_hcd->tcm_hcd;
 	static unsigned int retry_count;
 
-	LOG_ENTRY();
 	LOGN(tcm_hcd->pdev->dev.parent,
 			"Downloading application config\n");
 
@@ -688,7 +675,6 @@ unlock_resp:
 unlock_out:
 	UNLOCK_BUFFER(zeroflash_hcd->out);
 
-	LOG_DONE();
 	return retval;
 }
 
@@ -697,7 +683,6 @@ static void zeroflash_download_config_work(struct work_struct *work)
 	int retval;
 	struct syna_tcm_hcd *tcm_hcd = zeroflash_hcd->tcm_hcd;
 
-	LOG_ENTRY();
 	retval = zeroflash_get_fw_image();
 	if (retval < 0) {
 		LOGE(tcm_hcd->pdev->dev.parent,
@@ -734,7 +719,6 @@ exit:
 
 	zeroflash_download_config();
 
-	LOG_DONE();
 	return;
 }
 
@@ -748,7 +732,6 @@ static int zeroflash_download_app_fw(void)
 	const struct syna_tcm_board_data *bdata = tcm_hcd->hw_if->bdata;
 #endif
 
-	LOG_ENTRY();
 	LOGN(tcm_hcd->pdev->dev.parent,
 			"Downloading application firmware\n");
 
@@ -822,7 +805,6 @@ static int zeroflash_download_app_fw(void)
 	LOGN(tcm_hcd->pdev->dev.parent,
 			"Application firmware downloaded\n");
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -833,7 +815,6 @@ static void zeroflash_download_firmware_work(struct work_struct *work)
 	struct syna_tcm_hcd *tcm_hcd = zeroflash_hcd->tcm_hcd;
 	static unsigned int retry_count;
 
-	LOG_ENTRY();
 	retval = zeroflash_check_uboot();
 	if (retval < 0) {
 		LOGE(tcm_hcd->pdev->dev.parent,
@@ -905,13 +886,11 @@ exit:
 		}
 	}
 
-	LOG_DONE();
 	return;
 }
 
 static int zeroflash_init(struct syna_tcm_hcd *tcm_hcd)
 {
-	LOG_ENTRY();
 	zeroflash_hcd = kzalloc(sizeof(*zeroflash_hcd), GFP_KERNEL);
 	if (!zeroflash_hcd) {
 		LOGE(tcm_hcd->pdev->dev.parent,
@@ -935,13 +914,11 @@ static int zeroflash_init(struct syna_tcm_hcd *tcm_hcd)
 			tcm_hcd->hw_if->bus_io->type == BUS_SPI)
 		zeroflash_download_firmware();
 
-	LOG_DONE();
 	return 0;
 }
 
 static int zeroflash_remove(struct syna_tcm_hcd *tcm_hcd)
 {
-	LOG_ENTRY();
 	if (!zeroflash_hcd)
 		goto exit;
 
@@ -962,7 +939,6 @@ static int zeroflash_remove(struct syna_tcm_hcd *tcm_hcd)
 exit:
 	complete(&zeroflash_remove_complete);
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -971,7 +947,6 @@ static int zeroflash_syncbox(struct syna_tcm_hcd *tcm_hcd)
 	int retval;
 	unsigned char *fw_status;
 
-	LOG_ENTRY();
 	if (!zeroflash_hcd)
 		return 0;
 
@@ -1003,7 +978,6 @@ static int zeroflash_syncbox(struct syna_tcm_hcd *tcm_hcd)
 		break;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1011,13 +985,11 @@ static int zeroflash_reset(struct syna_tcm_hcd *tcm_hcd)
 {
 	int retval;
 
-	LOG_ENTRY();
 	if (!zeroflash_hcd) {
 		retval = zeroflash_init(tcm_hcd);
 		return retval;
 	}
 
-	LOG_DONE();
 	return 0;
 }
 
@@ -1036,7 +1008,7 @@ static struct syna_tcm_module_cb zeroflash_module = {
 static int __init zeroflash_module_init(void)
 {
 	int retval;
-	LOG_ENTRY();
+
 	/* add check F7A LCM by wanghan start */
 	if(!lct_syna_verify_flag)
 		return -ENODEV;
@@ -1046,18 +1018,16 @@ static int __init zeroflash_module_init(void)
 	if(retval) {
 		LOGV("syna_tcm_add_module failed! retval = %d\n", retval);
 	}
-	LOG_DONE();
+
 	return retval;
 }
 
 static void __exit zeroflash_module_exit(void)
 {
-	LOG_ENTRY();
 	syna_tcm_add_module(&zeroflash_module, false);
 
 	wait_for_completion(&zeroflash_remove_complete);
 
-	LOG_DONE();
 	return;
 }
 

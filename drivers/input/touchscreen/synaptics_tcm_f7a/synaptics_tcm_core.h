@@ -73,26 +73,12 @@
 #define LOGW(dev, log, ...) LOGy(dev_warn, dev, log, ##__VA_ARGS__)
 #define LOGE(dev, log, ...) LOGy(dev_err, dev, log, ##__VA_ARGS__)
 
-
-
 #if 1
 #define LOGV(log, ...) \
 	printk(KERN_ERR "[synaptics] %s (line %d): " log, __func__, __LINE__, ##__VA_ARGS__)
 #else
 #define LOGV(log, ...) {}
 #endif
-
-#if 0
-#define LOG_ENTRY() \
-	printk(KERN_WARNING "[synaptics][debug] %s (file %s line %d) Entry.\n", __func__, __FILE__, __LINE__)
-#define LOG_DONE() \
-	printk(KERN_WARNING "[synaptics][debug] %s (file %s line %d) Done.\n", __func__, __FILE__, __LINE__)
-#else
-#define LOG_ENTRY() {}
-#define LOG_DONE() {}
-#endif
-
-
 
 #define INIT_BUFFER(buffer, is_clone) \
 	mutex_init(&buffer.buf_mutex); \
