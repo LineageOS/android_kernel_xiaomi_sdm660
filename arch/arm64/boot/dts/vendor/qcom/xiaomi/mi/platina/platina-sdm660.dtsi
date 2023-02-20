@@ -256,10 +256,12 @@
 	};
 };
 
+/*
 &pm660_coincell {
 	qcom,vset-millivolts = <3200>;
 	qcom,charge-enable = <1>;
 };
+*/
 
 &pm660_haptics {
 	status = "okay";

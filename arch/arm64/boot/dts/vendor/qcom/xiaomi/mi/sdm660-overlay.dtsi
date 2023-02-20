@@ -510,11 +510,14 @@
 	qcom,pet-time = <15000>;
 };
 
+/*
 &sensor_information15 {
 	qcom,sensor-name = "cam_therm0";
 };
+*/
 
 &soc {
+/*
 	qcom,sensor-information {
 		sensor_information22: qcom,sensor-information-22 {
 			qcom,sensor-type =  "adc";
@@ -525,6 +528,7 @@
 			qcom,sensor-name = "backlight_therm";
 		};
 	};
+*/
 
 	qcom,bcl {
 		qcom,ibat-monitor {
