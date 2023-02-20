@@ -1,0 +1,1 @@
+#define CONFIG_SND_SOC_USB_HEADSET 1
