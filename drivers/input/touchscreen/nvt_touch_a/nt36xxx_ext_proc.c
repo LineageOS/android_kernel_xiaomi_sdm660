@@ -29,7 +29,6 @@
 #define NVT_BASELINE "nvt_baseline"
 #define NVT_RAW "nvt_raw"
 #define NVT_DIFF "nvt_diff"
-#define NVT_XIAOMI_LOCKDOWN_INFO "tp_lockdown_info"
 
 #define I2C_TANSFER_LENGTH  64
 
@@ -40,11 +39,6 @@
 
 #define XDATA_SECTOR_SIZE   256
 
-
-extern int32_t Init_BootLoader(void);
-extern int32_t Resume_PD(void);
-
-
 static uint8_t xdata_tmp[2048] = {0};
 static int32_t xdata[2048] = {0};
 static int32_t xdata_i[2048] = {0};
@@ -54,14 +48,6 @@ static struct proc_dir_entry *NVT_proc_fw_version_entry;
 static struct proc_dir_entry *NVT_proc_baseline_entry;
 static struct proc_dir_entry *NVT_proc_raw_entry;
 static struct proc_dir_entry *NVT_proc_diff_entry;
-static struct proc_dir_entry *NVT_proc_xiaomi_lockdown_info_entry;
-uint8_t tp_maker_cg_lamination = 0;
-uint8_t display_maker = 0;
-uint8_t cg_ink_color = 0;
-uint8_t hw_version = 0;
-uint8_t project_id = 0;
-uint8_t cg_maker = 0;
-uint8_t reservation_byte = 0;
 
 /*******************************************************
 Description:
@@ -592,198 +578,6 @@ static const struct file_operations nvt_diff_fops = {
 	.llseek = seq_lseek,
 	.release = seq_release,
 };
-static int32_t nvt_get_oem_data(uint8_t *data, uint32_t flash_address, int32_t size)
-{
-	uint8_t buf[64] = {0};
-	uint8_t tmp_data[512] = {0};
-	int32_t count_256 = 0;
-	uint32_t cur_flash_addr = 0;
-	uint32_t cur_sram_addr = 0;
-	uint16_t checksum_get = 0;
-	uint16_t checksum_cal = 0;
-	int32_t i = 0;
-	int32_t j = 0;
-	int32_t ret = 0;
-	int32_t retry = 0;
-
-	NVT_LOG("++\n");
-
-
-	if (size % 256)
-		count_256 = size / 256 + 1;
-	else
-		count_256 = size / 256;
-
-get_oem_data_retry:
-	nvt_sw_reset_idle();
-
-
-	nvt_stop_crc_reboot();
-
-
-	ret = Init_BootLoader();
-	if (ret < 0) {
-		goto get_oem_data_out;
-	}
-
-
-	ret = Resume_PD();
-	if (ret < 0) {
-		goto get_oem_data_out;
-	}
-
-
-	buf[0] = 0x00;
-	buf[1] = 0x35;
-	CTP_I2C_WRITE(ts->client, I2C_HW_Address, buf, 2);
-	msleep(10);
-
-	for (i = 0; i < count_256; i++) {
-		cur_flash_addr = flash_address + i * 256;
-
-		buf[0] = 0x00;
-		buf[1] = 0x03;
-		buf[2] = ((cur_flash_addr >> 16) & 0xFF);
-		buf[3] = ((cur_flash_addr >> 8) & 0xFF);
-		buf[4] = (cur_flash_addr & 0xFF);
-		buf[5] = 0x00;
-		buf[6] = 0xFF;
-		CTP_I2C_WRITE(ts->client, I2C_HW_Address, buf, 7);
-		msleep(10);
-
-		buf[0] = 0x00;
-		buf[2] = 0x00;
-		CTP_I2C_READ(ts->client, I2C_HW_Address, buf, 2);
-		if (buf[1] != 0xAA) {
-			NVT_ERR("Check 0xAA (Read Command) error!! status=0x%02X\n", buf[1]);
-			ret = -1;
-			goto get_oem_data_out;
-		}
-		msleep(10);
-
-
-		for (j = 0; j < ((256 / 32) + 1); j++) {
-			cur_sram_addr = ts->mmap->READ_FLASH_CHECKSUM_ADDR + j * 32;
-			buf[0] = 0xFF;
-			buf[1] = (cur_sram_addr >> 16) & 0xFF;
-			buf[2] = (cur_sram_addr  >> 8) & 0xFF;
-			CTP_I2C_WRITE(ts->client, I2C_BLDR_Address, buf, 3);
-
-			buf[0] = cur_sram_addr & 0xFF;
-			CTP_I2C_READ(ts->client, I2C_BLDR_Address, buf, 33);
-
-			memcpy(tmp_data + j * 32, buf + 1, 32);
-		}
-
-		checksum_get = (uint16_t)((tmp_data[1] << 8) | tmp_data[0]);
-
-		checksum_cal = (uint16_t)((cur_flash_addr >> 16) & 0xFF) + (uint16_t)((cur_flash_addr >> 8) & 0xFF) + (cur_flash_addr & 0xFF) + 0x00 + 0xFF;
-		for (j = 0; j < 256; j++) {
-			checksum_cal += tmp_data[j + 2];
-		}
-		checksum_cal = 65535 - checksum_cal + 1;
-
-
-		if (checksum_get != checksum_cal) {
-			if (retry < 3) {
-				retry++;
-				goto get_oem_data_retry;
-			} else {
-				NVT_ERR("Checksum not match error! checksum_get=0x%04X, checksum_cal=0x%04X, i=%d\n", checksum_get, checksum_cal, i);
-				ret = -2;
-				goto get_oem_data_out;
-			}
-		}
-
-
-		if ((i + 1) * 256 > size) {
-			memcpy(data + i * 256, tmp_data + 2, size - i * 256);
-		} else {
-			memcpy(data + i * 256, tmp_data + 2, 256);
-		}
-	}
-
-#if 0
-	for (i = 0; i < size; i++) {
-		if (i % 16 == 0)
-			printk("\n");
-		printk("%02X ", data[i]);
-	}
-	printk("\n");
-#endif
-
-get_oem_data_out:
-	nvt_bootloader_reset();
-	nvt_check_fw_reset_state(RESET_STATE_INIT);
-
-	NVT_LOG("--\n");
-
-	return ret;
-}
-
-int32_t nvt_get_xiaomi_lockdown_info(void)
-{
-	uint8_t data_buf[8] = {0};
-	int ret = 0;
-
-	ret = nvt_get_oem_data(data_buf, 0x1E000, 8);
-
-	if (ret < 0) {
-		NVT_ERR("get oem data failed!\n");
-	} else {
-		tp_maker_cg_lamination = data_buf[0];
-		NVT_LOG("The maker of Touch Panel & CG Lamination: 0x%02X\n", tp_maker_cg_lamination);
-		display_maker = data_buf[1];
-		NVT_LOG("Display maker: 0x%02X\n", display_maker);
-		cg_ink_color = data_buf[2];
-		NVT_LOG("CG ink color: 0x%02X\n", cg_ink_color);
-		hw_version = data_buf[3];
-		NVT_LOG("HW version: 0x%02X\n", hw_version);
-		project_id = ((data_buf[4] << 8) | data_buf[5]);
-		NVT_LOG("Project ID: 0x%04X\n", project_id);
-		cg_maker = data_buf[6];
-		NVT_LOG("CG maker: 0x%02X\n", cg_maker);
-		reservation_byte = data_buf[7];
-		NVT_LOG("Reservation byte: 0x%02X\n", reservation_byte);
-	}
-
-	return ret;
-}
-
-static int nvt_xiaomi_lockdown_info_show(struct seq_file *m, void *v)
-{
-	seq_printf(m, "%02X%02X%02X%02X%04X%02X%02X\n", tp_maker_cg_lamination, display_maker, cg_ink_color, hw_version, project_id, cg_maker, reservation_byte);
-
-
-	return 0;
-}
-
-static int32_t nvt_xiaomi_lockdown_info_open(struct inode *inode, struct file *file)
-{
-	if (mutex_lock_interruptible(&ts->lock)) {
-		return -ERESTARTSYS;
-	}
-
-	NVT_LOG("++\n");
-
-#if NVT_TOUCH_ESD_PROTECT
-	nvt_esd_check_enable(false);
-#endif /* #if NVT_TOUCH_ESD_PROTECT */
-
-	mutex_unlock(&ts->lock);
-
-	NVT_LOG("--\n");
-
-	return single_open(file, nvt_xiaomi_lockdown_info_show, NULL);
-}
-
-static const struct file_operations nvt_xiaomi_lockdown_info_fops = {
-	.owner = THIS_MODULE,
-	.open = nvt_xiaomi_lockdown_info_open,
-	.read = seq_read,
-	.llseek = seq_lseek,
-	.release = single_release,
-};
 
 /*******************************************************
 Description:
@@ -825,14 +619,6 @@ int32_t nvt_extra_proc_init(void)
 		return -ENOMEM;
 	} else {
 		NVT_LOG("create proc/nvt_diff Succeeded!\n");
-	}
-
-	NVT_proc_xiaomi_lockdown_info_entry = proc_create(NVT_XIAOMI_LOCKDOWN_INFO, 0444, NULL, &nvt_xiaomi_lockdown_info_fops);
-	if (NVT_proc_xiaomi_lockdown_info_entry == NULL) {
-		NVT_ERR("create proc/%s Failed!\n", NVT_XIAOMI_LOCKDOWN_INFO);
-		return -ENOMEM;
-	} else {
-		NVT_LOG("create proc/%s Succeeded!\n", NVT_XIAOMI_LOCKDOWN_INFO);
 	}
 
 	return 0;
