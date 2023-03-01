@@ -304,8 +304,9 @@
 	};
 };
 
-&soc {
+&q6core {
 	sound {
+		status = "ok";
 		qcom,msm-mi2s-master = <0>, <1>, <0>, <0>;
 		qcom,msm-mi2s-ext-mclk = <1>,<0>,<0>,<0>;
 		qcom,wsa-max-devs = <0>;
@@ -317,7 +318,9 @@
 		qcom,usbc-analog-en1_gpio = <&pm660_gpios 13 0>;
 		qcom,us-euro-gpios = <&us_euro_gpio>;
 	};
+};
 
+&soc {
 	qcom,msm-dai-mi2s {
 		compatible = "qcom,msm-dai-mi2s";
 		dai_mi2s1: qcom,msm-dai-q6-mi2s-sec {
