@@ -24,7 +24,7 @@
 
 #define LPI_AUTO_SUSPEND_DELAY          100 /* delay in msec */
 
-#define LPI_ADDRESS_SIZE			0xC000
+#define LPI_ADDRESS_SIZE			0x20000
 
 #define LPI_GPIO_REG_VAL_CTL			0x00
 #define LPI_GPIO_REG_DIR_CTL			0x04
