@@ -829,6 +829,7 @@ struct csr_roam_profile {
 	tSirMacRateSet  extended_rates;
 	struct qdf_mac_addr bssid_hint;
 	bool force_24ghz_in_ht20;
+	bool require_h2e;
 	uint32_t cac_duration_ms;
 	uint32_t dfs_regdomain;
 #ifdef WLAN_FEATURE_FILS_SK
@@ -1362,6 +1363,26 @@ struct wep_update_default_key_idx {
 	uint8_t default_idx;
 };
 
+/**
+ * enum roam_rt_stats_params: different types of params to set or get roam
+ * events stats for the vdev
+ * @ROAM_RT_STATS_ENABLE:              Roam stats feature if enable/not
+ * @ROAM_RT_STATS_SUSPEND_MODE_ENABLE: Roam stats wow event if sent to FW/not
+ */
+enum roam_rt_stats_params {
+	ROAM_RT_STATS_ENABLE,
+	ROAM_RT_STATS_SUSPEND_MODE_ENABLE,
+};
+/**
+ * struct csr_roam_rt_stats - Roam events stats update
+ * @roam_stats_enabled: set 1 if roam stats feature is enabled from userspace
+ * @roam_stats_wow_sent: set 1 if roam stats wow event is sent to FW
+ */
+struct csr_roam_rt_stats {
+	uint8_t roam_stats_enabled;
+	uint8_t roam_stats_wow_sent;
+};
+
 typedef QDF_STATUS (*csr_roam_complete_cb)(void *context,
 					   struct csr_roam_info *param,
 					   uint32_t roam_id,
@@ -1581,4 +1602,27 @@ csr_update_pmf_cap_from_connected_profile(tCsrRoamConnectedProfile *profile,
 					  struct scan_filter *filter)
 {}
 #endif
+
+#ifdef WLAN_FEATURE_ROAM_OFFLOAD
+/**
+ * csr_roam_send_rt_stats_config() - Send roam event stats cfg value to FW
+ * @psoc: PSOC pointer
+ * @vdev_id: vdev id
+ * @param_value: roam stats enable/disable cfg
+ *
+ * Return: QDF_STATUS
+ */
+QDF_STATUS
+csr_roam_send_rt_stats_config(struct wlan_objmgr_psoc *psoc,
+			      uint8_t vdev_id, uint8_t param_value);
+
+#else
+static inline QDF_STATUS
+csr_roam_send_rt_stats_config(struct wlan_objmgr_psoc *psoc,
+			      uint8_t vdev_id, uint8_t param_value)
+{
+	return QDF_STATUS_E_NOSUPPORT;
+}
+#endif
+
 #endif
