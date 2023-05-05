@@ -595,10 +595,44 @@ void sme_get_pmk_info(mac_handle_t mac_handle, uint8_t session_id,
 QDF_STATUS sme_roam_set_psk_pmk(mac_handle_t mac_handle, uint8_t sessionId,
 				uint8_t *psk_pmk, size_t pmk_len,
 				bool update_to_fw);
+/**
+ * sme_roam_events_register_callback() - Register roam events callback
+ * @mac_handle: Opaque handle to the MAC context
+ * @roam_rt_stats_cb: Function to be invoked for roam events stats
+ *
+ * This function will register a callback for roams events stats.
+ *
+ * Return: void
+ */
+void sme_roam_events_register_callback(mac_handle_t mac_handle,
+				       void (*roam_rt_stats_cb)(
+				       hdd_handle_t hdd_handle,
+				struct mlme_roam_debug_info *roam_stats));
+/**
+ * sme_roam_events_deregister_callback() - DeRegister roam events callback
+ * @mac_handle: Opaque handle to the MAC context
+ *
+ * This function will deregister the callback of roams events stats.
+ *
+ * Return: void
+ */
+void sme_roam_events_deregister_callback(mac_handle_t mac_handle);
+
 #else
 static inline
 void sme_get_pmk_info(mac_handle_t mac_handle, uint8_t session_id,
 		      tPmkidCacheInfo *pmk_cache)
+{}
+
+static inline void
+sme_roam_events_register_callback(mac_handle_t mac_handle,
+				  void (*roam_rt_stats_cb)(
+				  hdd_handle_t hdd_handle,
+				  struct mlme_roam_debug_info *roam_stats))
+{}
+
+static inline
+void sme_roam_events_deregister_callback(mac_handle_t mac_handle)
 {}
 
 static inline QDF_STATUS
@@ -2972,6 +3006,53 @@ QDF_STATUS sme_handle_sae_msg(mac_handle_t mac_handle,
 			      uint8_t sae_status,
 			      struct qdf_mac_addr peer_mac_addr,
 			      const uint8_t *pmkid)
+{
+	return QDF_STATUS_SUCCESS;
+}
+#endif
+
+#ifdef WLAN_FEATURE_ROAM_OFFLOAD
+void
+sme_update_roam_rt_stats(struct wlan_objmgr_psoc *psoc,
+			 uint8_t value, enum roam_rt_stats_params stats);
+
+uint8_t
+sme_get_roam_rt_stats(struct wlan_objmgr_psoc *psoc,
+		      enum roam_rt_stats_params stats);
+
+/**
+ * sme_roam_send_rt_stats_config() - Enable/Disable Roam event stats from FW
+ * @pdev: Pointer to pdev
+ * @vdev_id: vdev id
+ * @param_value: Value set based on the userspace attributes.
+ * param_value - 0: if configure attribute is 0
+ *               1: if configure is 1 and suspend_state is not set
+ *               3: if configure is 1 and suspend_state is set
+ *
+ * Return: QDF_STATUS
+ */
+QDF_STATUS
+sme_roam_send_rt_stats_config(struct wlan_objmgr_pdev *pdev,
+			      uint8_t vdev_id, uint8_t param_value);
+
+#else
+static inline
+void sme_update_roam_rt_stats(struct wlan_objmgr_psoc *psoc,
+			      uint8_t value,
+			      enum roam_rt_stats_params stats)
+{
+}
+
+static inline
+uint8_t sme_get_roam_rt_stats(struct wlan_objmgr_psoc *psoc,
+			      enum roam_rt_stats_params stats)
+{
+	return 0;
+}
+
+static inline
+QDF_STATUS sme_roam_send_rt_stats_config(struct wlan_objmgr_pdev *pdev,
+					 uint8_t vdev_id, uint8_t param_value)
 {
 	return QDF_STATUS_SUCCESS;
 }

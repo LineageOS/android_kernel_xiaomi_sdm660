@@ -38,6 +38,7 @@
 #include "sme_power_save.h"
 #include "wmi_unified.h"
 #include "wmi_unified_param.h"
+#include "wlan_mlme_public_struct.h"
 
 struct wmi_twt_enable_complete_event_param;
 /*--------------------------------------------------------------------------
@@ -406,6 +407,10 @@ struct sme_context {
 #endif
 	sme_get_raom_scan_ch_callback roam_scan_ch_callback;
 	void *roam_scan_ch_get_context;
+#ifdef WLAN_FEATURE_ROAM_OFFLOAD
+	void (*roam_rt_stats_cb)(hdd_handle_t hdd_handle,
+				 struct mlme_roam_debug_info *roam_stats);
+#endif
 };
 
 #endif /* #if !defined( __SMEINTERNAL_H ) */

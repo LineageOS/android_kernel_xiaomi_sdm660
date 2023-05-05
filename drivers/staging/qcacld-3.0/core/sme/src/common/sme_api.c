@@ -5466,45 +5466,6 @@ sme_handle_generic_change_country_code(struct mac_context *mac_ctx,
 				       void *msg_buf)
 {
 	QDF_STATUS status = QDF_STATUS_SUCCESS;
-	v_REGDOMAIN_t reg_domain_id = 0;
-	bool user_ctry_priority =
-		mac_ctx->mlme_cfg->sap_cfg.country_code_priority;
-	tAniGenericChangeCountryCodeReq *msg = msg_buf;
-
-	if (SOURCE_11D != mac_ctx->reg_hint_src) {
-		if (SOURCE_DRIVER != mac_ctx->reg_hint_src) {
-			if (user_ctry_priority)
-				mac_ctx->mlme_cfg->gen.enabled_11d = false;
-			else {
-				if (mac_ctx->mlme_cfg->gen.enabled_11d &&
-				    mac_ctx->scan.countryCode11d[0] != 0) {
-
-					sme_debug("restore 11d");
-
-					status =
-					csr_get_regulatory_domain_for_country(
-						mac_ctx,
-						mac_ctx->scan.countryCode11d,
-						&reg_domain_id,
-						SOURCE_11D);
-					return QDF_STATUS_E_FAILURE;
-				}
-			}
-		}
-	} else {
-		/* if kernel gets invalid country code; it
-		 *  resets the country code to world
-		 */
-		if (('0' != msg->countryCode[0]) ||
-		    ('0' != msg->countryCode[1]))
-			qdf_mem_copy(mac_ctx->scan.countryCode11d,
-				     msg->countryCode,
-				     CFG_COUNTRY_CODE_LEN);
-	}
-
-	qdf_mem_copy(mac_ctx->scan.countryCodeCurrent,
-		     msg->countryCode,
-		     CFG_COUNTRY_CODE_LEN);
 
 	/* get the channels based on new cc */
 	status = csr_get_channel_and_power_list(mac_ctx);
@@ -5518,13 +5479,6 @@ sme_handle_generic_change_country_code(struct mac_context *mac_ctx,
 	csr_apply_channel_power_info_wrapper(mac_ctx);
 
 	csr_scan_filter_results(mac_ctx);
-
-	/* scans after the country is set by User hints or
-	 * Country IE
-	 */
-	mac_ctx->scan.curScanType = eSIR_ACTIVE_SCAN;
-
-	mac_ctx->reg_hint_src = SOURCE_UNKNOWN;
 
 	sme_disconnect_connected_sessions(mac_ctx,
 					  eSIR_MAC_UNSPEC_FAILURE_REASON);
@@ -16572,3 +16526,46 @@ end:
 	sme_release_global_lock(&mac->sme);
 	return status;
 }
+
+#ifdef WLAN_FEATURE_ROAM_OFFLOAD
+void
+sme_update_roam_rt_stats(struct wlan_objmgr_psoc *psoc,
+			 uint8_t value, enum roam_rt_stats_params stats)
+{
+	csr_update_roam_rt_stats(psoc, value, stats);
+}
+
+uint8_t
+sme_get_roam_rt_stats(struct wlan_objmgr_psoc *psoc,
+		      enum roam_rt_stats_params stats)
+{
+	return csr_get_roam_rt_stats(psoc, stats);
+}
+
+QDF_STATUS
+sme_roam_send_rt_stats_config(struct wlan_objmgr_pdev *pdev,
+			      uint8_t vdev_id, uint8_t param_value)
+{
+	struct wlan_objmgr_psoc *psoc = wlan_pdev_get_psoc(pdev);
+
+	return csr_roam_send_rt_stats_config(psoc, vdev_id, param_value);
+}
+
+void sme_roam_events_register_callback(mac_handle_t mac_handle,
+				       void (*roam_rt_stats_cb)(
+				       hdd_handle_t hdd_handle,
+				struct mlme_roam_debug_info *roam_stats))
+{
+	struct mac_context *mac = MAC_CONTEXT(mac_handle);
+	if (!mac) {
+		sme_err("Invalid mac context");
+		return;
+	}
+	mac->sme.roam_rt_stats_cb = roam_rt_stats_cb;
+}
+
+void sme_roam_events_deregister_callback(mac_handle_t mac_handle)
+{
+       sme_roam_events_register_callback(mac_handle, NULL);
+}
+#endif /* WLAN_FEATURE_ROAM_OFFLOAD */

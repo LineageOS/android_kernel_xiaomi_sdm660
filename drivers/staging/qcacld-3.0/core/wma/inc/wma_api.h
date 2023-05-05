@@ -724,4 +724,10 @@ int wma_wlm_stats_rsp(void *wma_ctx, uint8_t *event, uint32_t len);
  */
 void wma_update_roam_offload_flag(void *handle,
 				  struct roam_init_params *params);
+#ifdef WLAN_FEATURE_ROAM_OFFLOAD
+QDF_STATUS wma_roam_rt_stats_config_set_param(wmi_unified_t wmi_handle,
+					      uint8_t vdev_id,
+					      uint32_t rstats_config);
+#endif
+
 #endif /* WMA_API_H */

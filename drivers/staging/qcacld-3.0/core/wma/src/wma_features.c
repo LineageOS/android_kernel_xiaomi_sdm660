@@ -1647,6 +1647,8 @@ static const uint8_t *wma_wow_wake_reason_str(A_INT32 wake_reason)
 		return "PAGE_FAULT";
 	case WOW_REASON_ROAM_PMKID_REQUEST:
 		return "ROAM_PMKID_REQUEST";
+	case WOW_REASON_ROAM_STATS:
+		return "ROAM_STATS";
 	default:
 		return "unknown";
 	}
@@ -2789,6 +2791,10 @@ static int wma_wake_event_no_payload(
 	case WOW_REASON_NLOD:
 		return wma_wake_reason_nlod(wma, wake_info->vdev_id);
 
+	case WOW_REASON_ROAM_STATS:
+		wma_info("Wake reason %s",
+			  wma_wow_wake_reason_str(wake_info->wake_reason));
+		return 0;
 	default:
 		return 0;
 	}

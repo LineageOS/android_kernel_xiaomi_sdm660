@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2022 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -646,11 +647,6 @@ static void csr_diag_reset_country_information(struct mac_context *mac)
 				mac->mlme_cfg->power.max_tx_power);
 		}
 	}
-	if (!mac->mlme_cfg->gen.enabled_11d)
-		p11dLog->supportMultipleDomain = WLAN_80211D_DISABLED;
-	else
-		p11dLog->supportMultipleDomain =
-			WLAN_80211D_SUPPORT_MULTI_DOMAIN;
 	WLAN_HOST_DIAG_LOG_REPORT(p11dLog);
 }
 #endif /* FEATURE_WLAN_DIAG_SUPPORT_CSR */
@@ -3096,8 +3092,7 @@ void csr_init_occupied_channels_list(struct mac_context *mac_ctx,
 	qdf_list_node_t *next_lst = NULL;
 	struct scan_cache_node *cur_node = NULL;
 	struct scan_filter *filter;
-	tpCsrNeighborRoamControlInfo neighbor_roam_info =
-		&mac_ctx->roam.neighborRoamInfo[sessionId];
+	tpCsrNeighborRoamControlInfo neighbor_roam_info;
 	tCsrRoamConnectedProfile *profile = NULL;
 	uint8_t ch;
 
@@ -3106,6 +3101,8 @@ void csr_init_occupied_channels_list(struct mac_context *mac_ctx,
 		sme_debug("Invalid session");
 		return;
 	}
+	neighbor_roam_info = &mac_ctx->roam.neighborRoamInfo[sessionId];
+
 	if (neighbor_roam_info->cfgParams.specific_chan_info.numOfChannels) {
 		/*
 		 * Ini file contains neighbor scan channel list, hence NO need

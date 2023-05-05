@@ -255,7 +255,25 @@ int wma_roam_auth_offload_event_handler(WMA_HANDLE handle, uint8_t *event,
  */
 int wma_roam_stats_event_handler(WMA_HANDLE handle, uint8_t *event,
 				 uint32_t len);
-
+/**
+ * wma_report_real_time_roam_stats - Gathers/Sends the roam events stats
+ * @psoc:      Pointer to psoc structure
+ * @vdev_id:   Vdev ID
+ * @events:    Event/Notif type from roam event/roam stats event
+ * @roam_info: Roam stats from the roam stats event
+ * @value:     Notif param value from the roam event
+ * @reason:    Notif param value from the roam event that carries trigger reason
+ *
+ * Gathers the roam stats from the roam event and the roam stats event and
+ * sends them to hdd for filling the vendor attributes.
+ *
+ * Return: none
+ */
+void wma_report_real_time_roam_stats(struct wlan_objmgr_psoc *psoc,
+				     uint8_t vdev_id,
+				     enum roam_rt_stats_type events,
+				     struct mlme_roam_debug_info *roam_info,
+				     uint32_t value, uint32_t reason);
 /**
  * wma_mlme_roam_synch_event_handler_cb() - roam synch event handler
  * @handle: wma handle
@@ -304,6 +322,14 @@ wma_roam_pmkid_request_event_handler(void *handle,
 {
 	return 0;
 }
+
+static inline void
+wma_report_real_time_roam_stats(struct wlan_objmgr_psoc *psoc,
+				uint8_t vdev_id,
+				enum roam_rt_stats_type events,
+				struct mlme_roam_debug_info *roam_info,
+				uint32_t value, uint32_t reason)
+{}
 #endif
 
 #ifdef WLAN_FEATURE_ROAM_OFFLOAD
