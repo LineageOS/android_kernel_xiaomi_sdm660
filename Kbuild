@@ -1668,6 +1668,8 @@ HIF_USB_OBJS := $(WLAN_COMMON_ROOT)/$(HIF_USB_DIR)/usbdrv.o \
                 $(WLAN_COMMON_ROOT)/$(HIF_USB_DIR)/if_usb.o \
                 $(WLAN_COMMON_ROOT)/$(HIF_USB_DIR)/regtable_usb.o
 
+ccflags-y += -Wno-strict-prototypes
+
 HIF_SDIO_OBJS := $(WLAN_COMMON_ROOT)/$(HIF_SDIO_DIR)/hif_diag_reg_access.o \
                  $(WLAN_COMMON_ROOT)/$(HIF_SDIO_DIR)/hif_sdio_dev.o \
                  $(WLAN_COMMON_ROOT)/$(HIF_SDIO_DIR)/hif_sdio.o \
