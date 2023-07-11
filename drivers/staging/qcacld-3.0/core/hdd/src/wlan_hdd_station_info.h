@@ -25,6 +25,9 @@
  * WLAN Host Device Driver STATION info API specification
  */
 
+#define DISCONNECT_REASON \
+	QCA_WLAN_VENDOR_ATTR_GET_STATION_INFO_DRIVER_DISCONNECT_REASON
+
 #ifdef FEATURE_STATION_INFO
 /**
  * wlan_hdd_cfg80211_get_station_cmd() - Handle get station vendor cmd
