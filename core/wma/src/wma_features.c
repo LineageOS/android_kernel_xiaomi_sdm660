@@ -2992,13 +2992,13 @@ static void wma_wake_event_log_reason(t_wma_handle *wma,
 	/* "Unspecified" means APPS triggered wake, else firmware triggered */
 	if (wake_info->wake_reason != WOW_REASON_UNSPECIFIED) {
 		vdev = &wma->interfaces[wake_info->vdev_id];
-		WMA_LOGA("WLAN triggered wakeup: %s (%d), vdev: %d (%s)",
+		wma_nofl_info("WLAN triggered wakeup: %s (%d), vdev: %d (%s)",
 			 wma_wow_wake_reason_str(wake_info->wake_reason),
 			 wake_info->wake_reason,
 			 wake_info->vdev_id,
 			 wma_vdev_type_str(vdev->type));
 	} else if (!wmi_get_runtime_pm_inprogress(wma->wmi_handle)) {
-		WMA_LOGA("Non-WLAN triggered wakeup: %s (%d)",
+		wma_nofl_info("Non-WLAN triggered wakeup: %s (%d)",
 			 wma_wow_wake_reason_str(wake_info->wake_reason),
 			 wake_info->wake_reason);
 	}
@@ -3111,7 +3111,7 @@ int wma_pdev_resume_event_handler(void *handle, uint8_t *event, uint32_t len)
 {
 	tp_wma_handle wma = (tp_wma_handle) handle;
 
-	WMA_LOGA("Received PDEV resume event");
+	wma_nofl_info("Received PDEV resume event");
 
 	ucfg_pmo_psoc_wakeup_host_event_received(wma->psoc);
 
