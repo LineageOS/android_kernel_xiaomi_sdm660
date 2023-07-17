@@ -1331,7 +1331,15 @@ lim_process_auth_frame(struct mac_context *mac_ctx, uint8_t *rx_pkt_info,
 		return;
 	}
 
-	/* save seq number in pe_session */
+	/* Duplicate Auth frame from peer */
+	auth_node = lim_search_pre_auth_list(mac_ctx, mac_hdr->sa);
+	if (auth_node && (auth_node->seq_num == curr_seq_num)) {
+		pe_err("Received an already processed auth frame with seq_num : %d",
+		       curr_seq_num);
+		return;
+	}
+
+	/* save seq number and mac_addr in pe_session */
 	pe_session->prev_auth_seq_num = curr_seq_num;
 
 	body_ptr = WMA_GET_RX_MPDU_DATA(rx_pkt_info);
@@ -1473,7 +1481,6 @@ lim_process_auth_frame(struct mac_context *mac_ctx, uint8_t *rx_pkt_info,
 		 * Authentication frame3 and there is a context for requesting
 		 * STA. If not, reject with unspecified failure status code
 		 */
-		auth_node = lim_search_pre_auth_list(mac_ctx, mac_hdr->sa);
 		if (!auth_node) {
 			pe_err("rx Auth frame with no preauth ctx with WEP bit set "
 				QDF_MAC_ADDR_STR,
