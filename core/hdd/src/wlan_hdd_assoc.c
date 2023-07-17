@@ -3001,7 +3001,9 @@ hdd_association_completion_handler(struct hdd_adapter *adapter,
 				(u8 *) (roam_info->pbFrames +
 					roam_info->nBeaconLength +
 					roam_info->nAssocReqLength);
-			if (assoc_rsp) {
+			if (assoc_rsp &&
+			    roam_info->nAssocRspLength >
+			    FT_ASSOC_RSP_IES_OFFSET) {
 				/*
 				 * assoc_rsp needs to point to the IEs
 				 */
@@ -3020,7 +3022,9 @@ hdd_association_completion_handler(struct hdd_adapter *adapter,
 			assoc_req = (u8 *) (roam_info->pbFrames +
 					      roam_info->nBeaconLength);
 			if (assoc_req) {
-				if (!ft_carrier_on) {
+				if (!ft_carrier_on &&
+				    roam_info->nAssocReqLength >
+				    FT_ASSOC_REQ_IES_OFFSET) {
 					/*
 					 * assoc_req needs to point to
 					 * the IEs
