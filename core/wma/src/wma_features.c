@@ -1979,16 +1979,13 @@ static int wow_get_wmi_eventid(int32_t reason, uint32_t tag)
 		event_id = wma_ndp_get_eventid_from_tlvtag(tag);
 		break;
 	case WOW_REASON_TDLS_CONN_TRACKER_EVENT:
-		event_id = WOW_TDLS_CONN_TRACKER_EVENT;
+		event_id = WMI_TDLS_PEER_EVENTID;
 		break;
 	case WOW_REASON_ROAM_HO:
 		event_id = WMI_ROAM_EVENTID;
 		break;
 	case WOW_REASON_11D_SCAN:
 		event_id = WMI_11D_NEW_COUNTRY_EVENTID;
-		break;
-	case WOW_ROAM_PREAUTH_START_EVENT:
-		event_id = WMI_ROAM_PREAUTH_STATUS_CMDID;
 		break;
 	case WOW_REASON_ROAM_PMKID_REQUEST:
 		event_id = WMI_ROAM_PMKID_REQUEST_EVENTID;
