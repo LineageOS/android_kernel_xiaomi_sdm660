@@ -6751,6 +6751,13 @@ QDF_STATUS hdd_reset_all_adapters(struct hdd_context *hdd_ctx)
 
 		hdd_stop_tsf_sync(adapter);
 
+		if (wlan_hdd_is_session_type_monitor(adapter->device_mode) &&
+			adapter->vdev) {
+			ucfg_pkt_capture_deregister_callbacks(adapter->vdev);
+			hdd_objmgr_put_vdev(adapter->vdev);
+			adapter->vdev = NULL;
+		}
+
 		hdd_softap_deinit_tx_rx(adapter);
 		hdd_deregister_hl_netdev_fc_timer(adapter);
 		hdd_deregister_tx_flow_control(adapter);
