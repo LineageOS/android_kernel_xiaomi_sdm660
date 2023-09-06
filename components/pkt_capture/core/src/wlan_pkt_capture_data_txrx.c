@@ -108,6 +108,7 @@ static unsigned char pkt_capture_get_tx_rate(
 		case 0x0:
 			ret = 0x16;
 			*preamble = LONG_PREAMBLE;
+			break;
 		case 0x1:
 			ret = 0xB;
 			*preamble = LONG_PREAMBLE;
@@ -155,7 +156,7 @@ static void pkt_capture_tx_get_phy_info(
 {
 	uint8_t preamble = 0;
 	uint8_t preamble_type = pktcapture_hdr->preamble;
-	uint8_t mcs = 0, bw = 0;
+	uint8_t mcs = 0;
 	uint16_t vht_flags = 0, ht_flags = 0;
 
 	switch (preamble_type) {
@@ -169,7 +170,6 @@ static void pkt_capture_tx_get_phy_info(
 		break;
 	case 0x2:
 		ht_flags = 1;
-		bw = pktcapture_hdr->bw;
 		if (pktcapture_hdr->nss == 2)
 			mcs = 8 + pktcapture_hdr->mcs;
 		else
@@ -177,31 +177,26 @@ static void pkt_capture_tx_get_phy_info(
 		break;
 	case 0x3:
 		vht_flags = 1;
-		bw = pktcapture_hdr->bw;
 		mcs = pktcapture_hdr->mcs;
-
+		tx_status->vht_flag_values3[0] =
+			mcs << 0x4 | (pktcapture_hdr->nss + 1);
+		tx_status->vht_flag_values2 = pktcapture_hdr->bw;
 		/* fallthrough */
 	default:
 		break;
 	}
 
 	tx_status->mcs = mcs;
-	tx_status->bw = bw;
+	tx_status->bw = pktcapture_hdr->bw;
 	tx_status->nr_ant = pktcapture_hdr->nss;
+	tx_status->nss = pktcapture_hdr->nss;
 	tx_status->is_stbc = pktcapture_hdr->stbc;
 	tx_status->sgi = pktcapture_hdr->sgi;
 	tx_status->ldpc = pktcapture_hdr->ldpc;
 	tx_status->beamformed = pktcapture_hdr->beamformed;
-	tx_status->vht_flag_values3[0] = mcs << 0x4 | (pktcapture_hdr->nss + 1);
 	tx_status->ht_flags = ht_flags;
 	tx_status->vht_flags = vht_flags;
 	tx_status->rtap_flags |= ((preamble == 1) ? BIT(1) : 0);
-	if (bw == 0)
-		tx_status->vht_flag_values2 = 0;
-	else if (bw == 1)
-		tx_status->vht_flag_values2 = 1;
-	else if (bw == 2)
-		tx_status->vht_flag_values2 = 4;
 }
 
 /**
