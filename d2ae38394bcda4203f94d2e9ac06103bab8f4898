@@ -16,6 +16,24 @@
       "message": "Hello Michael,\nThe patch works but I\u0027m just not sure about the author of the patch.",
       "revId": "d2ae38394bcda4203f94d2e9ac06103bab8f4898",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7bf3fb9b_d2836851",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 33118
+      },
+      "writtenOn": "2023-10-24T10:40:26Z",
+      "side": 1,
+      "message": "Hi. You might want to check this out: https://github.com/Atom-X-Devs/android_kernel_xiaomi_scarlet/commit/538d4106947a16e249aea66d3ccb93919361f783",
+      "parentUuid": "869de817_675035e7",
+      "revId": "d2ae38394bcda4203f94d2e9ac06103bab8f4898",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
