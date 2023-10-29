@@ -34,6 +34,24 @@
       "parentUuid": "869de817_675035e7",
       "revId": "d2ae38394bcda4203f94d2e9ac06103bab8f4898",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "20d50a92_bf63559b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 32245
+      },
+      "writtenOn": "2023-10-29T09:05:02Z",
+      "side": 1,
+      "message": "maybe this is the original commit\nhttps://github.com/cocafe/xperia-x-compact_kernel_cocore-x/commit/99f2863dd3c1897b5aaa28c809c20033fcd94939\n\nand, some people reverted it:\nhttps://github.com/Jprimero15/lolz_kernel_redmi8/commit/dff4809944068f5c10123ef4c3de69ee15ce06b1\nhttps://github.com/PixelExperience-Devices/kernel_motorola_payton/commit/b7144822b962b65bf2a810fe2b0cedbdaecec5b1\nhttps://github.com/Atom-X-Devs/android_kernel_xiaomi_scarlet/commit/2ebc67a03865a4b139c0ef11ceedc56d4058e471",
+      "parentUuid": "7bf3fb9b_d2836851",
+      "revId": "d2ae38394bcda4203f94d2e9ac06103bab8f4898",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
