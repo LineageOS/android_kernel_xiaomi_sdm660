@@ -28,7 +28,6 @@ endchoice
 config TOUCHSCREEN_SYNAPTICS_DSX_CORE
 	tristate "Synaptics DSX core driver module"
 	depends on I2C || SPI_MASTER
-	default y
 	help
 	  Say Y here to enable basic touch reporting functionality.
 
