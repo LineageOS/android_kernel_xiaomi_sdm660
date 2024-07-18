@@ -1998,16 +1998,6 @@ static int32_t nvt_ts_probe(struct i2c_client *client, const struct i2c_device_i
 		}
 	}
 
-	ret = nvt_get_lockdown_info(ts->lockdown_info);
-
-	if (ret < 0)
-		NVT_ERR("can't get lockdown info");
-	else {
-		NVT_ERR("Lockdown:0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x\n",
-			ts->lockdown_info[0], ts->lockdown_info[1], ts->lockdown_info[2], ts->lockdown_info[3],
-			ts->lockdown_info[4], ts->lockdown_info[5], ts->lockdown_info[6], ts->lockdown_info[7]);
-	}
-
 	ts->fw_name = nvt_get_config(ts);
 	tp_maker = kzalloc(20, GFP_KERNEL);
 
