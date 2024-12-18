@@ -17,7 +17,7 @@
 #include <linux/regulator/consumer.h>
 #include <linux/of.h>
 #include <linux/of_gpio.h>
-#include <linux/mfd/msm-cdc-pinctrl.h>
+#include <asoc/msm-cdc-pinctrl.h>
 #include <soc/qcom/socinfo.h>
 #include "usb-headset.h"
 
