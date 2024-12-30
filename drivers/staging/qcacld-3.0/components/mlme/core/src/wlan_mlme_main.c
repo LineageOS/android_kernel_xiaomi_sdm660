@@ -1815,6 +1815,7 @@ static void mlme_init_scoring_cfg(struct wlan_objmgr_psoc *psoc,
 		cfg_get(psoc, CFG_SCORING_OCE_WAN_WEIGHTAGE);
 	scoring_cfg->weight_cfg.sae_pk_ap_weightage =
 		cfg_get(psoc, CFG_SAE_PK_AP_WEIGHTAGE);
+	scoring_cfg->weight_cfg.security_weightage = SECURITY_WEIGHTAGE;
 
 	total_weight =  scoring_cfg->weight_cfg.rssi_weightage +
 			scoring_cfg->weight_cfg.ht_caps_weightage +
@@ -1827,7 +1828,8 @@ static void mlme_init_scoring_cfg(struct wlan_objmgr_psoc *psoc,
 			scoring_cfg->weight_cfg.pcl_weightage +
 			scoring_cfg->weight_cfg.channel_congestion_weightage +
 			scoring_cfg->weight_cfg.oce_wan_weightage +
-			scoring_cfg->weight_cfg.sae_pk_ap_weightage;
+			scoring_cfg->weight_cfg.sae_pk_ap_weightage +
+			scoring_cfg->weight_cfg.security_weightage;
 
 	/*
 	 * If configured weights are greater than max weight,
@@ -1922,6 +1924,7 @@ static void mlme_init_scoring_cfg(struct wlan_objmgr_psoc *psoc,
 	scoring_cfg->apsd_enabled = (bool)cfg_default(CFG_APSD_ENABLED);
 	scoring_cfg->min_roam_score_delta =
 				cfg_get(psoc, CFG_CAND_MIN_ROAM_SCORE_DELTA);
+	scoring_cfg->security_weight_per_index = SECURITY_INDEX_WEIGHTAGE;
 }
 
 static void mlme_init_oce_cfg(struct wlan_objmgr_psoc *psoc,

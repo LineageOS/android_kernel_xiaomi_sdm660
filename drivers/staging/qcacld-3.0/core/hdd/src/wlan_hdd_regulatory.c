@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014-2020 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -749,6 +750,7 @@ int hdd_reg_set_country(struct hdd_context *hdd_ctx, char *country_code)
 int hdd_reg_set_band(struct net_device *dev, u8 ui_band)
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
+	struct hdd_adapter *next_adapter = NULL;
 	mac_handle_t mac_handle;
 	enum band_info band;
 	QDF_STATUS status;
@@ -813,7 +815,7 @@ int hdd_reg_set_band(struct net_device *dev, u8 ui_band)
 			current_band, band);
 
 	mac_handle = hdd_ctx->mac_handle;
-	hdd_for_each_adapter(hdd_ctx, adapter) {
+	hdd_for_each_adapter_dev_held_safe(hdd_ctx, adapter, next_adapter) {
 		wlan_abort_scan(hdd_ctx->pdev, INVAL_PDEV_ID,
 				adapter->vdev_id, INVALID_SCAN_ID, false);
 		connected_band = hdd_conn_get_connected_band(
@@ -843,10 +845,14 @@ int hdd_reg_set_band(struct net_device *dev, u8 ui_band)
 			if (status) {
 				hdd_err("Hdd disconnect failed, status: %d",
 					status);
+				dev_put(adapter->dev);
+				if (next_adapter)
+					dev_put(next_adapter->dev);
 				return -EINVAL;
 			}
 		}
 		ucfg_scan_flush_results(hdd_ctx->pdev, NULL);
+		dev_put(adapter->dev);
 	}
 
 	if (QDF_IS_STATUS_ERROR(ucfg_reg_set_band(hdd_ctx->pdev, band))) {

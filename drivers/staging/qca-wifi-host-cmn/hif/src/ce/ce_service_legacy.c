@@ -1285,7 +1285,7 @@ struct ce_ops ce_service_legacy = {
 		ce_prepare_shadow_register_v2_cfg_legacy,
 };
 
-struct ce_ops *ce_services_legacy()
+struct ce_ops *ce_services_legacy(void)
 {
 	return &ce_service_legacy;
 }

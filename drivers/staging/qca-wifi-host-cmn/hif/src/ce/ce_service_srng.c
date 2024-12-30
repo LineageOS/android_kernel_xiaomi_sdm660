@@ -941,7 +941,7 @@ static struct ce_ops ce_service_srng = {
 		ce_prepare_shadow_register_v2_cfg_srng,
 };
 
-struct ce_ops *ce_services_srng()
+struct ce_ops *ce_services_srng(void)
 {
 	return &ce_service_srng;
 }

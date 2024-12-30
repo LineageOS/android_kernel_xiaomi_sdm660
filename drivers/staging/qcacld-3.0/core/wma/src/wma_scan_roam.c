@@ -79,6 +79,7 @@
 #include <wlan_crypto_global_api.h>
 #include <cdp_txrx_mon.h>
 #include "wlan_blm_api.h"
+#include "wlan_crypto_def_i.h"
 
 #ifdef FEATURE_WLAN_EXTSCAN
 #define WMA_EXTSCAN_CYCLE_WAKE_LOCK_DURATION WAKELOCK_DURATION_RECOMMENDED
@@ -895,65 +896,153 @@ A_UINT32 e_csr_encryption_type_to_rsn_cipherset(eCsrEncryptionType encr)
 	}
 }
 
-/**
- * wma_convert_gp_mgmt_cipher_to_target_cipher_type() - map csr ani group mgmt
- * enc type to RSN cipher
- * @encr: CSR Encryption
- *
- * Map CSR's group management cipher type into RSN cipher types used by firmware
- *
- * Return: WMI RSN cipher
- */
-static uint32_t
-wma_convert_gp_mgmt_cipher_to_target_cipher_type(tAniEdType cipher_type)
+static uint32_t wma_get_rsn_wmi_auth_type(int32_t akm)
 {
-	switch (cipher_type) {
-	/* BIP-CMAC-128 (00:0f:ac: 0x06) */
-	case eSIR_ED_AES_128_CMAC:
-		return WMI_CIPHER_AES_CMAC;
-
-	/* BIP-GMAC-128 (00:0f:ac: 0x0b) */
-	case eSIR_ED_AES_GMAC_128:
-		return WMI_CIPHER_AES_GMAC;
-
-	/* BIP-GMAC-256(00:0f:ac: 0x0c)*/
-	case eSIR_ED_AES_GMAC_256:
-		return WMI_CIPHER_BIP_GMAC_256;
-	case eSIR_ED_NONE:
-	default:
-		return WMI_CIPHER_NONE;
-	}
-}
-
-#ifdef WLAN_FEATURE_ROAM_OFFLOAD
-/**
- * wma_roam_scan_get_cckm_mode() - Get the CCKM auth mode
- * @roam_req: Roaming request buffer
- * @auth_mode: Auth mode to be converted
- *
- * Based on LFR2.0 or LFR3.0, return the proper auth type
- *
- * Return: if LFR2.0, then return WMI_AUTH_CCKM for backward compatibility
- *         if LFR3.0 then return the appropriate auth type
- */
-static
-uint32_t wma_roam_scan_get_cckm_mode(struct roam_offload_scan_req *roam_req,
-				     uint32_t auth_mode)
-{
-	if (roam_req->roam_offload_enabled)
-		return auth_mode;
+	/* Try the more preferred ones first. */
+	if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_FT_FILS_SHA384))
+		return WMI_AUTH_FT_RSNA_FILS_SHA384;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_FT_FILS_SHA256))
+		return WMI_AUTH_FT_RSNA_FILS_SHA256;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_FILS_SHA384))
+		return WMI_AUTH_RSNA_FILS_SHA384;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_FILS_SHA256))
+		return WMI_AUTH_RSNA_FILS_SHA256;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_FT_SAE))
+		return WMI_AUTH_FT_RSNA_SAE;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_SAE))
+		return WMI_AUTH_WPA3_SAE;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_OWE))
+		return WMI_AUTH_WPA3_OWE;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_FT_IEEE8021X))
+		return WMI_AUTH_FT_RSNA;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_FT_PSK))
+		return WMI_AUTH_FT_RSNA_PSK;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_IEEE8021X))
+		return WMI_AUTH_RSNA;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_PSK))
+		return WMI_AUTH_RSNA_PSK;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_CCKM))
+		return WMI_AUTH_CCKM_RSNA;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_PSK_SHA256))
+		return WMI_AUTH_RSNA_PSK_SHA256;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_IEEE8021X_SHA256))
+		return WMI_AUTH_RSNA_8021X_SHA256;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_IEEE8021X_SUITE_B))
+		return WMI_AUTH_RSNA_SUITE_B_8021X_SHA256;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_IEEE8021X_SUITE_B_192))
+		return WMI_AUTH_RSNA_SUITE_B_8021X_SHA384;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_FT_IEEE8021X_SHA384))
+		return WMI_AUTH_FT_RSNA_SUITE_B_8021X_SHA384;
 	else
-		return WMI_AUTH_CCKM;
+		return WMI_AUTH_NONE;
+}
 
-}
-#else
-static
-uint32_t wma_roam_scan_get_cckm_mode(struct roam_offload_scan_req *roam_req,
-				     uint32_t auth_mode)
+static uint32_t wma_get_wpa_wmi_auth_type(int32_t akm)
 {
-	return WMI_AUTH_CCKM;
+	/* Try the more preferred ones first. */
+	if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_IEEE8021X))
+		return WMI_AUTH_WPA;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_PSK))
+		return WMI_AUTH_WPA_PSK;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_CCKM))
+		return WMI_AUTH_CCKM_WPA;
+	else
+		return WMI_AUTH_NONE;
 }
-#endif
+
+static uint32_t wma_get_wapi_wmi_auth_type(int32_t akm)
+{
+	/* Try the more preferred ones first. */
+	if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_WAPI_CERT))
+		return WMI_AUTH_WAPI;
+	else if (HAS_PARAM(akm, WLAN_CRYPTO_KEY_MGMT_WAPI_PSK))
+		return WMI_AUTH_WAPI_PSK;
+	else
+		return WMI_AUTH_NONE;
+}
+static uint32_t wma_crpto_cipher_wmi_cipher(int32_t cipherset)
+{
+
+	if (!cipherset || cipherset < 0)
+		return WMI_CIPHER_NONE;
+
+	if (HAS_PARAM(cipherset, WLAN_CRYPTO_CIPHER_AES_GCM) ||
+	    HAS_PARAM(cipherset, WLAN_CRYPTO_CIPHER_AES_GCM_256))
+		return WMI_CIPHER_AES_GCM;
+	if (HAS_PARAM(cipherset, WLAN_CRYPTO_CIPHER_AES_CCM) ||
+	    HAS_PARAM(cipherset, WLAN_CRYPTO_CIPHER_AES_OCB) ||
+	    HAS_PARAM(cipherset, WLAN_CRYPTO_CIPHER_AES_CCM_256))
+		return WMI_CIPHER_AES_CCM;
+	if (HAS_PARAM(cipherset, WLAN_CRYPTO_CIPHER_TKIP))
+		return WMI_CIPHER_TKIP;
+	if (HAS_PARAM(cipherset, WLAN_CRYPTO_CIPHER_AES_CMAC) ||
+	    HAS_PARAM(cipherset, WLAN_CRYPTO_CIPHER_AES_CMAC_256))
+		return WMI_CIPHER_AES_CMAC;
+	if (HAS_PARAM(cipherset, WLAN_CRYPTO_CIPHER_WAPI_GCM4) ||
+	    HAS_PARAM(cipherset, WLAN_CRYPTO_CIPHER_WAPI_SMS4))
+		return WMI_CIPHER_WAPI;
+	if (HAS_PARAM(cipherset, WLAN_CRYPTO_CIPHER_AES_GMAC) ||
+	    HAS_PARAM(cipherset, WLAN_CRYPTO_CIPHER_AES_GMAC_256))
+		return WMI_CIPHER_AES_GMAC;
+	if (HAS_PARAM(cipherset, WLAN_CRYPTO_CIPHER_WEP) ||
+	    HAS_PARAM(cipherset, WLAN_CRYPTO_CIPHER_WEP_40) ||
+	    HAS_PARAM(cipherset, WLAN_CRYPTO_CIPHER_WEP_104))
+		return WMI_CIPHER_WEP;
+
+	return WMI_CIPHER_NONE;
+}
+
+static uint32_t wma_crypto_authmode_to_wmi_authmode(int32_t authmodeset,
+					    int32_t akm, int32_t ucastcipherset)
+{
+	if (!authmodeset || authmodeset < 0)
+		return WMI_AUTH_OPEN;
+
+	if (HAS_PARAM(authmodeset, WLAN_CRYPTO_AUTH_OPEN))
+		return WMI_AUTH_OPEN;
+
+	if (HAS_PARAM(authmodeset, WLAN_CRYPTO_AUTH_AUTO) ||
+	    HAS_PARAM(authmodeset, WLAN_CRYPTO_AUTH_NONE)) {
+		if ((HAS_PARAM(ucastcipherset, WLAN_CRYPTO_CIPHER_WEP) ||
+		     HAS_PARAM(ucastcipherset, WLAN_CRYPTO_CIPHER_WEP_40) ||
+		     HAS_PARAM(ucastcipherset,
+				   WLAN_CRYPTO_CIPHER_WEP_104) ||
+		     HAS_PARAM(ucastcipherset, WLAN_CRYPTO_CIPHER_TKIP) ||
+		     HAS_PARAM(ucastcipherset,
+				   WLAN_CRYPTO_CIPHER_AES_GCM) ||
+		     HAS_PARAM(ucastcipherset,
+				   WLAN_CRYPTO_CIPHER_AES_GCM_256) ||
+		     HAS_PARAM(ucastcipherset,
+				   WLAN_CRYPTO_CIPHER_AES_CCM) ||
+		     HAS_PARAM(ucastcipherset,
+				   WLAN_CRYPTO_CIPHER_AES_OCB) ||
+		     HAS_PARAM(ucastcipherset,
+				   WLAN_CRYPTO_CIPHER_AES_CCM_256)))
+			return WMI_AUTH_OPEN;
+		else
+			return WMI_AUTH_NONE;
+	}
+
+	if (HAS_PARAM(authmodeset, WLAN_CRYPTO_AUTH_SHARED))
+		return WMI_AUTH_SHARED;
+
+	if (HAS_PARAM(authmodeset, WLAN_CRYPTO_AUTH_8021X) ||
+	    HAS_PARAM(authmodeset, WLAN_CRYPTO_AUTH_RSNA) ||
+	    HAS_PARAM(authmodeset, WLAN_CRYPTO_AUTH_CCKM) ||
+	    HAS_PARAM(authmodeset, WLAN_CRYPTO_AUTH_SAE) ||
+	    HAS_PARAM(authmodeset, WLAN_CRYPTO_AUTH_FILS_SK))
+		return wma_get_rsn_wmi_auth_type(akm);
+
+
+	if (HAS_PARAM(authmodeset, WLAN_CRYPTO_AUTH_WPA))
+		return wma_get_wpa_wmi_auth_type(akm);
+
+	if (HAS_PARAM(authmodeset, WLAN_CRYPTO_AUTH_WAPI))
+		return wma_get_wapi_wmi_auth_type(akm);
+
+	return WMI_AUTH_OPEN;
+}
+
 /**
  * wma_roam_scan_fill_ap_profile() - fill ap_profile
  * @roam_req: roam offload scan request
@@ -965,9 +1054,17 @@ uint32_t wma_roam_scan_get_cckm_mode(struct roam_offload_scan_req *roam_req,
  */
 static void
 wma_roam_scan_fill_ap_profile(struct roam_offload_scan_req *roam_req,
+			      struct wlan_objmgr_vdev *vdev,
+			      struct csr_roam_session * session,
 			      struct ap_profile *profile)
 {
-	uint32_t rsn_authmode;
+	uint32_t orig_key_mgmt, authmode, uccipher, mccipher, keymgmt;
+	uint32_t group_mgmt_cipher;
+	int32_t connected_akm;
+	uint16_t rsn_caps;
+	bool peer_rmf_capable = false;
+	uint32_t num_allowed_authmode = 0;
+	enum wlan_crypto_key_mgmt i;
 
 	qdf_mem_zero(profile, sizeof(*profile));
 	if (!roam_req) {
@@ -986,38 +1083,80 @@ wma_roam_scan_fill_ap_profile(struct roam_offload_scan_req *roam_req,
 	qdf_mem_copy(profile->ssid.mac_ssid,
 		     roam_req->ConnectedNetwork.ssId.ssId,
 		     profile->ssid.length);
-	profile->rsn_authmode =
-		e_csr_auth_type_to_rsn_authmode(
-			roam_req->ConnectedNetwork.authentication,
-			roam_req->ConnectedNetwork.encryption);
-	rsn_authmode = profile->rsn_authmode;
-
-	if (rsn_authmode == WMI_AUTH_CCKM_WPA ||
-	    rsn_authmode == WMI_AUTH_CCKM_RSNA)
-		profile->rsn_authmode =
-			wma_roam_scan_get_cckm_mode(roam_req, rsn_authmode);
 
 	/* Pairwise cipher suite */
-	profile->rsn_ucastcipherset =
-		e_csr_encryption_type_to_rsn_cipherset(
-				roam_req->ConnectedNetwork.encryption);
+	uccipher = wlan_crypto_get_param(vdev, WLAN_CRYPTO_PARAM_UCAST_CIPHER);
+	profile->rsn_ucastcipherset = wma_crpto_cipher_wmi_cipher(uccipher);
 
 	/* Group cipher suite */
-	profile->rsn_mcastcipherset =
-		e_csr_encryption_type_to_rsn_cipherset(
-			roam_req->ConnectedNetwork.mcencryption);
+	mccipher = wlan_crypto_get_param(vdev, WLAN_CRYPTO_PARAM_MCAST_CIPHER);
+	profile->rsn_mcastcipherset = wma_crpto_cipher_wmi_cipher(mccipher);
+
+	authmode = wlan_crypto_get_param(vdev, WLAN_CRYPTO_PARAM_AUTH_MODE);
+	/* Get connected akm */
+	connected_akm = wlan_crypto_get_param(vdev,
+					WLAN_CRYPTO_PARAM_KEY_MGMT);
+	profile->rsn_authmode =
+		wma_crypto_authmode_to_wmi_authmode(authmode,
+						    connected_akm,
+						    uccipher);
 
 	/* Group management cipher suite */
-	profile->rsn_mcastmgmtcipherset =
-		wma_convert_gp_mgmt_cipher_to_target_cipher_type(
-			roam_req->ConnectedNetwork.gp_mgmt_cipher_suite);
-
 	profile->rssi_threshold = roam_req->RoamRssiDiff;
 	if (roam_req->rssi_abs_thresh)
 		profile->rssi_abs_thresh = roam_req->rssi_abs_thresh;
+
 #ifdef WLAN_FEATURE_11W
-	if (roam_req->ConnectedNetwork.mfp_enabled)
+	rsn_caps = (uint16_t)wlan_crypto_get_param(vdev,
+						   WLAN_CRYPTO_PARAM_RSN_CAP);
+	if (wlan_crypto_vdev_has_mgmtcipher(vdev,
+					(1 << WLAN_CRYPTO_CIPHER_AES_GMAC) |
+					(1 << WLAN_CRYPTO_CIPHER_AES_GMAC_256) |
+					(1 << WLAN_CRYPTO_CIPHER_AES_CMAC)) &&
+					(rsn_caps &
+					 WLAN_CRYPTO_RSN_CAP_MFP_ENABLED))
+		peer_rmf_capable = true;
+
+	keymgmt = wlan_crypto_get_param(vdev, WLAN_CRYPTO_PARAM_MGMT_CIPHER);
+	if (keymgmt & (1 << WLAN_CRYPTO_CIPHER_AES_CMAC))
+		group_mgmt_cipher = WMI_CIPHER_AES_CMAC;
+	else if (keymgmt & (1 << WLAN_CRYPTO_CIPHER_AES_GMAC))
+		group_mgmt_cipher = WMI_CIPHER_AES_GMAC;
+	else if (keymgmt & (1 << WLAN_CRYPTO_CIPHER_AES_GMAC_256))
+		group_mgmt_cipher = WMI_CIPHER_BIP_GMAC_256;
+	else
+		group_mgmt_cipher = WMI_CIPHER_NONE;
+
+	if (peer_rmf_capable) {
+		profile->rsn_mcastmgmtcipherset = group_mgmt_cipher;
 		profile->flags |= WMI_AP_PROFILE_FLAG_PMF;
+		WMA_LOGI("%s: [crypto]flag 0x%x mcastmgmtcipherset 0x%x",
+			__func__, profile->flags,
+			profile->rsn_mcastmgmtcipherset);
+	} else {
+		profile->rsn_mcastmgmtcipherset = WMI_CIPHER_NONE;
+	}
+
+	/* Get keymgmt from self security info */
+	orig_key_mgmt = session->orig_sec_info.key_mgmt;
+	WMA_LOGI("%s: [crypto]rsn_caps 0x%x auth %d keymgmt 0x%x orig_key_mgmt 0x%x",
+		__func__, rsn_caps, authmode, keymgmt, orig_key_mgmt);
+
+	for (i = 0; i < WLAN_CRYPTO_KEY_MGMT_MAX; i++) {
+		/*
+		 * Send AKM in allowed list which are not present in connected
+		 * akm
+		 */
+		if (HAS_PARAM(orig_key_mgmt, i) &&
+			num_allowed_authmode < WLAN_CRYPTO_AUTH_MAX) {
+			profile->allowed_authmode[num_allowed_authmode++] =
+				wma_crypto_authmode_to_wmi_authmode(authmode,
+							   (orig_key_mgmt & (1 << i)),
+							   uccipher);
+		}
+	}
+
+	profile->num_allowed_authmode = num_allowed_authmode;
 #endif
 }
 
@@ -1308,14 +1447,41 @@ static QDF_STATUS wma_roam_scan_offload_ap_profile(tp_wma_handle wma_handle,
 {
 	struct ap_profile_params ap_profile;
 	bool db2dbm_enabled;
+	struct mac_context *mac_ctx;
+	struct csr_roam_session *session;
+	uint8_t session_id;
+	struct wlan_objmgr_vdev *vdev;
 
-	if (!wma_is_vdev_valid(roam_req->sessionId)) {
-		WMA_LOGE("%s: Invalid vdev id:%d", __func__,
-			 roam_req->sessionId);
+	session_id = roam_req->sessionId;
+	if (!wma_is_vdev_valid(session_id)) {
+		WMA_LOGE("%s: Invalid vdev id:%d", __func__, session_id);
 		return QDF_STATUS_E_FAILURE;
 	}
-	ap_profile.vdev_id = roam_req->sessionId;
-	wma_roam_scan_fill_ap_profile(roam_req, &ap_profile.profile);
+
+	mac_ctx = cds_get_context(QDF_MODULE_ID_PE);
+	if (!mac_ctx) {
+		WMA_LOGE("NULL mac_ctx ptr");
+		QDF_ASSERT(0);
+		return QDF_STATUS_E_FAILURE;
+	}
+
+	session = CSR_GET_SESSION(mac_ctx, session_id);
+	if (!session) {
+		WMA_LOGE("session %d not found", session_id);
+		return QDF_STATUS_E_FAILURE;
+	}
+
+	vdev = wlan_objmgr_get_vdev_by_id_from_psoc(wma_handle->psoc,
+						    session_id,
+						    WLAN_LEGACY_WMA_ID);
+	if (!vdev) {
+		WMA_LOGE("%s, vdev%d not found", __func__, session_id);
+		return QDF_STATUS_E_FAILURE;
+	}
+
+	ap_profile.vdev_id = session_id;
+	wma_roam_scan_fill_ap_profile(roam_req, vdev, session,
+				      &ap_profile.profile);
 
 	db2dbm_enabled = wmi_service_enabled(wma_handle->wmi_handle,
 					     wmi_service_hw_db2dbm_support);
@@ -1349,6 +1515,7 @@ static QDF_STATUS wma_roam_scan_offload_ap_profile(tp_wma_handle wma_handle,
 	ap_profile.score_delta_param[BTM_ROAM_TRIGGER] =
 				roam_req->score_delta_param[BTM_ROAM_TRIGGER];
 
+	wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_WMA_ID);
 	return wmi_unified_send_roam_scan_offload_ap_cmd(wma_handle->wmi_handle,
 							 &ap_profile);
 }

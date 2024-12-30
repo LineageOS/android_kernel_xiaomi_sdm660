@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017-2019 The Linux Foundation. All rights reserved.
- *
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
@@ -24,7 +24,7 @@
 
 #include "target_if_reg_11d.h"
 
-#ifdef HOST_11D_SCAN
+#ifdef TARGET_11D_SCAN
 bool tgt_if_regulatory_is_11d_offloaded(struct wlan_objmgr_psoc *psoc)
 {
 	wmi_unified_t wmi_handle = get_wmi_unified_hdl_from_psoc(psoc);

@@ -704,6 +704,7 @@ struct csr_roam_session {
 #ifdef FEATURE_MONITOR_MODE_SUPPORT
 	csr_session_monitor_mode_cb session_monitor_mode_cb;
 #endif
+	struct self_security_info orig_sec_info; /* self security info */
 };
 
 struct csr_roamstruct {

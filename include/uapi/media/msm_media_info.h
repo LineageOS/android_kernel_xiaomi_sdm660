@@ -1294,7 +1294,7 @@ static inline unsigned int VENUS_BUFFER_SIZE(unsigned int color_fmt,
 			uv_meta_plane = MSM_MEDIA_ALIGN(uv_meta_stride *
 				uv_meta_scanlines, 4096);
 			size = (y_ubwc_plane + uv_ubwc_plane + y_meta_plane +
-				uv_meta_plane)*2;
+				uv_meta_plane)*2+(64 * y_stride);
 		} else {
 			y_sclines = VENUS_Y_SCANLINES(color_fmt, height);
 			y_ubwc_plane =

@@ -838,6 +838,7 @@ struct csr_roam_profile {
 	struct cds_fils_connection_info *fils_con_info;
 #endif
 	bool force_rsne_override;
+	struct self_security_info orig_sec_info; /* self security info */
 };
 
 #ifdef FEATURE_WLAN_MCC_TO_SCC_SWITCH

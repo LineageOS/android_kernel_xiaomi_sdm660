@@ -69,6 +69,23 @@ typedef uint32_t wlan_scan_id;
 #define MAX_INDEX_SCORE 100
 #define SAE_PK_AP_WEIGHTAGE 3
 #define MAX_INDEX_PER_INI 4
+#define SECURITY_WEIGHTAGE 4
+
+/*
+ * This macro give percentage value of security_weightage to be used as per
+ * security Eg if AP security is WPA 10% will be given for AP.
+ *
+ * Indexes are defined in this way.
+ *     0 Index (BITS 0-7): WPA - Def 25%
+ *     1 Index (BITS 8-15): WPA2- Def 50%
+ *     2 Index (BITS 16-23): WPA3- Def 100%
+ *     3 Index (BITS 24-31): reserved
+ *
+ * if AP security is Open/WEP 0% will be given for AP
+ * These percentage values are stored in HEX. For any index max value, can be 64
+ */
+#define SECURITY_INDEX_WEIGHTAGE 0x00643219
+
 
 #ifdef CONFIG_MCL
 #define MAX_BCN_PROBE_IN_SCAN_QUEUE 150
@@ -272,6 +289,24 @@ struct security_info {
 	enum wlan_enc_type uc_enc;
 	enum wlan_enc_type mc_enc;
 	enum wlan_auth_type auth_type;
+};
+
+/**
+ * struct security_info - self cache security info
+ * @authmodeset: auth mode
+ * @key_mgmt: key management
+ * @ucastcipherset: unicast cipher set
+ * @mcastcipherset: multicast cipher set
+ * @mgmtcipherset: mgmt cipher set
+ * @rsn_caps: rsn caps
+ */
+struct self_security_info {
+	uint32_t authmodeset;
+	uint32_t key_mgmt;
+	uint32_t ucastcipherset;
+	uint32_t mcastcipherset;
+	uint32_t mgmtcipherset;
+	uint16_t rsn_caps;
 };
 
 /**

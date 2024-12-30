@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2011-2021 The Linux Foundation. All rights reserved.
- * Copyright (c) 2021-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2021-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  *
  * Previously licensed under the ISC license by Qualcomm Atheros, Inc.
  *
@@ -639,6 +639,51 @@ typedef  enum  {
     WMI_SERVICE_TX_PWR_PER_PPDU_STATS_SUPPORT = 386, /* FW support to check tx power stats per PPDU */
     WMI_SERVICE_DISABLE_WDS_PEER_MAP_UNMAP_EVENT_SUPPORT = 387, /* Indicate FW support to disable wds peer map/unmap events */
     WMI_SERVICE_PDEV_WSI_STATS_INFO_SUPPORT = 388, /* Support for WSI Stats Info. */
+    WMI_SERVICE_MULTIPLE_RF_PATH_SOC_SUPPORT = 389, /* Indicates FW supports Multiple RF Path on SOC Level */
+    WMI_SERVICE_RADAR_FLAGS_SUPPORT = 390, /* Indicates FW supports radar flags, such as full bandwidth need put to NOL */
+    WMI_SERVICE_XPAN_SUPPORT = 391, /* Indicate FW support XPAN configuration */
+    WMI_SERVICE_5GHZ_HI_RSSI_ROAM_SUPPORT = 392, /* Indicate FW supports High RSSI Roam from 5 GHz Band to 6 GHz Band */
+    WMI_SERVICE_BOTH_PSD_EIRP_FOR_AP_SP_CLIENT_SP_SUPPORT = 393, /* Support for CTL regeneration where both PSD and EIRP will be sent in 6GHZ SET_TPC WMI for SP and SP_CLIENT power modes */
+    WMI_SERVICE_PDEV_PARAM_IN_UTF_WMI = 394, /* FW supports receiving and sending pdev_id parameter in WMI_PDEV_UTF_(CMD/EVENT) */
+    WMI_SERVICE_SW_PROG_DFS_SUPPORT = 395, /* Indicate FW support SW progressive DFS */
+    WMI_SERVICE_MULTIPLE_REORDER_QUEUE_SETUP_SUPPORT = 396, /* Indicate FW supports multiple TID reorder queues setup in one cmd */
+    WMI_SERVICE_MULTIPLE_COEX_CONFIG_SUPPORT = 397, /* FW supports mutiple coex configs in one cmd */
+    WMI_SERVICE_PCIE_DATA_RATE_LED_BLINK_SUPPORT = 398, /* FW supports Data Rate based LED blinking for PCI chips */
+    WMI_SERVICE_VDEV_DCS_STATS_SUPPORT = 399, /* FW supports VDEV level DCS stats reporting */
+    WMI_SERVICE_WIFI_RADAR_SUPPORT = 400, /* FW supports wifi radar */
+    WMI_SERVICE_P2P_DEVICE_UPDATE_MAC_ADDR_SUPPORT = 401, /* indicate FW support dynamic update mac address for P2P device */
+    WMI_SERVICE_DCS_OBSS_INT_SUPPORT = 402, /* Indicates FW supports OBSS Interference detection */
+    WMI_SERVICE_DYNAMIC_WSI_REMAP_SUPPORT = 403, /* WSI bypass remap is supported by Firmware */
+    WMI_SERVICE_QMS_DLKM_SUPPORT = 404, /* DEPRECATED */
+    WMI_SERVICE_SMEM_MAILBOX_SUPPORT = 404, /* FW code has smem_mailbox support enabled */
+    WMI_SERVICE_REG_CC_EXT2_EVENT_SUPPORT = 405, /* DEPRECATED */
+    WMI_SERVICE_MLO_MODE2_RECOVERY_SUPPORTED = 406, /* Indicate FW support for MLO mode2 recovery */
+    WMI_SERVICE_MSDUQ_RECFG = 407, /* FW support the HTT MSDUQ_RECFG_REQ + MSDUQ_CFG_IND messages */
+    WMI_SERVICE_TRAFFIC_CONTEXT_SUPPORT = 408, /* FW supports traffic context aware manager */
+    WMI_SERVICE_STA_SAP_NDP_CONCURRENCY_SUPPORT = 409, /* FW supports STA + SAP + NDP concurrency */
+    WMI_SERVICE_THERM_THROT_POUT_REDUCTION = 410, /* FW supports thermal throttling Pout reduction */
+    WMI_SERVICE_E2E_SDWF_SUPPORT = 411, /* FW supports end-to-end SDWF features like SDWF scheduler */
+    WMI_SERVICE_EPM = 412, /* FW supports enhanced power management */
+    WMI_SERVICE_CHIPSET_LOGGING_SUPPORT = 413, /* FW supports chipset logging feature */
+    WMI_SERVICE_SUPPORT_AP_SUSPEND_RESUME = 414, /* FW supports SAP suspend feature */
+    WMI_SERVICE_STA_P2P_NDP_CONCURRENCY_SUPPORT = 415, /* FW supports STA + P2P + NAN concurrency */
+    WMI_SERVICE_USE_STA_VDEV_FOR_P2P_DEVICE = 416, /* FW supports use of sta vdev to be repurposed for p2p device */
+    WMI_SERVICE_AP_ASSISTED_DFS_CHAN_P2P_SESSION = 417, /* FW supports P2P session on DFS chan enabled by DFS master AP */
+    WMI_SERVICE_MLO_SAP_EMLSR_SUPPORT = 418, /* Indicates FW MLO SAP supports EMLSR Mode */
+    WMI_SERVICE_PKTLOG_ML_TSTMP_SUPPORT = 419, /* Indicates ML timestamp for pktlog */
+    WMI_SERVICE_MGMT_SRNG_SUPPORT = 420, /* FW supports MGMT frame forwarding via host provided SRNG instead of WMI */
+    WMI_SERVICE_WDS_NULL_FRAME_SUPPORT = 421,
+    WMI_SERVICE_MLO_SAP_CONCURRENCY_SUPPORT = 422, /* Indicates FW supports MLO SAP+STA Concurrency */
+    WMI_SERVICE_MEC_AGING_TIMER_SUPPORT = 423, /* FW supports multicast echo check aging timer */
+    WMI_SERVICE_MULTI_RSNO_SUPPORT = 424, /* FW supports parsing of multiple RSN override IEs */
+    /* WMI_SERVICE_IS_TARGET_IPA:
+     * FW indicates to host whether the target is IPA or xFEM.
+     * If this flag is 0, the target is XFEM or unspecified.
+     * If this flag is 1, the target is IPA.
+     */
+    WMI_SERVICE_IS_TARGET_IPA = 425,
+    WMI_SERVICE_THERM_THROT_TX_CHAIN_MASK = 426, /*FW supports thermal throttling dynamic Tx ChainMask update */
+
 
     WMI_MAX_EXT2_SERVICE
 

@@ -858,6 +858,10 @@ static int ufs_qcom_suspend(struct ufs_hba *hba, enum ufs_pm_op pm_op)
 			ufs_qcom_config_vreg(hba->dev,
 					host->vccq_parent, false);
 
+		if (host->vccq2_parent && !hba->auto_bkops_enabled)
+			ufs_qcom_config_vreg(hba->dev,
+					host->vccq2_parent, false);
+
 		if (ufs_qcom_is_link_off(hba)) {
 			/* Assert PHY soft reset */
 			ufs_qcom_assert_reset(hba);
@@ -897,6 +901,9 @@ static int ufs_qcom_resume(struct ufs_hba *hba, enum ufs_pm_op pm_op)
 	if (host->vccq_parent)
 		ufs_qcom_config_vreg(hba->dev, host->vccq_parent, true);
 
+	if (host->vccq2_parent)
+		ufs_qcom_config_vreg(hba->dev, host->vccq2_parent, true);
+
 	err = ufs_qcom_enable_lane_clks(host);
 	if (err)
 		goto out;
@@ -910,12 +917,17 @@ out:
 static int ufs_qcom_full_reset(struct ufs_hba *hba)
 {
 	int ret = -ENOTSUPP;
+	bool reenable_intr = false;
 
 	if (!hba->core_reset) {
 		dev_err(hba->dev, "%s: failed, err = %d\n", __func__,
 				ret);
 		goto out;
 	}
+
+	reenable_intr = hba->is_irq_enabled;
+	disable_irq(hba->irq);
+	hba->is_irq_enabled = false;
 
 	ret = reset_control_assert(hba->core_reset);
 	if (ret) {
@@ -935,6 +947,11 @@ static int ufs_qcom_full_reset(struct ufs_hba *hba)
 	if (ret)
 		dev_err(hba->dev, "%s: core_reset deassert failed, err = %d\n",
 				__func__, ret);
+
+	if (reenable_intr) {
+		enable_irq(hba->irq);
+		hba->is_irq_enabled = true;
+	}
 
 out:
 	return ret;
@@ -1497,7 +1514,6 @@ static void ufs_qcom_set_caps(struct ufs_hba *hba)
 	if (!host->disable_lpm) {
 		hba->caps |= UFSHCD_CAP_CLK_GATING;
 		hba->caps |= UFSHCD_CAP_HIBERN8_WITH_CLK_GATING;
-		hba->caps |= UFSHCD_CAP_CLK_SCALING;
 	}
 	hba->caps |= UFSHCD_CAP_AUTO_BKOPS_SUSPEND;
 
@@ -2080,6 +2096,8 @@ static int ufs_qcom_parse_reg_info(struct ufs_qcom_host *host, char *name,
 			vreg->min_uV = VDDP_REF_CLK_MIN_UV;
 		else if (!strcmp(name, "qcom,vccq-parent"))
 			vreg->min_uV = 0;
+		else if (!strcmp(name, "qcom,vccq2-parent"))
+			vreg->min_uV = 0;
 		ret = 0;
 	}
 
@@ -2091,6 +2109,8 @@ static int ufs_qcom_parse_reg_info(struct ufs_qcom_host *host, char *name,
 		if (!strcmp(name, "qcom,vddp-ref-clk"))
 			vreg->max_uV = VDDP_REF_CLK_MAX_UV;
 		else if (!strcmp(name, "qcom,vccq-parent"))
+			vreg->max_uV = 0;
+		else if (!strcmp(name, "qcom,vccq2-parent"))
 			vreg->max_uV = 0;
 		ret = 0;
 	}
@@ -2239,6 +2259,17 @@ static int ufs_qcom_init(struct ufs_hba *hba)
 		}
 	}
 
+	err = ufs_qcom_parse_reg_info(host, "qcom,vccq2-parent",
+				      &host->vccq2_parent);
+	if (host->vccq2_parent) {
+		err = ufs_qcom_config_vreg(hba->dev, host->vccq2_parent, true);
+		if (err) {
+			dev_err(dev, "%s: failed vccq2-parent set load: %d\n",
+				__func__, err);
+			goto out_disable_vddp;
+		}
+	}
+
 	err = ufs_qcom_init_lane_clks(host);
 	if (err)
 		goto out_set_load_vccq_parent;
@@ -2271,6 +2302,8 @@ static int ufs_qcom_init(struct ufs_hba *hba)
 out_set_load_vccq_parent:
 	if (host->vccq_parent)
 		ufs_qcom_config_vreg(hba->dev, host->vccq_parent, false);
+	if (host->vccq2_parent)
+		ufs_qcom_config_vreg(hba->dev, host->vccq2_parent, false);
 out_disable_vddp:
 	if (host->vddp_ref_clk)
 		ufs_qcom_disable_vreg(dev, host->vddp_ref_clk);

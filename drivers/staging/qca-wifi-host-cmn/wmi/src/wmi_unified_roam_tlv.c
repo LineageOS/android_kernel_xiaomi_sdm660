@@ -1544,6 +1544,8 @@ send_roam_scan_offload_ap_profile_cmd_tlv(wmi_unified_t wmi_handle,
 	wmi_roam_score_delta_param *score_delta_param;
 	wmi_roam_cnd_min_rssi_param *min_rssi_param;
 	enum roam_trigger_reason trig_reason;
+	uint32_t *authmode_list;
+	int i;
 
 	len = sizeof(wmi_roam_ap_profile_fixed_param) + sizeof(wmi_ap_profile);
 	len += sizeof(*score_param);
@@ -1551,6 +1553,17 @@ send_roam_scan_offload_ap_profile_cmd_tlv(wmi_unified_t wmi_handle,
 	len += NUM_OF_ROAM_TRIGGERS * sizeof(*score_delta_param);
 	len += WMI_TLV_HDR_SIZE;
 	len += NUM_OF_ROAM_TRIGGERS * sizeof(*min_rssi_param);
+
+	/*owe_ap_profile & roam_cnd_vendor_scoring_param*/
+	len += 2 * WMI_TLV_HDR_SIZE;
+
+	if (ap_profile->profile.num_allowed_authmode) {
+		len += WMI_TLV_HDR_SIZE;
+		len += ap_profile->profile.num_allowed_authmode * sizeof(uint32_t);
+	} else {
+		len += WMI_TLV_HDR_SIZE;
+	}
+
 	buf = wmi_buf_alloc(wmi_handle, len);
 	if (!buf) {
 		return QDF_STATUS_E_NOMEM;
@@ -1605,6 +1618,8 @@ send_roam_scan_offload_ap_profile_cmd_tlv(wmi_unified_t wmi_handle,
 	score_param->bw_weightage_pcnt = ap_profile->param.bw_weightage;
 	score_param->band_weightage_pcnt = ap_profile->param.band_weightage;
 	score_param->nss_weightage_pcnt = ap_profile->param.nss_weightage;
+	score_param->security_weightage_pcnt =
+				   ap_profile->param.security_weightage;
 	score_param->esp_qbss_weightage_pcnt =
 			ap_profile->param.esp_qbss_weightage;
 	score_param->beamforming_weightage_pcnt =
@@ -1615,7 +1630,7 @@ send_roam_scan_offload_ap_profile_cmd_tlv(wmi_unified_t wmi_handle,
 	score_param->vendor_roam_score_algorithm_id =
 			ap_profile->param.vendor_roam_score_algorithm;
 
-	WMI_LOGD("Score params weightage: disable_bitmap %x rssi %d ht %d vht %d he %d BW %d band %d NSS %d ESP %d BF %d PCL %d OCE WAN %d roam score algo %d",
+	WMI_LOGD("Score params weightage: disable_bitmap %x rssi %d ht %d vht %d he %d BW %d band %d NSS %d ESP %d BF %d PCL %d OCE WAN %d roam score algo %d security %d",
 		 score_param->disable_bitmap, score_param->rssi_weightage_pcnt,
 		 score_param->ht_weightage_pcnt,
 		 score_param->vht_weightage_pcnt,
@@ -1626,18 +1641,22 @@ send_roam_scan_offload_ap_profile_cmd_tlv(wmi_unified_t wmi_handle,
 		 score_param->beamforming_weightage_pcnt,
 		 score_param->pcl_weightage_pcnt,
 		 score_param->oce_wan_weightage_pcnt,
-		 score_param->vendor_roam_score_algorithm_id);
+		 score_param->vendor_roam_score_algorithm_id,
+		 score_param->security_weightage_pcnt);
 
 	score_param->bw_scoring.score_pcnt = ap_profile->param.bw_index_score;
 	score_param->band_scoring.score_pcnt =
 			ap_profile->param.band_index_score;
 	score_param->nss_scoring.score_pcnt =
 			ap_profile->param.nss_index_score;
+	score_param->security_scoring.score_pcnt =
+			ap_profile->param.security_index_score;
 
-	WMI_LOGD("Params index score bitmask: bw_index_score %x band_index_score %x nss_index_score %x",
+	WMI_LOGD("Params index score bitmask: bw_index_score %x band_index_score %x nss_index_score %x security_index_score %x",
 		 score_param->bw_scoring.score_pcnt,
 		 score_param->band_scoring.score_pcnt,
-		 score_param->nss_scoring.score_pcnt);
+		 score_param->nss_scoring.score_pcnt,
+		 score_param->security_scoring.score_pcnt);
 
 	score_param->rssi_scoring.best_rssi_threshold =
 		(-1) * ap_profile->param.rssi_scoring.best_rssi_threshold;
@@ -1758,6 +1777,7 @@ send_roam_scan_offload_ap_profile_cmd_tlv(wmi_unified_t wmi_handle,
 		ap_profile->min_rssi_params[DEAUTH_MIN_RSSI].min_rssi;
 
 	buf_ptr += sizeof(*min_rssi_param);
+
 	min_rssi_param = (wmi_roam_cnd_min_rssi_param *)buf_ptr;
 	WMITLV_SET_HDR(&min_rssi_param->tlv_header,
 		       WMITLV_TAG_STRUC_wmi_roam_cnd_min_rssi_param,
@@ -1768,6 +1788,43 @@ send_roam_scan_offload_ap_profile_cmd_tlv(wmi_unified_t wmi_handle,
 		convert_roam_trigger_reason(trig_reason);
 	min_rssi_param->candidate_min_rssi =
 		ap_profile->min_rssi_params[BMISS_MIN_RSSI].min_rssi;
+
+	buf_ptr += sizeof(*min_rssi_param);
+
+	/* set zero TLV's for roam_cnd_vendor_scoring_param */
+	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_STRUC,
+		       WMITLV_GET_STRUCT_TLVLEN(0));
+	buf_ptr += WMI_TLV_HDR_SIZE;
+
+	/* set zero TLV's for owe_ap_profile */
+	WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_STRUC,
+		       WMITLV_GET_STRUCT_TLVLEN(0));
+	buf_ptr += WMI_TLV_HDR_SIZE;
+
+	/* List of Allowed authmode other than the connected akm */
+	if (ap_profile->profile.num_allowed_authmode) {
+		WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_UINT32,
+			(ap_profile->profile.num_allowed_authmode * sizeof(uint32_t)));
+
+		buf_ptr += WMI_TLV_HDR_SIZE;
+
+		authmode_list = (uint32_t *)buf_ptr;
+		for (i = 0; i < ap_profile->profile.num_allowed_authmode; i++)
+			authmode_list[i] = ap_profile->profile.allowed_authmode[i];
+
+		wmi_debug("[Allowed Authmode]: num_allowed_authmode: %u",
+			ap_profile->profile.num_allowed_authmode);
+		QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_WMI, QDF_TRACE_LEVEL_DEBUG,
+			authmode_list,
+			ap_profile->profile.num_allowed_authmode * sizeof(uint32_t));
+	} else {
+		/* set zero TLV's for allowed_authmode */
+		WMITLV_SET_HDR(buf_ptr, WMITLV_TAG_ARRAY_UINT32,
+			WMITLV_GET_STRUCT_TLVLEN(0));
+		wmi_debug("[Allowed Authmode]: num_allowed_authmode: %u",
+			ap_profile->profile.num_allowed_authmode);
+		buf_ptr += WMI_TLV_HDR_SIZE;
+	}
 
 	wmi_mtrace(WMI_ROAM_AP_PROFILE, NO_SESSION, 0);
 	status = wmi_unified_cmd_send(wmi_handle, buf,

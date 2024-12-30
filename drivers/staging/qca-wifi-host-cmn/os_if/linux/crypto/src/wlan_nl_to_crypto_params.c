@@ -196,6 +196,14 @@ static const struct osif_akm_type_crypto_mapping
 		.akm_suite = WLAN_AKM_SUITE_DPP,
 		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_DPP,
 	},
+#ifndef WLAN_AKM_SUITE_FT_8021X_SHA384
+#define WLAN_AKM_SUITE_FT_8021X_SHA384    0x000FAC0D
+#endif
+	{
+		.akm_suite = WLAN_AKM_SUITE_FT_8021X_SHA384,
+		.akm_type_crypto = WLAN_CRYPTO_KEY_MGMT_FT_IEEE8021X_SHA384,
+	},
+
 };
 
 /* mapping table for cipher type received from NL and cryto cipher type */

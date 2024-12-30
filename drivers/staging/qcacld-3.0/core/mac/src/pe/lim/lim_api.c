@@ -52,6 +52,7 @@
 #include "lim_session.h"
 #include "wma_types.h"
 #include "wlan_crypto_global_api.h"
+#include "wlan_crypto_def_i.h"
 
 #include "rrm_api.h"
 
@@ -1892,6 +1893,80 @@ void lim_fill_join_rsp_ht_caps(struct pe_session *session,
 #endif
 
 #ifdef WLAN_FEATURE_ROAM_OFFLOAD
+#ifdef WLAN_FEATURE_11W
+static void pe_set_rmf_caps(struct mac_context *mac_ctx,
+			    struct pe_session *ft_session,
+			    struct roam_offload_synch_ind *roam_synch)
+{
+	uint8_t *assoc_body;
+	uint16_t len;
+	tDot11fReAssocRequest *assoc_req;
+	uint32_t status;
+	tSirMacRsnInfo rsn_ie;
+	uint32_t value = WPA_TYPE_OUI;
+
+	assoc_body = (uint8_t *)roam_synch + roam_synch->reassoc_req_offset +
+			sizeof(tSirMacMgmtHdr);
+	len = roam_synch->reassoc_req_length - sizeof(tSirMacMgmtHdr);
+
+	assoc_req = qdf_mem_malloc(sizeof(*assoc_req));
+	if (!assoc_req)
+		return;
+
+	/* delegate to the framesc-generated code, */
+	status = dot11f_unpack_re_assoc_request(mac_ctx, assoc_body, len,
+						assoc_req, false);
+	if (DOT11F_FAILED(status)) {
+		pe_err("Failed to parse a Re-association Request (0x%08x, %d bytes):",
+		       status, len);
+		QDF_TRACE_HEX_DUMP(QDF_MODULE_ID_PE, QDF_TRACE_LEVEL_INFO,
+				   assoc_body, len);
+		qdf_mem_free(assoc_req);
+		return;
+	} else if (DOT11F_WARNED(status)) {
+		pe_debug("There were warnings while unpacking a Re-association Request (0x%08x, %d bytes):",
+			 status, len);
+	}
+	ft_session->limRmfEnabled = false;
+	if (!assoc_req->RSNOpaque.present && !assoc_req->WPAOpaque.present) {
+		qdf_mem_free(assoc_req);
+		return;
+	}
+
+	if (assoc_req->RSNOpaque.present) {
+		rsn_ie.info[0] = WLAN_ELEMID_RSN;
+		rsn_ie.info[1] = assoc_req->RSNOpaque.num_data;
+		rsn_ie.length = assoc_req->RSNOpaque.num_data + 2;
+		qdf_mem_copy(&rsn_ie.info[2], assoc_req->RSNOpaque.data,
+			     assoc_req->RSNOpaque.num_data);
+	} else if (assoc_req->WPAOpaque.present) {
+		rsn_ie.info[0] = WLAN_ELEMID_VENDOR;
+		rsn_ie.info[1] = WLAN_OUI_SIZE + assoc_req->WPAOpaque.num_data;
+		rsn_ie.length = WLAN_OUI_SIZE +
+				assoc_req->WPAOpaque.num_data + 2;
+		qdf_mem_copy(&rsn_ie.info[2], (uint8_t *)&value, WLAN_OUI_SIZE);
+		qdf_mem_copy(&rsn_ie.info[WLAN_OUI_SIZE + 2],
+			     assoc_req->WPAOpaque.data,
+			     assoc_req->WPAOpaque.num_data);
+	}
+
+	qdf_mem_free(assoc_req);
+	wlan_set_vdev_crypto_prarams_from_ie(ft_session->vdev, rsn_ie.info,
+					     rsn_ie.length);
+
+	ft_session->limRmfEnabled =
+		lim_get_vdev_rmf_capable(mac_ctx, ft_session);
+	pe_debug("vdev %u limRmfEnabled %u",
+		 ft_session->vdev_id, ft_session->limRmfEnabled);
+}
+#else
+static inline void pe_set_rmf_caps(struct mac_context *mac_ctx,
+				   struct pe_session *ft_session,
+				   struct roam_offload_synch_ind *roam_synch)
+{
+}
+#endif
+
 /**
  * sir_parse_bcn_fixed_fields() - Parse fixed fields in Beacon IE's
  *
@@ -2468,6 +2543,35 @@ lim_fill_fils_ft(struct pe_session *src_session,
 {}
 #endif
 
+/**
+ * lim_check_ft_initial_im_association() - To check FT initial mobility(im)
+ * association
+ * @roam_synch: A pointer to roam sync ind structure
+ * @session_entry: pe session
+ *
+ * This function is to check ft_initial_im_association.
+ *
+ * Return: None
+ */
+void
+lim_check_ft_initial_im_association(struct roam_offload_synch_ind *roam_synch,
+				    struct pe_session *session_entry)
+{
+	tpSirMacMgmtHdr hdr;
+	uint8_t *assoc_req_ptr;
+
+	assoc_req_ptr = (uint8_t *) roam_synch + roam_synch->reassoc_req_offset;
+	hdr = (tpSirMacMgmtHdr) assoc_req_ptr;
+
+	if (hdr->fc.type == SIR_MAC_MGMT_FRAME &&
+	    hdr->fc.subType == SIR_MAC_MGMT_ASSOC_REQ &&
+	    session_entry->is11Rconnection) {
+		pe_debug("Frame subtype: %d and connection is %d",
+			 hdr->fc.subType, session_entry->is11Rconnection);
+		roam_synch->is_ft_im_roam = true;
+	}
+}
+
 QDF_STATUS
 pe_roam_synch_callback(struct mac_context *mac_ctx,
 		       struct roam_offload_synch_ind *roam_sync_ind_ptr,
@@ -2575,6 +2679,7 @@ pe_roam_synch_callback(struct mac_context *mac_ctx,
 
 	/* Next routine will update nss and vdev_nss with AP's capabilities */
 	lim_fill_ft_session(mac_ctx, bss_desc, ft_session_ptr, session_ptr);
+	pe_set_rmf_caps(mac_ctx, ft_session_ptr, roam_sync_ind_ptr);
 
 	/* Next routine may update nss based on dot11Mode */
 	lim_ft_prepare_add_bss_req(mac_ctx, false, ft_session_ptr, bss_desc);
@@ -2638,6 +2743,8 @@ pe_roam_synch_callback(struct mac_context *mac_ctx,
 
 	lim_process_assoc_rsp_frame(mac_ctx, mac_ctx->roam.pReassocResp,
 				    LIM_REASSOC, ft_session_ptr);
+
+	lim_check_ft_initial_im_association(roam_sync_ind_ptr, ft_session_ptr);
 
 	lim_copy_and_free_hlp_data_from_session(ft_session_ptr,
 						roam_sync_ind_ptr);

@@ -132,8 +132,6 @@
 #define HW_CURSOR_STAGE(mdata) \
 	(((mdata)->max_target_zorder + MDSS_MDP_STAGE_0) - 1)
 
-#define BITS_TO_BYTES(x) DIV_ROUND_UP(x, BITS_PER_BYTE)
-
 #define PP_PROGRAM_PA		0x1
 #define PP_PROGRAM_PCC		0x2
 #define PP_PROGRAM_IGC		0x4

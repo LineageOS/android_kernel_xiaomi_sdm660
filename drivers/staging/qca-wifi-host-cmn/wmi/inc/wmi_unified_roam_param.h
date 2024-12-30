@@ -284,6 +284,8 @@ struct plm_req_params {
  *                   absolute RSSI threshold. Zero means no absolute minimum
  *                   RSSI is required. units are the offset from the noise
  *                   floor in dB
+ * @num_allowed_authmode: Number of allowerd authmode
+ * @allowed_authmode: List of allowed authmode other than connected
  */
 struct ap_profile {
 	uint32_t flags;
@@ -294,6 +296,8 @@ struct ap_profile {
 	uint32_t rsn_mcastcipherset;
 	uint32_t rsn_mcastmgmtcipherset;
 	uint32_t rssi_abs_thresh;
+	uint32_t num_allowed_authmode;
+	uint32_t allowed_authmode[WLAN_CRYPTO_AUTH_MAX];
 };
 
 /**
@@ -402,6 +406,14 @@ struct param_slot_scoring {
  * @rssi_scoring: RSSI scoring information.
  * @esp_qbss_scoring: ESP/QBSS scoring percentage information
  * @oce_wan_scoring: OCE WAN metrics percentage information
+ * @security_weightage: Security(WPA/WPA2/WPA3) weightage out of
+ * total score in %
+ * @security_index_score: Security scoring percentage information.
+ *                BITS 0-7 :- It contains scoring percentage of WPA security
+ *                BITS 8-15  :- It contains scoring percentage of WPA2 security
+ *                BITS 16-23 :- It contains scoring percentage of WPA3 security
+ *                BITS 24-31 :- reserved
+ *                The value of each index must be 0-100
  */
 struct scoring_param {
 	uint32_t disable_bitmap;
@@ -426,6 +438,8 @@ struct scoring_param {
 	struct rssi_scoring rssi_scoring;
 	struct param_slot_scoring esp_qbss_scoring;
 	struct param_slot_scoring oce_wan_scoring;
+	int32_t security_weightage;
+	uint32_t security_index_score;
 };
 
 /*

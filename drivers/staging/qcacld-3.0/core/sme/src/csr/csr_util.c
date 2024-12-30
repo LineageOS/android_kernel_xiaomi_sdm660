@@ -4017,6 +4017,8 @@ uint8_t csr_construct_rsn_ie(struct mac_context *mac, uint32_t sessionId,
 	tPmkidCacheInfo pmkid_cache;
 #ifdef WLAN_FEATURE_11W
 	uint8_t *pGroupMgmtCipherSuite;
+	struct wlan_objmgr_vdev *vdev;
+	int16_t rsn_cap = 0;
 #endif
 	tDot11fBeaconIEs *pIesLocal = pIes;
 	enum csr_akm_type negAuthType = eCSR_AUTH_TYPE_UNKNOWN;
@@ -4099,13 +4101,29 @@ uint8_t csr_construct_rsn_ie(struct mac_context *mac, uint32_t sessionId,
 		 * supplicant, if AP and STA both are MFP capable.
 		 */
 #ifdef WLAN_FEATURE_11W
+                sme_debug("[MFPC/MFPR]RSNCapa 0x%x/0x%x pProfile 0x%x/0x%x",
+                          RSNCapabilities.MFPCapable,
+                          RSNCapabilities.MFPRequired,
+                          pProfile->MFPCapable,
+                          pProfile->MFPRequired);
 		if (RSNCapabilities.MFPCapable && pProfile->MFPCapable) {
 			RSNCapabilities.MFPCapable = pProfile->MFPCapable;
 			RSNCapabilities.MFPRequired = pProfile->MFPRequired;
+			rsn_cap |= WLAN_CRYPTO_RSN_CAP_MFP_ENABLED;
+			sme_debug("set rsn_cap 0x%x to vedv%u crypto", rsn_cap, sessionId);
 		} else {
 			RSNCapabilities.MFPCapable = 0;
 			RSNCapabilities.MFPRequired = 0;
 		}
+		vdev = wlan_objmgr_get_vdev_by_id_from_psoc(mac->psoc, sessionId,
+                                                    WLAN_LEGACY_SME_ID);
+		if (!vdev) {
+			sme_err("Invalid vdev");
+			break;
+		}
+		wlan_crypto_set_vdev_param(vdev, WLAN_CRYPTO_PARAM_RSN_CAP,
+					   rsn_cap);
+		wlan_objmgr_vdev_release_ref(vdev, WLAN_LEGACY_SME_ID);
 #endif
 		*(uint16_t *) (&pAuthSuite->AuthOui[1]) =
 			*((uint16_t *) (&RSNCapabilities));

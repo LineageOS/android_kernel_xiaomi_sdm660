@@ -97,6 +97,9 @@ static inline const struct wlan_crypto_cipher *fils_register(void)
 const struct wlan_crypto_cipher *fils_register(void);
 #endif
 
+struct wlan_crypto_params *wlan_crypto_vdev_get_comp_params(
+				struct wlan_objmgr_vdev *vdev,
+				struct wlan_crypto_comp_priv **crypto_priv);
 
 static inline void *wlan_get_vdev_crypto_obj(struct wlan_objmgr_vdev *vdev)
 {

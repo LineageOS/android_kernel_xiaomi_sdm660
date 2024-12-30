@@ -162,6 +162,7 @@ static void dfs_radar_summary_parse(struct wlan_dfs *dfs,
 		MS(rs[RADAR_REPORT_PULSE_REG_1], RADAR_REPORT_AGC_TOTAL_GAIN);
 	rsu->agc_mb_gain = MS(rs[RADAR_REPORT_PULSE_REG_2],
 		RADAR_REPORT_PULSE_AGC_MB_GAIN);
+	rsu->rssi = MS(rs[RADAR_REPORT_PULSE_REG_4], RADAR_REPORT_PULSE_RSSI);
 }
 
 /**

@@ -1801,4 +1801,17 @@ void lim_flush_bssid(struct mac_context *mac_ctx, uint8_t *bssid);
  */
 bool lim_is_sha384_akm(enum ani_akm_type akm);
 
+/**
+ * lim_get_vdev_rmf_capable() - get rmf capable - MFPC
+ * @mac: mac context
+ * @session: pe session
+ *
+ * Get intersection of local & peer (BSS) RSN caps
+ * and check MFPC bit.
+ *
+ * Return: bool
+ */
+bool lim_get_vdev_rmf_capable(struct mac_context *mac,
+			      struct pe_session *session);
+
 #endif /* __LIM_UTILS_H */

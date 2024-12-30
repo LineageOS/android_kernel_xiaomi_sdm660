@@ -115,7 +115,8 @@ void scm_validate_scoring_config(struct scoring_config *score_cfg)
 		       score_cfg->weight_cfg.beamforming_cap_weightage +
 		       score_cfg->weight_cfg.pcl_weightage +
 		       score_cfg->weight_cfg.channel_congestion_weightage +
-		       score_cfg->weight_cfg.oce_wan_weightage;
+		       score_cfg->weight_cfg.oce_wan_weightage +
+		       score_cfg->weight_cfg.sae_pk_ap_weightage;
 
 	if (total_weight > BEST_CANDIDATE_MAX_WEIGHT) {
 
@@ -134,9 +135,10 @@ void scm_validate_scoring_config(struct scoring_config *score_cfg)
 		score_cfg->weight_cfg.beamforming_cap_weightage =
 			BEAMFORMING_CAP_WEIGHTAGE;
 		score_cfg->weight_cfg.pcl_weightage = PCL_WEIGHT;
-			score_cfg->weight_cfg.channel_congestion_weightage =
+		score_cfg->weight_cfg.channel_congestion_weightage =
 			CHANNEL_CONGESTION_WEIGHTAGE;
 		score_cfg->weight_cfg.oce_wan_weightage = OCE_WAN_WEIGHTAGE;
+		score_cfg->weight_cfg.sae_pk_ap_weightage = SAE_PK_AP_WEIGHTAGE;
 	}
 
 	score_cfg->bandwidth_weight_per_index =
