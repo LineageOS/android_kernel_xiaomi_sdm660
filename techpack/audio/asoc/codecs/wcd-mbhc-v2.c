@@ -614,7 +614,6 @@ void wcd_mbhc_report_plug(struct wcd_mbhc *mbhc, int insertion,
 #ifdef CONFIG_MACH_XIAOMI_CLOVER
 		mbhc->hph_status &= ~(SND_JACK_HEADSET |
 			SND_JACK_LINEOUT |
-			SND_JACK_ANC_HEADPHONE |
 			SND_JACK_UNSUPPORTED);
 #else
 		mbhc->hph_status &= ~jack_type;
@@ -786,7 +785,6 @@ void wcd_mbhc_report_plug(struct wcd_mbhc *mbhc, int insertion,
 				if (mbhc->hph_status) {
 					mbhc->hph_status &= ~(SND_JACK_LINEOUT |
 							SND_JACK_HEADPHONE |
-							SND_JACK_ANC_HEADPHONE |
 							SND_JACK_UNSUPPORTED);
 					wcd_mbhc_jack_report(mbhc,
 							&mbhc->headset_jack,
