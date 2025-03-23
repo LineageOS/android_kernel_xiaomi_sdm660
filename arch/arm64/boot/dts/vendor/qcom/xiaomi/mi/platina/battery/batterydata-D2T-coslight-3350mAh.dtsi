@@ -16,6 +16,21 @@ qcom,d2t_coslight_3350mah {
 	qcom, = <24>;
 	/* #3475320_Xiaomi_D2Tcos_3350mAh_averaged_MasterSlave_Jun4th2018*/
 	qcom,max-voltage-uv = <4400000>;
+	qcom,fastchg-current-ma = <3300>;
+	qcom,jeita-fcc-ranges = <0   50   325000
+				 51  100  1000000
+				 101 150  1000000
+				 151 450  3300000
+				 451 580  1700000>;
+	qcom,jeita-fv-ranges = <0   50   4400000
+				51  100  4400000
+				101 150  4400000
+				151 450  4400000
+				451 580  4100000>;
+	qcom,step-chg-ranges = <3600000  4000000  3000000
+				4001000  4200000  2800000
+				4201000  4400000  2000000>;
+	qcom,ocv-based-step-chg;
 	qcom,nom-batt-capacity-mah = <3350>;
 	qcom,batt-id-kohm = <100>;
 	qcom,battery-beta = <3435>;
