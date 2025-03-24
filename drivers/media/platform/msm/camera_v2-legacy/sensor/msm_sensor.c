@@ -437,7 +437,6 @@ int msm_sensor_match_vendor_id(struct msm_sensor_ctrl_t *s_ctrl)
 		have_vcmid = 1;
 	}
 #endif
-#endif
 
 	sensor_i2c_client->cci_client->sid = temp_sid;
 	sensor_i2c_client->cci_client->cci_i2c_master = temp_master;
@@ -465,10 +464,8 @@ int msm_sensor_match_vendor_id(struct msm_sensor_ctrl_t *s_ctrl)
 					__func__, vcmid, s_ctrl->sensordata->vcm_id_info->vcm_id);
 			}
 		}
+#endif
 	}
-	pr_err("%s: read vendor id: 0x%x expected id 0x%x:\n",
-			__func__, vendorid, s_ctrl->sensordata->vendor_id_info->vendor_id);
-
 	return rc;
 }
 #endif
