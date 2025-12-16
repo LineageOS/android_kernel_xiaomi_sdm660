@@ -2789,7 +2789,6 @@ static struct snd_soc_dai_driver tfa98xx_dai[] = {
 static int tfa98xx_probe(struct snd_soc_component *codec)
 {
 	struct tfa98xx *tfa98xx = snd_soc_component_get_drvdata(codec);
-	struct snd_soc_dapm_context *dapm = snd_soc_component_get_dapm(codec);
 	int ret;
 
 	pr_debug("\n");
