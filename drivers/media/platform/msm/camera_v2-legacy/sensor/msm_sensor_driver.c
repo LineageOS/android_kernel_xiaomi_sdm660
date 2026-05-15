@@ -796,8 +796,8 @@ void msm_sensor_set_module_info(struct msm_sensor_ctrl_t *s_ctrl)
 	strcat(module_info, "\n");
 }
 
-static ssize_t msm_sensor_module_id_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+static ssize_t msm_sensor_module_id_show(struct kobject *kobj,
+		struct kobj_attribute *attr, char *buf)
 {
 	ssize_t rc = 0;
 
@@ -807,7 +807,8 @@ static ssize_t msm_sensor_module_id_show(struct device *dev,
 	return rc;
 }
 
-static DEVICE_ATTR(sensor, 0444, msm_sensor_module_id_show, NULL);
+static struct kobj_attribute msm_sensor_kobj_attr =
+	__ATTR(sensor, 0444, msm_sensor_module_id_show, NULL);
 
 int32_t msm_sensor_init_device_name(void)
 {
@@ -825,7 +826,7 @@ int32_t msm_sensor_init_device_name(void)
 		rc = -ENOMEM;
 		return rc;
 	}
-	rc = sysfs_create_file(msm_sensor_device, &dev_attr_sensor.attr);
+	rc = sysfs_create_file(msm_sensor_device, &msm_sensor_kobj_attr.attr);
 	if (rc) {
 		printk("%s: sysfs_create_file failed\n", __func__);
 		kobject_del(msm_sensor_device);
