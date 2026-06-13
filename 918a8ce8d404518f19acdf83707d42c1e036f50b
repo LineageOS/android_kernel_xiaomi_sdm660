@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ccc689a_1728df00",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 36052
+      },
+      "writtenOn": "2026-06-13T07:50:31Z",
+      "side": 1,
+      "message": "I compiled for lavender (Redmi Note 7) and encountered this error. After this, I tested it: the build passed, boots, and everything seems to be working fine so far.",
+      "revId": "918a8ce8d404518f19acdf83707d42c1e036f50b",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
