@@ -109,14 +109,16 @@
 	wqhd-vddio-supply = <&disp_vdd_vreg>;
 };
 
-/* Blue led was used for powersupply of left button key backlight */
-&blue_led {
-	linux,name = "button-backlight";
-};
+&pm660l_rgb_led {
+	/* Blue led was used for powersupply of left button key backlight */
+	blue {
+		label = "button-backlight";
+	};
 
-/* Green led was used for powersupply of right button key backlight */
-&green_led {
-	linux,name = "button-backlight1";
+	/* Green led was used for powersupply of right button key backlight */
+	green {
+		label = "button-backlight1";
+	};
 };
 
 &soc {
