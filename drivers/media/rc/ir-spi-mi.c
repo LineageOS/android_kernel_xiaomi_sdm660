@@ -11,17 +11,24 @@
  */
 
 #include <linux/fs.h>
+#include <linux/idr.h>
+#include <linux/miscdevice.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/of_gpio.h>
 #include <linux/regulator/consumer.h>
+#include <linux/slab.h>
 #include <linux/spi/spi.h>
-#include "media/lirc_dev.h"
+#include <linux/uaccess.h>
+#include <media/lirc.h>
 
 #define IR_SPI_DRIVER_NAME		"ir-spi"
 
 #define IR_SPI_DEFAULT_FREQUENCY	960000
 #define IR_SPI_BIT_PER_WORD		    32
+#define IR_SPI_NAME_SIZE		    16
+
+static DEFINE_IDA(ir_spi_ida);
 
 struct ir_spi_data {
 	u16 nusers;
@@ -29,7 +36,9 @@ struct ir_spi_data {
 
 	u8 *buffer;
 
-	struct lirc_driver lirc_driver;
+	struct miscdevice miscdev;
+	int lirc_id;
+	char miscdev_name[IR_SPI_NAME_SIZE];
 	struct spi_device *spi;
 	struct spi_transfer xfer;
 	struct mutex mutex;
@@ -95,25 +104,31 @@ out_unlock:
 
 static int ir_spi_chardev_open(struct inode *inode, struct file *file)
 {
-	struct ir_spi_data *idata = lirc_get_pdata(file);
+	struct miscdevice *miscdev = file->private_data;
+	struct ir_spi_data *idata =
+		container_of(miscdev, struct ir_spi_data, miscdev);
+	int ret = 0;
+
+	mutex_lock(&idata->mutex);
 
 	if (unlikely(idata->nusers >= SHRT_MAX)) {
 		dev_err(&idata->spi->dev, "device busy\n");
-		return -EBUSY;
+		ret = -EBUSY;
+		goto out_unlock;
 	}
 
+	idata->nusers++;
 	file->private_data = idata;
 
-	mutex_lock(&idata->mutex);
-	idata->nusers++;
+out_unlock:
 	mutex_unlock(&idata->mutex);
 
-	return 0;
+	return ret;
 }
 
 static int ir_spi_chardev_close(struct inode *inode, struct file *file)
 {
-	struct ir_spi_data *idata = lirc_get_pdata(file);
+	struct ir_spi_data *idata = file->private_data;
 
 	mutex_lock(&idata->mutex);
 	idata->nusers--;
@@ -148,8 +163,7 @@ static long ir_spi_chardev_ioctl(struct file *file, unsigned int cmd,
 
 	switch (cmd) {
 	case LIRC_GET_FEATURES:
-		return put_user(idata->lirc_driver.features,
-					(__u32 __user *) arg);
+		return put_user((__u32)LIRC_CAN_SEND_RAW, (__u32 __user *) arg);
 
 	case LIRC_GET_LENGTH:
 		return put_user(idata->xfer.len, (__u32 __user *) arg);
@@ -224,9 +238,7 @@ static long ir_spi_chardev_ioctl(struct file *file, unsigned int cmd,
 
 static const struct file_operations ir_spi_fops = {
 	.owner   = THIS_MODULE,
-	.read    = lirc_dev_fop_read,
 	.write   = ir_spi_chardev_write,
-	.poll    = lirc_dev_fop_poll,
 	.open    = ir_spi_chardev_open,
 	.release = ir_spi_chardev_close,
 	.llseek  = noop_llseek,
@@ -237,6 +249,8 @@ static const struct file_operations ir_spi_fops = {
 static int ir_spi_probe(struct spi_device *spi)
 {
 	struct ir_spi_data *idata;
+	int ret;
+
 	idata = devm_kzalloc(&spi->dev, sizeof(*idata), GFP_KERNEL);
 	if (!idata)
 		return -ENOMEM;
@@ -245,21 +259,6 @@ static int ir_spi_probe(struct spi_device *spi)
 	if (IS_ERR(idata->regulator))
 		return PTR_ERR(idata->regulator);
 #endif
-	snprintf(idata->lirc_driver.name, sizeof(idata->lirc_driver.name),
-							IR_SPI_DRIVER_NAME);
-	idata->lirc_driver.features    = LIRC_CAN_SEND_RAW;
-	idata->lirc_driver.code_length = 1;
-	idata->lirc_driver.fops        = &ir_spi_fops;
-	idata->lirc_driver.dev         = &spi->dev;
-	idata->lirc_driver.data        = idata;
-	idata->lirc_driver.owner       = THIS_MODULE;
-	idata->lirc_driver.minor       = -1;
-
-	idata->lirc_driver.minor = lirc_register_driver(&idata->lirc_driver);
-	if (idata->lirc_driver.minor < 0) {
-		dev_err(&spi->dev, "unable to generate character device\n");
-		return idata->lirc_driver.minor;
-	}
 
 	mutex_init(&idata->mutex);
 
@@ -268,6 +267,31 @@ static int ir_spi_probe(struct spi_device *spi)
 	idata->xfer.bits_per_word = IR_SPI_BIT_PER_WORD;
 	idata->xfer.speed_hz = IR_SPI_DEFAULT_FREQUENCY;
 
+	ret = ida_simple_get(&ir_spi_ida, 0, 0, GFP_KERNEL);
+	if (ret < 0)
+		return ret;
+
+	idata->lirc_id = ret;
+	snprintf(idata->miscdev_name, sizeof(idata->miscdev_name),
+		 "lirc%d", idata->lirc_id);
+
+	idata->miscdev.minor = MISC_DYNAMIC_MINOR;
+	idata->miscdev.name = idata->miscdev_name;
+	idata->miscdev.fops = &ir_spi_fops;
+	idata->miscdev.parent = &spi->dev;
+
+	spi_set_drvdata(spi, idata);
+
+	ret = misc_register(&idata->miscdev);
+	if (ret) {
+		ida_simple_remove(&ir_spi_ida, idata->lirc_id);
+		dev_err(&spi->dev, "unable to register /dev/%s\n",
+			idata->miscdev_name);
+		return ret;
+	}
+
+	dev_info(&spi->dev, "registered /dev/%s\n", idata->miscdev_name);
+
 	return 0;
 }
 
@@ -275,7 +299,8 @@ static int ir_spi_remove(struct spi_device *spi)
 {
 	struct ir_spi_data *idata = spi_get_drvdata(spi);
 
-	lirc_unregister_driver(idata->lirc_driver.minor);
+	misc_deregister(&idata->miscdev);
+	ida_simple_remove(&ir_spi_ida, idata->lirc_id);
 
 	return 0;
 }
