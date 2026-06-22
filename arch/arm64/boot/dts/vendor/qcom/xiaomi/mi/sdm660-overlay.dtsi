@@ -22,6 +22,11 @@
 // msm-pm660.dtsi
 &spmi_bus {
 	qcom,pm660@0 {
+		pm660_coincell: qcom,coincell@2800 {
+        	compatible = "qcom,qpnp-coincell";
+            reg = <0x2800 0x100>;
+        };
+
 		qcom,power-on@800 {
 			qcom,pon-dbc-delay = <62500>;
 			qcom,pon_1 {
@@ -510,12 +515,13 @@
 	qcom,pet-time = <15000>;
 };
 
-&sensor_information15 {
-	qcom,sensor-name = "cam_therm0";
-};
-
 &soc {
 	qcom,sensor-information {
+		sensor_information15: qcom,sensor-information-15 {
+            qcom,sensor-type = "adc";
+            qcom,sensor-name = "msm_therm";
+        };
+
 		sensor_information22: qcom,sensor-information-22 {
 			qcom,sensor-type =  "adc";
 			qcom,sensor-name = "cam_therm1";
@@ -531,6 +537,10 @@
 			qcom,soc-low-threshold = <5>;
 		};
 	};
+};
+
+&sensor_information15 {
+	qcom,sensor-name = "cam_therm0";
 };
 
 &qcom_seecom {
