@@ -184,6 +184,7 @@
 
 &i2c_4 { /* BLSP1 QUP3 (TP) */
 	status = "okay";
+	qcom,disable-dma;
 	/* Novatek device tree node */
 	novatek@62 {
 		compatible = "novatek,NVT-ts";
