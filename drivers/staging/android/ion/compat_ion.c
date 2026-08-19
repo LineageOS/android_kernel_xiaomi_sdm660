@@ -35,10 +35,63 @@ struct compat_ion_handle_data {
 	compat_int_t handle;
 };
 
+struct compat_ion_custom_data {
+	compat_uint_t cmd;
+	compat_ulong_t arg;
+};
+
+struct compat_ion_flush_data {
+	compat_int_t handle;
+	compat_int_t fd;
+	compat_uptr_t vaddr;
+	compat_uint_t offset;
+	compat_uint_t length;
+};
+
 #define COMPAT_ION_IOC_ALLOC	_IOWR(ION_IOC_MAGIC, 0, \
 				      struct compat_ion_old_allocation_data)
 #define COMPAT_ION_IOC_FREE	_IOWR(ION_IOC_MAGIC, 1, \
 				      struct compat_ion_handle_data)
+
+#define COMPAT_ION_IOC_CUSTOM	_IOWR(ION_IOC_MAGIC, 6, \
+				      struct compat_ion_custom_data)
+
+#define COMPAT_ION_IOC_CLEAN_CACHES _IOWR(ION_IOC_MSM_MAGIC, 0, \
+					   struct compat_ion_flush_data)
+#define COMPAT_ION_IOC_INV_CACHES _IOWR(ION_IOC_MSM_MAGIC, 1, \
+					 struct compat_ion_flush_data)
+#define COMPAT_ION_IOC_CLEAN_INV_CACHES _IOWR(ION_IOC_MSM_MAGIC, 2, \
+					       struct compat_ion_flush_data)
+
+static unsigned int compat_ion_cache_cmd(unsigned int cmd)
+{
+	switch (cmd) {
+	case COMPAT_ION_IOC_CLEAN_CACHES:
+		return ION_IOC_CLEAN_CACHES;
+	case COMPAT_ION_IOC_INV_CACHES:
+		return ION_IOC_INV_CACHES;
+	case COMPAT_ION_IOC_CLEAN_INV_CACHES:
+		return ION_IOC_CLEAN_INV_CACHES;
+	default:
+		return 0;
+	}
+}
+
+static long compat_ion_cache_ioctl(unsigned int cmd, compat_uptr_t arg)
+{
+	struct compat_ion_flush_data flush_data;
+	unsigned int native_cmd = compat_ion_cache_cmd(cmd);
+
+	if (!native_cmd)
+		return -ENOTTY;
+
+	if (copy_from_user(&flush_data, compat_ptr(arg), sizeof(flush_data)))
+		return -EFAULT;
+
+	return ion_legacy_cache_ioctl(native_cmd, flush_data.handle,
+				      flush_data.fd, flush_data.offset,
+				      flush_data.length);
+}
 
 static int compat_get_ion_allocation_data(
 			struct compat_ion_old_allocation_data __user *data32,
@@ -107,6 +160,19 @@ long compat_ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		return -ENOTTY;
 
 	switch (cmd) {
+	case COMPAT_ION_IOC_CUSTOM:
+	{
+		struct compat_ion_custom_data custom;
+
+		if (copy_from_user(&custom, compat_ptr(arg), sizeof(custom)))
+			return -EFAULT;
+
+		return compat_ion_cache_ioctl(custom.cmd, custom.arg);
+	}
+	case COMPAT_ION_IOC_CLEAN_CACHES:
+	case COMPAT_ION_IOC_INV_CACHES:
+	case COMPAT_ION_IOC_CLEAN_INV_CACHES:
+		return compat_ion_cache_ioctl(cmd, arg);
 	case COMPAT_ION_IOC_ALLOC:
 	{
 		struct compat_ion_old_allocation_data __user *data32;
