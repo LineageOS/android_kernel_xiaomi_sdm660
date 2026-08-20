@@ -362,9 +362,6 @@ struct msm_camera_sensor_slave_info {
 	struct msm_vendor_id_info_t vendor_id_info;
 	struct msm_vcm_id_info_t vcm_id_info;
 #endif
-#ifdef CONFIG_MACH_XIAOMI_LAVENDER
-	struct msm_lens_id_info_t lens_id_info;
-#endif
 	struct msm_sensor_power_setting_array power_setting_array;
 	unsigned char  is_init_params_valid;
 	struct msm_sensor_init_params sensor_init_params;
