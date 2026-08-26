@@ -307,6 +307,11 @@
 &q6core {
 	sound {
 		status = "ok";
+		/delete-property/ qcom,ext-disp-audio-rx;
+		asoc-codec = <&stub_codec>, <&msm_digital_codec>,
+				<&pmic_analog_codec>, <&msm_sdw_codec>;
+		asoc-codec-names = "msm-stub-codec.1", "msm-dig-codec",
+				"analog-codec", "msm_sdw_codec";
 		qcom,msm-mi2s-master = <0>, <1>, <0>, <0>;
 		qcom,msm-mi2s-ext-mclk = <1>,<0>,<0>,<0>;
 		qcom,wsa-max-devs = <0>;
