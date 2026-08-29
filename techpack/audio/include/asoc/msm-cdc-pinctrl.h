@@ -47,7 +47,7 @@ int msm_cdc_pinctrl_get_state(struct device_node *np)
 {
 	return true;
 }
-static int msm_cdc_pinctrl_set_wakeup_capable(struct device_node *np,
+int msm_cdc_pinctrl_set_wakeup_capable(struct device_node *np,
 					      bool enable)
 {
 	return 0;
