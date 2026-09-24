@@ -2137,9 +2137,8 @@ static int32_t nvt_ts_probe(struct i2c_client *client, const struct i2c_device_i
 		goto err_pm_workqueue;
 	}
 
-	bTouchIsAwake = 1;
+	bTouchIsAwake = 0;
 	NVT_LOG("end\n");
-	enable_irq(client->irq);
 	return 0;
 err_pm_workqueue:
 	destroy_workqueue(ts->event_wq);
@@ -2333,6 +2332,8 @@ static int32_t nvt_ts_resume(struct device *dev)
 	/* please make sure display reset(RESX) sequence and mipi dsi cmds sent before this */
 	nvt_bootloader_reset();
 	nvt_check_fw_reset_state(RESET_STATE_REK);
+	if (ts->fw_ver == 0)
+		nvt_get_fw_info();
 
 	if ((ts->gesture_enabled && ts->gesture_disabled_when_resume) || !ts->gesture_enabled_when_resume) {
 		enable_irq(ts->client->irq);
