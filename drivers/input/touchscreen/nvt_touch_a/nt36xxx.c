@@ -742,12 +742,19 @@ static int nvt_parse_dt(struct device *dev)
 	struct device_node *np = dev->of_node;
 	ts->irq_gpio = of_get_named_gpio_flags(np, "novatek,irq-gpio", 0, &ts->irq_flags);
 	NVT_LOG("novatek,irq-gpio=%d\n", ts->irq_gpio);
+#if NVT_TOUCH_SUPPORT_HW_RST
+	ts->reset_gpio = of_get_named_gpio_flags(np, "novatek,reset-gpio", 0, &ts->reset_flags);
+	NVT_LOG("novatek,reset-gpio=%d\n", ts->reset_gpio);
+#endif
 	return 0;
 }
 #else
 static int nvt_parse_dt(struct device *dev)
 {
 	ts->irq_gpio = NVTTOUCH_INT_PIN;
+#if NVT_TOUCH_SUPPORT_HW_RST
+	ts->reset_gpio = NVTTOUCH_RST_PIN;
+#endif
 	return 0;
 }
 #endif
@@ -763,6 +770,19 @@ static int nvt_gpio_config(struct nvt_ts_data *ts)
 {
 	int32_t ret = 0;
 
+#if NVT_TOUCH_SUPPORT_HW_RST
+	if (gpio_is_valid(ts->reset_gpio)) {
+		ret = gpio_request_one(ts->reset_gpio, GPIOF_OUT_INIT_LOW, "NVT-tp-rst");
+		if (ret) {
+			NVT_ERR("Failed to request NVT-tp-rst GPIO\n");
+			goto err_request_reset_gpio;
+		}
+		msleep(20);
+		gpio_set_value(ts->reset_gpio, 1);
+		msleep(40);
+	}
+#endif
+
 	/* request INT-pin (Input) */
 	if (gpio_is_valid(ts->irq_gpio)) {
 		ret = gpio_request_one(ts->irq_gpio, GPIOF_IN, "NVT-int");
@@ -774,7 +794,13 @@ static int nvt_gpio_config(struct nvt_ts_data *ts)
 	}
 
 	return ret;
+
 err_request_irq_gpio:
+#if NVT_TOUCH_SUPPORT_HW_RST
+	if (gpio_is_valid(ts->reset_gpio))
+		gpio_free(ts->reset_gpio);
+err_request_reset_gpio:
+#endif
 	return ret;
 }
 
@@ -1180,26 +1206,22 @@ static int32_t nvt_ts_probe(struct i2c_client *client, const struct i2c_device_i
 
 	msleep(10);
 	
-	ts->vcc_i2c = regulator_get(&client->dev, "vcc_i2c-supply");
-	if (IS_ERR(ts->vcc_i2c))
-	{
+	ts->vcc_i2c = regulator_get(&client->dev, "vcc_i2c");
+	if (IS_ERR(ts->vcc_i2c)) {
 		ret = PTR_ERR(ts->vcc_i2c);
-		NVT_ERR("Regulator get failed vcc_i2c");
+		NVT_ERR("Regulator get failed vcc_i2c\n");
+	} else {
+		if (regulator_count_voltages(ts->vcc_i2c) > 0) {
+			ret = regulator_set_voltage(ts->vcc_i2c, 1800000, 1800000);
+			if (ret) {
+				NVT_ERR("Regulator set_vtg failed vcc_i2c\n");
+			}
+		}
+		ret = regulator_enable(ts->vcc_i2c);
+		if (ret) {
+			NVT_ERR("Regulator vcc_i2c enable failed\n");
+		}
 	}
-
-    if (regulator_count_voltages(ts->vcc_i2c) > 0)
-    {
-        ret = regulator_set_voltage(ts->vcc_i2c, 1800000, 1800000);
-        if (ret)
-        {
-            NVT_ERR("Regulator set_vtg failed vcc_i2c ");
-        }
-    }
-    ret = regulator_enable(ts->vcc_i2c);
-    if (ret)
-    {
-        NVT_ERR("Regulator vcc_i2c enable failed");
-    }
 
 
 	ret = nvt_ts_check_chip_ver_trim();
@@ -1385,8 +1407,15 @@ err_create_nvt_wq_failed:
 err_chipvertrim_failed:
 err_check_functionality_failed:
 	gpio_free(ts->irq_gpio);
-
+#if NVT_TOUCH_SUPPORT_HW_RST
+	if (gpio_is_valid(ts->reset_gpio))
+		gpio_free(ts->reset_gpio);
+#endif
 err_gpio_config_failed:
+	if (ts->vcc_i2c && !IS_ERR(ts->vcc_i2c)) {
+		regulator_disable(ts->vcc_i2c);
+		regulator_put(ts->vcc_i2c);
+	}
 	i2c_set_clientdata(client, NULL);
 	kfree(ts);
 	return ret;
@@ -1410,6 +1439,15 @@ static int32_t nvt_ts_remove(struct i2c_client *client)
 	NVT_LOG("Removing driver...\n");
 	free_irq(client->irq, ts);
 	input_unregister_device(ts->input_dev);
+	gpio_free(ts->irq_gpio);
+#if NVT_TOUCH_SUPPORT_HW_RST
+	if (gpio_is_valid(ts->reset_gpio))
+		gpio_free(ts->reset_gpio);
+#endif
+	if (ts->vcc_i2c && !IS_ERR(ts->vcc_i2c)) {
+		regulator_disable(ts->vcc_i2c);
+		regulator_put(ts->vcc_i2c);
+	}
 	i2c_set_clientdata(client, NULL);
 	kfree(ts);
 	return 0;
@@ -1508,6 +1546,10 @@ static int32_t nvt_ts_resume(struct device *dev)
 
 	mutex_lock(&ts->lock);
 	NVT_LOG("start\n");
+#if NVT_TOUCH_SUPPORT_HW_RST
+	if (gpio_is_valid(ts->reset_gpio))
+		gpio_set_value(ts->reset_gpio, 1);
+#endif
 	nvt_bootloader_reset();
 	nvt_check_fw_reset_state(RESET_STATE_REK);
 
