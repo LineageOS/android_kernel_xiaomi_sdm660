@@ -1635,7 +1635,8 @@ static int fts_ts_suspend(struct device *dev)
 		ret = enable_irq_wake(fts_data->irq);
     	if (ret) {
         	FTS_INFO("enable_irq_wake(irq:%d) failed", fts_data->irq);
-    	}	
+    	}
+		fts_gesture_set_active(true);
 
 	}
 	else {

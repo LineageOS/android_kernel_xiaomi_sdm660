@@ -220,6 +220,9 @@ static ssize_t fts_gesture_buf_store(struct device *dev, struct device_attribute
 }
 
 #ifdef CONFIG_TOUCHSCREEN_COMMON
+extern bool focal_gesture_mode;
+extern bool enable_gesture_mode;
+
 static ssize_t double_tap_show(struct kobject *kobj,
                               struct kobj_attribute *attr, char *buf)
 {
@@ -237,6 +240,8 @@ static ssize_t double_tap_store(struct kobject *kobj,
                return -EINVAL;
 
        fts_gesture_data.mode = !!val;
+       focal_gesture_mode = !!val;
+       enable_gesture_mode = !!val;
        return count;
 }
 
@@ -245,6 +250,11 @@ static struct tp_common_ops double_tap_ops = {
        .store = double_tap_store
 };
 #endif
+
+void fts_gesture_set_active(bool active)
+{
+       fts_gesture_data.active = active ? ENABLE : DISABLE;
+}
 
 /*****************************************************************************
 *   Name: fts_create_gesture_sysfs
