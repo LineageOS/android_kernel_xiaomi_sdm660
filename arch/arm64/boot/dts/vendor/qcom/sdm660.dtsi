@@ -2875,10 +2875,8 @@
 		status = "okay";
 		compatible = "gpio-keys";
 		label = "gpio-keys";
-		pinctrl-names = "tlmm_gpio_key_active","tlmm_gpio_key_suspend",
-						"default";
+		pinctrl-names = "default";
 		pinctrl-0 = <&gpio_key_active &key_vol_up_default>;
-		pinctrl-1 = <&gpio_key_suspend>;
 
 		camera_focus {
 			label = "camera_focus";
