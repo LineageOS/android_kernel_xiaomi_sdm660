@@ -7,6 +7,7 @@
 #include <linux/file.h>
 #include <linux/fs.h>
 #include <linux/uaccess.h>
+#include <linux/dma-buf.h>
 
 #include "ion.h"
 #include "ion_system_secure_heap.h"
@@ -20,6 +21,8 @@ union ion_ioctl_arg {
 	struct ion_heap_query query;
 	struct ion_prefetch_data prefetch_data;
 #ifdef CONFIG_ION_LEGACY
+	struct ion_custom_data custom;
+	struct ion_flush_data flush_data;
 	struct ion_fd_data fd;
 	struct ion_old_allocation_data old_allocation;
 	struct ion_handle_data handle;
@@ -47,6 +50,10 @@ static unsigned int ion_ioctl_dir(unsigned int cmd)
 {
 	switch (cmd) {
 #ifdef CONFIG_ION_LEGACY
+	case ION_IOC_CLEAN_CACHES:
+	case ION_IOC_INV_CACHES:
+	case ION_IOC_CLEAN_INV_CACHES:
+	case ION_IOC_CUSTOM:
 	case ION_IOC_FREE:
 		return _IOC_WRITE;
 #endif
@@ -54,6 +61,72 @@ static unsigned int ion_ioctl_dir(unsigned int cmd)
 		return _IOC_DIR(cmd);
 	}
 }
+
+#ifdef CONFIG_ION_LEGACY
+long ion_legacy_cache_ioctl(unsigned int cmd, ion_user_handle_t handle,
+			    int fd, unsigned int offset, unsigned int length)
+{
+	struct dma_buf *dmabuf;
+	enum dma_data_direction direction;
+	int buffer_fd = fd >= 0 ? fd : handle;
+	int ret;
+
+	switch (cmd) {
+	case ION_IOC_CLEAN_CACHES:
+		direction = DMA_TO_DEVICE;
+		break;
+	case ION_IOC_INV_CACHES:
+		direction = DMA_FROM_DEVICE;
+		break;
+	case ION_IOC_CLEAN_INV_CACHES:
+		direction = DMA_BIDIRECTIONAL;
+		break;
+	default:
+		return -ENOTTY;
+	}
+
+	dmabuf = dma_buf_get(buffer_fd);
+	if (IS_ERR(dmabuf))
+		return PTR_ERR(dmabuf);
+
+	if (offset > dmabuf->size || length > dmabuf->size - offset) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = dma_buf_begin_cpu_access_partial(dmabuf, direction, offset,
+					       length);
+	if (!ret)
+		ret = dma_buf_end_cpu_access_partial(dmabuf, direction, offset,
+						     length);
+out:
+	dma_buf_put(dmabuf);
+	return ret;
+}
+
+static long ion_legacy_custom_ioctl(const struct ion_custom_data *custom)
+{
+	struct ion_flush_data flush_data;
+
+	switch (custom->cmd) {
+	case ION_IOC_CLEAN_CACHES:
+	case ION_IOC_INV_CACHES:
+	case ION_IOC_CLEAN_INV_CACHES:
+		break;
+	default:
+		return -ENOTTY;
+	}
+
+	if (copy_from_user(&flush_data, (void __user *)custom->arg,
+			   sizeof(flush_data)))
+		return -EFAULT;
+
+	return ion_legacy_cache_ioctl(custom->cmd, flush_data.handle,
+				      flush_data.fd, flush_data.offset,
+				      flush_data.length);
+}
+#endif
+
 
 long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
@@ -129,6 +202,15 @@ long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		break;
 	}
 #ifdef CONFIG_ION_LEGACY
+	case ION_IOC_CLEAN_CACHES:
+	case ION_IOC_INV_CACHES:
+	case ION_IOC_CLEAN_INV_CACHES:
+		return ion_legacy_cache_ioctl(cmd, data.flush_data.handle,
+					      data.flush_data.fd,
+					      data.flush_data.offset,
+					      data.flush_data.length);
+	case ION_IOC_CUSTOM:
+		return ion_legacy_custom_ioctl(&data.custom);
 	case ION_OLD_IOC_ALLOC:
 	{
 		int fd;
