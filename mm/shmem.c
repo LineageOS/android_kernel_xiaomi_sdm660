@@ -2443,6 +2443,8 @@ int shmem_mfill_atomic_pte(struct mm_struct *dst_mm,
 	return 0;
 out_delete_from_cache:
 	delete_from_page_cache(page);
+	/* committed: the charge goes when the page is freed */
+	goto out_release;
 out_release_uncharge:
 	mem_cgroup_cancel_charge(page, memcg, false);
 out_release:
