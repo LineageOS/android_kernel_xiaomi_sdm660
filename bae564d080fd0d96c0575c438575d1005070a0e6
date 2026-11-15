@@ -16,6 +16,24 @@
       "message": "This could be turned into dt binding flags to avoid the revert and have devices affected set the flag",
       "revId": "bae564d080fd0d96c0575c438575d1005070a0e6",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8d090ba0_f567115c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 4550
+      },
+      "writtenOn": "2026-11-15T21:11:37Z",
+      "side": 1,
+      "message": "It\u0027s not affecting specific devices, this kernel is on lineage-20 branch therefore it should allow building on lineage-20 and all newer branches without anything special",
+      "parentUuid": "da8135b6_ecbd114e",
+      "revId": "bae564d080fd0d96c0575c438575d1005070a0e6",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
