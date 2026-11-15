@@ -768,19 +768,14 @@ CLANG_GCC_TC	:= --gcc-toolchain=$(GCC_TOOLCHAIN)
 endif
 KBUILD_CFLAGS += $(CLANG_TARGET) $(CLANG_GCC_TC) -meabi gnu
 KBUILD_AFLAGS += $(CLANG_TARGET) $(CLANG_GCC_TC)
-KBUILD_CPPFLAGS += $(call cc-option,-Qunused-arguments,)
-KBUILD_CFLAGS += $(call cc-disable-warning, format-invalid-specifier)
-KBUILD_CFLAGS += $(call cc-disable-warning, gnu)
-KBUILD_CFLAGS += $(call cc-disable-warning, duplicate-decl-specifier)
+KBUILD_CPPFLAGS += -Qunused-arguments
+KBUILD_CFLAGS += -Wno-format-invalid-specifier
+KBUILD_CFLAGS += -Wno-gnu
+KBUILD_CFLAGS += -Wno-duplicate-decl-specifier
 KBUILD_CFLAGS += -Wno-asm-operand-widths
-KBUILD_CFLAGS += -Wno-initializer-overrides
-KBUILD_CFLAGS += $(call cc-option, -Wno-undefined-optimized)
-KBUILD_CFLAGS += $(call cc-option, -Wno-tautological-constant-out-of-range-compare)
-KBUILD_CFLAGS += $(call cc-option, -mllvm -disable-struct-const-merge)
 
 # Quiet clang warning: comparison of unsigned expression < 0 is always false
-KBUILD_CFLAGS += $(call cc-disable-warning, tautological-compare)
-KBUILD_CFLAGS += $(call cc-option, -fcatch-undefined-behavior)
+KBUILD_CFLAGS += -Wno-tautological-compare
 endif
 
 # These warnings generated too much noise in a regular build.
@@ -890,7 +885,6 @@ endif
 ifdef CONFIG_LTO_CLANG
 ifdef CONFIG_THINLTO
 lto-clang-flags	:= -flto=thin
-KBUILD_LDFLAGS	+= --thinlto-cache-dir=.thinlto-cache
 else
 lto-clang-flags	:= -flto
 endif
@@ -976,15 +970,6 @@ KBUILD_CFLAGS += $(call cc-disable-warning, maybe-uninitialized)
 # disable invalid "can't wrap" optimizations for signed / pointers
 KBUILD_CFLAGS	+= $(call cc-option,-fno-strict-overflow)
 
-# clang sets -fmerge-all-constants by default as optimization, but this
-# is non-conforming behavior for C and in fact breaks the kernel, so we
-# need to disable it here generally.
-KBUILD_CFLAGS	+= $(call cc-option,-fno-merge-all-constants)
-
-# for gcc -fno-merge-all-constants disables everything, but it is fine
-# to have actual conforming behavior enabled.
-KBUILD_CFLAGS	+= $(call cc-option,-fmerge-constants)
-
 # Make sure -fstack-check isn't enabled (like gentoo apparently did)
 KBUILD_CFLAGS  += $(call cc-option,-fno-stack-check,)
 
@@ -1038,7 +1023,8 @@ LDFLAGS_vmlinux	+= $(call ld-option, -X,)
 endif
 
 ifeq ($(CONFIG_RELR),y)
-LDFLAGS_vmlinux	+= --pack-dyn-relocs=relr
+# ld.lld before 15 did not support -z pack-relative-relocs.
+LDFLAGS_vmlinux	+= $(call ld-option,--pack-dyn-relocs=relr,-z pack-relative-relocs)
 endif
 
 # insure the checker run with the right endianness

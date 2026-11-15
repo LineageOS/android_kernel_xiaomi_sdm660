@@ -1170,6 +1170,9 @@ static u32 s32ton(__s32 value, unsigned n)
 	if (!value || !n)
 		return 0;
 
+	if (n > 32)
+		n = 32;
+
 	a = value >> (n - 1);
 	if (a && a != -1)
 		return value < 0 ? 1 << (n - 1) : (1 << (n - 1)) - 1;
@@ -1596,6 +1599,13 @@ int hid_report_raw_event(struct hid_device *hid, int type, u8 *data, u32 size,
 	u32 rsize, csize = size;
 	u8 *cdata = data;
 	int ret = 0;
+
+	if (report_enum->numbered && size < 1) {
+		hid_warn_ratelimited(hid,
+				     "Event data for numbered report is too short %d\n",
+				     size);
+		return -EINVAL;
+	}
 
 	report = hid_get_report(report_enum, data);
 	if (!report)
