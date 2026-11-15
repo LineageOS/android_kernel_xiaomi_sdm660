@@ -263,7 +263,7 @@ static int hdd_extscan_nl_fill_bss(struct sk_buff *skb, tSirWifiScanResult *ap,
 {
 	struct nlattr *nla_ap;
 
-	nla_ap = nla_nest_start(skb, idx);
+	nla_ap = nla_nest_start_noflag(skb, idx);
 	if (!nla_ap)
 		return -EINVAL;
 
@@ -469,8 +469,8 @@ wlan_hdd_cfg80211_extscan_cached_results_ind(struct hdd_context *hdd_ctx,
 			hdd_err("put fail");
 			goto fail;
 		}
-		nla_results = nla_nest_start(skb,
-			      QCA_WLAN_VENDOR_ATTR_EXTSCAN_CACHED_RESULTS_LIST);
+		nla_results = nla_nest_start_noflag(skb,
+						    QCA_WLAN_VENDOR_ATTR_EXTSCAN_CACHED_RESULTS_LIST);
 		if (!nla_results)
 			goto fail;
 
@@ -478,7 +478,7 @@ wlan_hdd_cfg80211_extscan_cached_results_ind(struct hdd_context *hdd_ctx,
 			struct nlattr *nla_result;
 			struct nlattr *nla_aps;
 
-			nla_result = nla_nest_start(skb, i);
+			nla_result = nla_nest_start_noflag(skb, i);
 			if (!nla_result)
 				goto fail;
 
@@ -498,8 +498,8 @@ wlan_hdd_cfg80211_extscan_cached_results_ind(struct hdd_context *hdd_ctx,
 				goto fail;
 			}
 
-			nla_aps = nla_nest_start(skb,
-				     QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_LIST);
+			nla_aps = nla_nest_start_noflag(skb,
+							QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_LIST);
 			if (!nla_aps)
 				goto fail;
 
@@ -614,15 +614,15 @@ wlan_hdd_cfg80211_extscan_hotlist_match_ind(struct hdd_context *hdd_ctx,
 	if (data->numOfAps) {
 		struct nlattr *aps;
 
-		aps = nla_nest_start(skb,
-			       QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_LIST);
+		aps = nla_nest_start_noflag(skb,
+					    QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_LIST);
 		if (!aps)
 			goto fail;
 
 		for (i = 0; i < data->numOfAps; i++) {
 			struct nlattr *ap;
 
-			ap = nla_nest_start(skb, i);
+			ap = nla_nest_start_noflag(skb, i);
 			if (!ap)
 				goto fail;
 
@@ -745,8 +745,8 @@ wlan_hdd_cfg80211_extscan_signif_wifi_change_results_ind(
 	if (data->numResults) {
 		struct nlattr *aps;
 
-		aps = nla_nest_start(skb,
-			       QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_LIST);
+		aps = nla_nest_start_noflag(skb,
+					    QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_LIST);
 		if (!aps)
 			goto fail;
 
@@ -754,7 +754,7 @@ wlan_hdd_cfg80211_extscan_signif_wifi_change_results_ind(
 		for (i = 0; i < data->numResults; i++) {
 			struct nlattr *ap;
 
-			ap = nla_nest_start(skb, i);
+			ap = nla_nest_start_noflag(skb, i);
 			if (!ap)
 				goto fail;
 
@@ -1166,8 +1166,8 @@ wlan_hdd_cfg80211_extscan_epno_match_found(struct hdd_context *hdd_ctx,
 	if (data->num_results) {
 		struct nlattr *nla_aps;
 
-		nla_aps = nla_nest_start(skb,
-			QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_LIST);
+		nla_aps = nla_nest_start_noflag(skb,
+						QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_LIST);
 		if (!nla_aps)
 			goto fail;
 
@@ -1269,15 +1269,15 @@ wlan_hdd_cfg80211_passpoint_match_found(void *ctx,
 		goto fail;
 	}
 
-	nla_aps = nla_nest_start(skb,
-		QCA_WLAN_VENDOR_ATTR_EXTSCAN_PNO_RESULTS_PASSPOINT_MATCH_RESULT_LIST);
+	nla_aps = nla_nest_start_noflag(skb,
+					QCA_WLAN_VENDOR_ATTR_EXTSCAN_PNO_RESULTS_PASSPOINT_MATCH_RESULT_LIST);
 	if (!nla_aps)
 		goto fail;
 
 	for (i = 0; i < num_matches; i++) {
 		struct nlattr *nla_ap;
 
-		nla_ap = nla_nest_start(skb, i);
+		nla_ap = nla_nest_start_noflag(skb, i);
 		if (!nla_ap)
 			goto fail;
 
@@ -1296,8 +1296,8 @@ wlan_hdd_cfg80211_passpoint_match_found(void *ctx,
 				data->anqp_len, data->anqp))
 				goto fail;
 
-		nla_bss = nla_nest_start(skb,
-				QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_LIST);
+		nla_bss = nla_nest_start_noflag(skb,
+						QCA_WLAN_VENDOR_ATTR_EXTSCAN_RESULTS_LIST);
 		if (!nla_bss)
 			goto fail;
 

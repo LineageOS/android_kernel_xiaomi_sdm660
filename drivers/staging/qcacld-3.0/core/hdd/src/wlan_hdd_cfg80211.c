@@ -2173,12 +2173,12 @@ hdd_cfg80211_update_channel_info(struct sk_buff *skb,
 	struct hdd_channel_info *icv;
 	int i;
 
-	nla_attr = nla_nest_start(skb, idx);
+	nla_attr = nla_nest_start_noflag(skb, idx);
 	if (!nla_attr)
 		goto fail;
 
 	for (i = 0; i < sap_config->channel_info_count; i++) {
-		channel = nla_nest_start(skb, i);
+		channel = nla_nest_start_noflag(skb, i);
 		if (!channel)
 			goto fail;
 
@@ -2247,13 +2247,13 @@ hdd_cfg80211_update_pcl(struct sk_buff *skb,
 	struct nlattr *nla_attr, *channel;
 	int i;
 
-	nla_attr = nla_nest_start(skb, idx);
+	nla_attr = nla_nest_start_noflag(skb, idx);
 
 	if (!nla_attr)
 		goto fail;
 
 	for (i = 0; i < ch_list_count; i++) {
-		channel = nla_nest_start(skb, i);
+		channel = nla_nest_start_noflag(skb, i);
 		if (!channel)
 			goto fail;
 		if (nla_put_u8(skb, QCA_WLAN_VENDOR_ATTR_PCL_CHANNEL,
@@ -4728,7 +4728,7 @@ hdd_roam_control_config_fill_data(struct hdd_context *hdd_ctx, uint8_t vdev_id,
 	struct nlattr *config;
 	uint32_t full_roam_scan_period;
 
-	config = nla_nest_start(skb, PARAM_ROAM_CONTROL_CONFIG);
+	config = nla_nest_start_noflag(skb, PARAM_ROAM_CONTROL_CONFIG);
 	if (!config) {
 		hdd_err("nla nest start failure");
 		return -EINVAL;
@@ -6373,6 +6373,8 @@ wlan_hdd_wifi_config_policy[QCA_WLAN_VENDOR_ATTR_CONFIG_MAX + 1] = {
 	[QCA_WLAN_VENDOR_ATTR_DISCONNECT_IES] = {
 		.type = NLA_BINARY,
 		.len = SIR_MAC_MAX_ADD_IE_LENGTH + 2},
+	[QCA_WLAN_VENDOR_ATTR_CONFIG_CONCURRENT_STA_PRIMARY] = {
+							.type = NLA_U8 },
 
 };
 
@@ -7459,6 +7461,33 @@ static int hdd_config_disable_fils(struct hdd_adapter *adapter,
 	return qdf_status_to_os_return(status);
 }
 
+static int hdd_set_primary_interface(struct hdd_adapter *adapter,
+				     const struct nlattr *attr)
+{
+	struct hdd_context *hdd_ctx = WLAN_HDD_GET_CTX(adapter);
+	bool is_set_primary_iface;
+	QDF_STATUS status;
+	uint8_t primary_vdev_id;
+
+	/* ignore unless in STA mode */
+	if (adapter->device_mode != QDF_STA_MODE)
+		return 0;
+
+	is_set_primary_iface = nla_get_u8(attr);
+
+	primary_vdev_id = is_set_primary_iface ? adapter->vdev_id : WLAN_UMAC_VDEV_ID_MAX;
+	hdd_debug("Primary interface: %d", primary_vdev_id);
+
+	status = ucfg_mlme_set_primary_interface(hdd_ctx->psoc,
+						 primary_vdev_id);
+	if (QDF_IS_STATUS_ERROR(status)) {
+		hdd_err("could not set primary interface, %d", status);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int hdd_config_rsn_ie(struct hdd_adapter *adapter,
 			     const struct nlattr *attr)
 {
@@ -7652,6 +7681,8 @@ static const struct independent_setters independent_setters[] = {
 	{QCA_WLAN_VENDOR_ATTR_CONFIG_ELNA_BYPASS,
 	 hdd_set_elna_bypass},
 #endif
+	{QCA_WLAN_VENDOR_ATTR_CONFIG_CONCURRENT_STA_PRIMARY,
+	 hdd_set_primary_interface},
 };
 
 #ifdef WLAN_FEATURE_ELNA
@@ -9787,7 +9818,7 @@ static int __wlan_hdd_cfg80211_get_preferred_freq_list(struct wiphy *wiphy,
 	}
 
 	i = QCA_WLAN_VENDOR_ATTR_GET_PREFERRED_FREQ_LIST_WEIGHED_PCL;
-	nla_attr = nla_nest_start(reply_skb, i);
+	nla_attr = nla_nest_start_noflag(reply_skb, i);
 
 	if (!nla_attr) {
 		hdd_err("nla nest start fail");
@@ -9797,7 +9828,7 @@ static int __wlan_hdd_cfg80211_get_preferred_freq_list(struct wiphy *wiphy,
 	}
 
 	for (i = 0; i < pcl_len; i++) {
-		channel = nla_nest_start(reply_skb, i);
+		channel = nla_nest_start_noflag(reply_skb, i);
 		if (!channel) {
 			hdd_err("updating pcl list failed");
 			kfree_skb(reply_skb);
@@ -10371,8 +10402,8 @@ QCA_WLAN_VENDOR_ATTR_STA_CONNECT_ROAM_POLICY_MAX + 1] = {
  */
 static int
 __wlan_hdd_cfg80211_sta_roam_policy(struct wiphy *wiphy,
-		struct wireless_dev *wdev,
-		const void *data, int data_len)
+				    struct wireless_dev *wdev,
+				    const void *data, int data_len)
 {
 	struct net_device *dev = wdev->netdev;
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
@@ -10445,9 +10476,10 @@ __wlan_hdd_cfg80211_sta_roam_policy(struct wiphy *wiphy,
  * in Scanning.
  * Return: 0 on success; errno on failure
  */
-static int wlan_hdd_cfg80211_sta_roam_policy(struct wiphy *wiphy,
-		struct wireless_dev *wdev,
-		const void *data, int data_len)
+static int
+wlan_hdd_cfg80211_sta_roam_policy(struct wiphy *wiphy,
+				  struct wireless_dev *wdev, const void *data,
+				  int data_len)
 {
 	int errno;
 	struct osif_vdev_sync *vdev_sync;
@@ -10458,6 +10490,100 @@ static int wlan_hdd_cfg80211_sta_roam_policy(struct wiphy *wiphy,
 
 	errno = __wlan_hdd_cfg80211_sta_roam_policy(wiphy, wdev,
 						    data, data_len);
+
+	osif_vdev_sync_op_stop(vdev_sync);
+
+	return errno;
+}
+
+const struct nla_policy
+wlan_hdd_set_dual_sta_policy[
+QCA_WLAN_VENDOR_ATTR_CONCURRENT_STA_POLICY_MAX + 1] = {
+	[QCA_WLAN_VENDOR_ATTR_CONCURRENT_STA_POLICY_CONFIG] = {.type = NLA_U8 },
+};
+
+/**
+ * __wlan_hdd_cfg80211_dual_sta_policy() - Wrapper to configure the concurrent
+ * session policies
+ * @wiphy:    wiphy structure pointer
+ * @wdev:     Wireless device structure pointer
+ * @data:     Pointer to the data received
+ * @data_len: Length of @data
+ *
+ * Configure the concurrent session policies when multiple STA ifaces are
+ * (getting) active.
+ * Return: 0 on success; errno on failure
+ */
+static int __wlan_hdd_cfg80211_dual_sta_policy(struct wiphy *wiphy,
+					       struct wireless_dev *wdev,
+					       const void *data, int data_len)
+{
+	struct hdd_context *hdd_ctx = wiphy_priv(wiphy);
+	struct nlattr *tb[
+		QCA_WLAN_VENDOR_ATTR_CONCURRENT_STA_POLICY_MAX + 1];
+	QDF_STATUS status;
+	uint8_t dual_sta_config =
+		QCA_WLAN_CONCURRENT_STA_POLICY_UNBIASED;
+
+	if (wlan_hdd_validate_context(hdd_ctx)) {
+		hdd_err("Invalid hdd context");
+		return -EINVAL;
+	}
+
+	if (wlan_cfg80211_nla_parse(tb,
+			       QCA_WLAN_VENDOR_ATTR_CONCURRENT_STA_POLICY_MAX,
+			       data, data_len,
+			       wlan_hdd_set_dual_sta_policy)) {
+		hdd_err("nla_parse failed");
+		return -EINVAL;
+	}
+
+	if (!tb[QCA_WLAN_VENDOR_ATTR_CONCURRENT_STA_POLICY_CONFIG]) {
+		hdd_err("sta policy config attribute not present");
+		return -EINVAL;
+	}
+
+	dual_sta_config = nla_get_u8(
+			tb[QCA_WLAN_VENDOR_ATTR_CONCURRENT_STA_POLICY_CONFIG]);
+	hdd_debug("Concurrent STA policy : %d", dual_sta_config);
+
+	if (dual_sta_config > QCA_WLAN_CONCURRENT_STA_POLICY_UNBIASED)
+		return -EINVAL;
+
+	status = ucfg_mlme_set_dual_sta_policy(hdd_ctx->psoc, dual_sta_config);
+	if (QDF_IS_STATUS_ERROR(status)) {
+		hdd_err("failed to set MLME dual sta config");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/**
+ * wlan_hdd_cfg80211_dual_sta_policy() - Wrapper to configure the concurrent
+ * session policies
+ * @wiphy:    wiphy structure pointer
+ * @wdev:     Wireless device structure pointer
+ * @data:     Pointer to the data received
+ * @data_len: Length of @data
+ *
+ * Configure the concurrent session policies when multiple STA ifaces are
+ * (getting) active.
+ * Return: 0 on success; errno on failure
+ */
+static int wlan_hdd_cfg80211_dual_sta_policy(struct wiphy *wiphy,
+					     struct wireless_dev *wdev,
+					     const void *data, int data_len)
+{
+	int errno;
+	struct osif_vdev_sync *vdev_sync;
+
+	errno = osif_vdev_sync_op_start(wdev->netdev, &vdev_sync);
+	if (errno)
+		return errno;
+
+	errno = __wlan_hdd_cfg80211_dual_sta_policy(wiphy, wdev, data,
+						    data_len);
 
 	osif_vdev_sync_op_stop(vdev_sync);
 
@@ -13178,14 +13304,14 @@ static int hdd_populate_connectivity_check_stats_info(
 	struct nlattr *connect_stats, *connect_info;
 	uint32_t count = 0;
 
-	connect_stats = nla_nest_start(skb, DATA_PKT_STATS);
+	connect_stats = nla_nest_start_noflag(skb, DATA_PKT_STATS);
 	if (!connect_stats) {
 		hdd_err("nla_nest_start failed");
 		return -EINVAL;
 	}
 
 	if (adapter->pkt_type_bitmap & CONNECTIVITY_CHECK_SET_DNS) {
-		connect_info = nla_nest_start(skb, count);
+		connect_info = nla_nest_start_noflag(skb, count);
 		if (!connect_info) {
 			hdd_err("nla_nest_start failed count %u", count);
 			return -EINVAL;
@@ -13198,7 +13324,7 @@ static int hdd_populate_connectivity_check_stats_info(
 	}
 
 	if (adapter->pkt_type_bitmap & CONNECTIVITY_CHECK_SET_TCP_HANDSHAKE) {
-		connect_info = nla_nest_start(skb, count);
+		connect_info = nla_nest_start_noflag(skb, count);
 		if (!connect_info) {
 			hdd_err("nla_nest_start failed count %u", count);
 			return -EINVAL;
@@ -13209,7 +13335,7 @@ static int hdd_populate_connectivity_check_stats_info(
 		nla_nest_end(skb, connect_info);
 		count++;
 
-		connect_info = nla_nest_start(skb, count);
+		connect_info = nla_nest_start_noflag(skb, count);
 		if (!connect_info) {
 			hdd_err("nla_nest_start failed count %u", count);
 			return -EINVAL;
@@ -13220,7 +13346,7 @@ static int hdd_populate_connectivity_check_stats_info(
 		nla_nest_end(skb, connect_info);
 		count++;
 
-		connect_info = nla_nest_start(skb, count);
+		connect_info = nla_nest_start_noflag(skb, count);
 		if (!connect_info) {
 			hdd_err("nla_nest_start failed count %u", count);
 			return -EINVAL;
@@ -13233,7 +13359,7 @@ static int hdd_populate_connectivity_check_stats_info(
 	}
 
 	if (adapter->pkt_type_bitmap & CONNECTIVITY_CHECK_SET_ICMPV4) {
-		connect_info = nla_nest_start(skb, count);
+		connect_info = nla_nest_start_noflag(skb, count);
 		if (!connect_info) {
 			hdd_err("nla_nest_start failed count %u", count);
 			return -EINVAL;
@@ -13844,7 +13970,7 @@ static int wlan_hdd_fill_intf_info(struct sk_buff *skb,
 	if (!hdd_adapter)
 		goto error;
 
-	attr = nla_nest_start(skb, index);
+	attr = nla_nest_start_noflag(skb, index);
 	if (!attr)
 		goto error;
 
@@ -13895,7 +14021,7 @@ static int wlan_hdd_fill_mac_info(struct sk_buff *skb,
 		return 0;
 
 	i = 0;
-	attr = nla_nest_start(skb, mac_id);
+	attr = nla_nest_start_noflag(skb, mac_id);
 	if (!attr)
 		goto error;
 
@@ -13903,7 +14029,8 @@ static int wlan_hdd_fill_mac_info(struct sk_buff *skb,
 	    nla_put_u32(skb, QCA_WLAN_VENDOR_ATTR_MAC_INFO_BAND, band))
 		goto error;
 
-	intf_attr = nla_nest_start(skb, QCA_WLAN_VENDOR_ATTR_MAC_IFACE_INFO);
+	intf_attr = nla_nest_start_noflag(skb,
+					  QCA_WLAN_VENDOR_ATTR_MAC_IFACE_INFO);
 	if (!intf_attr)
 		goto error;
 
@@ -13961,7 +14088,7 @@ int wlan_hdd_send_mode_change_event(void)
 		return -ENOMEM;
 	}
 
-	attr = nla_nest_start(skb, QCA_WLAN_VENDOR_ATTR_MAC_INFO);
+	attr = nla_nest_start_noflag(skb, QCA_WLAN_VENDOR_ATTR_MAC_INFO);
 	if (!attr) {
 		hdd_err("nla_nest_start failed");
 		kfree_skb(skb);
@@ -14470,6 +14597,19 @@ const struct wiphy_vendor_command hdd_wiphy_vendor_commands[] = {
 			WIPHY_VENDOR_CMD_NEED_RUNNING,
 		.doit = wlan_hdd_cfg80211_sta_roam_policy
 	},
+
+	{
+		.info.vendor_id = QCA_NL80211_VENDOR_ID,
+		.info.subcmd =
+			QCA_NL80211_VENDOR_SUBCMD_CONCURRENT_MULTI_STA_POLICY,
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+			WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = wlan_hdd_cfg80211_dual_sta_policy,
+		vendor_command_policy(
+			wlan_hdd_set_dual_sta_policy,
+			QCA_WLAN_VENDOR_ATTR_CONCURRENT_STA_POLICY_MAX)
+	},
+
 #ifdef FEATURE_WLAN_CH_AVOID
 	{
 		.info.vendor_id = QCA_NL80211_VENDOR_ID,

@@ -388,7 +388,7 @@
 			alloc-ranges = <0x0 0x00000000 0x0 0xffffffff>;
 			reusable;
 			alignment = <0x0 0x400000>;
-			size = <0x0 0x1a0000>;
+			size = <0x0 0x400000>;
 		};
 
 		venus_fw_mem: venus_fw_region {
@@ -2875,10 +2875,8 @@
 		status = "okay";
 		compatible = "gpio-keys";
 		label = "gpio-keys";
-		pinctrl-names = "tlmm_gpio_key_active","tlmm_gpio_key_suspend",
-						"default";
+		pinctrl-names = "default";
 		pinctrl-0 = <&gpio_key_active &key_vol_up_default>;
-		pinctrl-1 = <&gpio_key_suspend>;
 
 		camera_focus {
 			label = "camera_focus";

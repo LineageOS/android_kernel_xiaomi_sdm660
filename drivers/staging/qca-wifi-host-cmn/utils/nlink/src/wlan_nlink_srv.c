@@ -341,7 +341,7 @@ static int cld80211_fill_data(struct sk_buff *msg, uint32_t portid,
 		return -EPERM;
 	}
 
-	nest = nla_nest_start(msg, CLD80211_ATTR_VENDOR_DATA);
+	nest = nla_nest_start_noflag(msg, CLD80211_ATTR_VENDOR_DATA);
 	if (!nest) {
 		QDF_TRACE(QDF_MODULE_ID_HDD, QDF_TRACE_LEVEL_ERROR,
 						"nla_nest_start failed");
