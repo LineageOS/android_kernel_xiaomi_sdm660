@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "da8135b6_ecbd114e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 19979
+      },
+      "writtenOn": "2026-11-15T20:57:43Z",
+      "side": 1,
+      "message": "This could be turned into dt binding flags to avoid the revert and have devices affected set the flag",
+      "revId": "bae564d080fd0d96c0575c438575d1005070a0e6",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
