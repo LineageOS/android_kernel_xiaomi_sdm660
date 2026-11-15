@@ -52,6 +52,24 @@
       "parentUuid": "8d090ba0_f567115c",
       "revId": "bae564d080fd0d96c0575c438575d1005070a0e6",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a905d721_b6793277",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 4550
+      },
+      "writtenOn": "2026-11-15T21:12:57Z",
+      "side": 1,
+      "message": "Anyway the DSP blobs are common so it\u0027s not possible to just toggle this for one device and it\u0027s too much work for something like this, I\u0027d rather switch back to new DSP blobs and fix jasmine ACDB and keep this until then",
+      "parentUuid": "aeb7c7b0_264bc0d6",
+      "revId": "bae564d080fd0d96c0575c438575d1005070a0e6",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
